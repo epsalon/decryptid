@@ -44,7 +44,7 @@ var terrInfo = [] struct {
 	{"Cougr", color.FgRed},
 }
 
-var bldgIcon = []string {"", "Stone", "Shack"}
+var bldgIcon = []string {"", "Stone", "Shed"}
 var bldgColor = []color.Attribute {
 	color.FgBlack,
 	color.FgHiWhite,
@@ -57,6 +57,7 @@ var playerColor = []color.Attribute {
 	color.FgHiMagenta,
 	color.FgHiBlue,
 	color.FgHiCyan,
+	color.FgHiBlack,
 }
 
 func playerStr(playerSet PlayerSet) (string, int) {
@@ -81,8 +82,8 @@ func (h Hex) FillStr() []string {
 	bc := color.New(bldgColor[h.C], color.BgBlack)
 	ps, psl := playerStr(h.Discs)
 	if (h.Cube != 0) {
-		ps = color.New(playerColor[h.Cube]).SprintfFunc()("[x]")
-		psl = 3
+		ps = color.New(playerColor[h.Cube-1]).SprintfFunc()("x") + ps
+		psl += 1
 	}
 	return []string {
 		" _____ ",

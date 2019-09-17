@@ -18,7 +18,7 @@ var testSpec = BoardSpec {
 
 func TestMakeBoard (t *testing.T) {
 	b := MakeBoard(testSpec)
-	t.Error(Hex{L: Water, T:Bear, B:Stone, C:Green, Discs: 11})
+	t.Error(Hex{L: Water, T:Bear, B:Stone, C:Green, Discs: 11, Cube: 2})
 	t.Error(Hex{L: Desert, T:Cougar, B:Shed, C:Blue, Cube: 2})
 	t.Error(b)
 }

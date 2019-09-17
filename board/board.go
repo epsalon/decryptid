@@ -9,12 +9,21 @@ const (
 	Water
 )
 
+func (l Landscape) String() string {
+	names := []string {"Forest", "Swamp", "Mountain", "Desert", "Water"}
+	return names[l]
+}
+
 type Territory int
 const (
 	NoTerritory Territory = iota
 	Bear
 	Cougar
 )
+func (t Territory) String() string {
+	names := []string {"None", "Bear", "Cougar"}
+	return names[t]
+}
 
 type BuildingType int
 const (
@@ -22,6 +31,10 @@ const (
 	Stone
 	Shed
 )
+func (b BuildingType) String() string {
+	names := []string {"None", "Standing Stone", "Abandoned Shed"}
+	return names[b]
+}
 
 type BuildingColor int
 const (
@@ -30,6 +43,10 @@ const (
 	Blue
 	Green
 )
+func (c BuildingColor) String() string {
+	names := []string {"None", "White", "Blue", "Green"}
+	return names[c]
+}
 
 type PlayerSet uint8
 
