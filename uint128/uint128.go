@@ -1,5 +1,6 @@
 package uint128
 
+import "fmt"
 import "math/bits"
 
 type Uint128 struct {
@@ -18,6 +19,10 @@ func (u Uint128) And(o Uint128) Uint128 {
 	return Uint128{u.Hi & o.Hi, u.Lo & o.Lo}
 }
 
+func (u Uint128) Or(o Uint128) Uint128 {
+	return Uint128{u.Hi | o.Hi, u.Lo | o.Lo}
+}
+
 func (u Uint128) Not() Uint128 {
 	return Uint128{^u.Hi, ^u.Lo}
 }
@@ -28,6 +33,14 @@ func (u Uint128) AndNot(o Uint128) Uint128 {
 
 func (u Uint128) Equals(o Uint128) bool {
 	return u.Hi == o.Hi && u.Lo == o.Lo
+}
+
+func Ones(l int) Uint128 {
+	if l < 64 {
+		return Uint128{0, (uint64(1) << l) - 1}
+	} else {
+		return Uint128{(uint64(1) << (l-64)) - 1, ^uint64(0)}
+	}
 }
 
 func FromBoolSlice(s []bool) Uint128 {
@@ -67,4 +80,8 @@ func (u Uint128) ToBoolSlice(l int) []bool {
 		sh = sh << 1
 	}
 	return s
+}
+
+func (u Uint128) String() string {
+	return fmt.Sprintf("%016x%016x", u.Hi, u.Lo)
 }

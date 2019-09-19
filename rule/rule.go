@@ -2,8 +2,12 @@ package rule
 
 import "github.com/epsalon/decryptid/board"
 
-type BoardRule []bool
-type Rule func (*board.Board) BoardRule
+type BoardRule struct {
+	RuleSpec
+	arr []bool
+}
+
+type Rule func (*board.Board) []bool
 
 type hexRule func (board.Hex) bool
 
@@ -22,16 +26,6 @@ type coord = struct {
 	X int
 	Y int
 }
-
-//         -A-
-//       3 3 3 3
-// -F-  3 2 2 2 3  -B-
-//     3 2 1 1 2 3        1, 7, 19, 37
-//    3 2 1 0 1 2 3
-//     3 2 1 1 2 3 -C-
-// -E-  3 2 2 2 3
-//       3 3 3 3
-//         -D-
 
 func max(a int, b int) int {
 	if a > b {
@@ -69,7 +63,7 @@ func rCoord (c coord) int {
 }
 
 func distanceRule(hr hexRule, d int) Rule {
-	return func (b *board.Board) BoardRule {
+	return func (b *board.Board) []bool {
 		out := make([]bool, 12 * 9)
 		for y, row := range *b {
 			for x, hex := range row {
@@ -85,7 +79,7 @@ func distanceRule(hr hexRule, d int) Rule {
 }
 
 func negate(r Rule) Rule {
-	return func (b *board.Board) BoardRule {
+	return func (b *board.Board) []bool {
 		br := r(b)
 		for i, v := range br {
 			br[i] = !v
@@ -94,16 +88,18 @@ func negate(r Rule) Rule {
 	}
 }
 
-func FromSpec(rs RuleSpec) Rule {
+func (rs RuleSpec) OnBoard(b *board.Board) BoardRule {
+	br := BoardRule{RuleSpec:rs}
 	r := distanceRule(rs.hr, rs.d)
 	if rs.neg {
 		r = negate(r)
 	}
-	return r
+	br.arr = r(b)
+	return br
 }
 
 func Apply(br BoardRule, b *board.Board, p int) {
-	for i, v := range br {
+	for i, v := range br.arr {
 		h := &b[i / 12][i % 12]
 		if v {
 			h.Discs = h.Discs | (1 << (p-1))
@@ -115,4 +111,8 @@ func Apply(br BoardRule, b *board.Board, p int) {
 			h.Cube = p
 		}
 	}
+}
+
+func (b BoardRule) ToBoolSlice() []bool {
+	return b.arr
 }
