@@ -5,6 +5,7 @@ package game
 
 import (
 	"fmt"
+	"math/rand"
 	"sort"
 
 	"github.com/epsalon/decryptid/board"
@@ -18,6 +19,7 @@ type Game struct {
 	Spec     board.BoardSpec
 	Players  int
 	Advanced bool           // whether "Not ..." rules and black buildings are in play
+	AnyClues bool           // allow clue sets where some clue is redundant (default: every clue is needed)
 	Markers  []Marker       // discs and cubes on the board
 	Known    map[int]string // player -> rule name, for rules we know
 }
@@ -86,7 +88,7 @@ func (g *Game) Solve() (*Result, error) {
 		return nil, err
 	}
 	res := &Result{Rules: p.rules, Candidates: p.cands}
-	res.Solutions = search.Solve(p.masks, p.cands)
+	res.Solutions = search.Solve(p.masks, p.cands, !g.AnyClues)
 	b := p.board
 	for _, s := range res.Solutions {
 		b[s.Location/board.Width][s.Location%board.Width].Highlighted = true
@@ -183,4 +185,29 @@ func (r *Result) Locations() []Location {
 		res[i] = *l
 	}
 	return res
+}
+
+// SampleWorld picks a world (rule per player and cryptid hex) uniformly at
+// random among those fitting the markers and known rules. ok is false if
+// there are none.
+func (g *Game) SampleWorld(rng *rand.Rand) (rules []rule.RuleSpec, x, y int, ok bool, err error) {
+	p, err := g.prepare(true)
+	if err != nil {
+		return nil, 0, 0, false, err
+	}
+	var pick []int
+	loc, seen := 0, 0
+	search.Each(p.masks, p.cands, !g.AnyClues, func(rs []int, l int) {
+		seen++
+		if rng.Intn(seen) == 0 {
+			pick, loc = append(pick[:0], rs...), l
+		}
+	})
+	if seen == 0 {
+		return nil, 0, 0, false, nil
+	}
+	for _, r := range pick {
+		rules = append(rules, p.rules[r])
+	}
+	return rules, loc % board.Width, loc / board.Width, true, nil
 }

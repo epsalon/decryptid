@@ -19,6 +19,8 @@ go run . -v examples/game.txt     # also: which clue assignments lead to each he
 go run . -rules                   # clue names and numbers (add -basic for basic mode)
 go run . -                        # read the game from stdin
 go run . -cube yellow examples/game.txt   # where should yellow put a cube?
+go run . -turn yellow examples/game.txt   # what should yellow do this turn?
+go run . -sim 100 -players 4              # AI-vs-AI tournament on random boards
 ```
 
 Example output (abridged):
@@ -87,6 +89,32 @@ The model assumes every valid world is equally likely. It also assumes
 opponents don't reason about *why* you chose a hex: a predictable strategy
 leaks information of its own.
 
+## AI player
+
+`-turn PLAYER` recommends a move: a question (whom to ask, and about which hex)
+or a search. That player's clue must be given with a `rule` line.
+
+- **Questions** are scored as **gain − λ·leak**, in bits of information about
+  the location.
+  - *Gain* is how much the answer should tell you.
+  - *Leak* is how much it tells everyone else. This counts the public answer
+    (for players other than the one asked) and the penalty cube you'd place
+    if the answer is "no". Leak uses the same per-opponent reasoning as cube advice.
+  - `-lambda` sets the weight (default 0.5).
+- **Search** the likeliest hex once its chance reaches `-search-at`
+  (default 15%), or when no question would teach you anything.
+
+The defaults come from self-play (`-sim`). It plays complete games with
+random boards and random valid clue sets, shuffling the competing policies into
+seats. In those tournaments:
+
+- **Searching early is what wins.** A 10–20% threshold beat waiting for
+  certainty by 3–4×. A failed search costs only a cube and still reveals answers.
+- **Avoiding leaks** (λ=0.5 vs 0) helped clearly with 5 players, but made
+  little difference with 4.
+- **3-player basic games** usually end on the first or second turn. Your own
+  clue plus the uniqueness rule is often enough to search right away.
+
 ## Development
 
 ```sh
@@ -106,5 +134,8 @@ go test ./...
 - [x] Viable locations from discs, cubes, and known clues
 - [x] Basic and advanced modes, including black buildings
 - [x] Least-revealing cube placement (`-cube`)
-- [ ] Suggest the most informative question to ask
+- [x] Question/search advice (`-turn`) and self-play tournaments (`-sim`)
+- [ ] Value-based search decision (vs. a fixed threshold), and searching
+      earlier when an opponent is close to solving
+- [ ] Interactive play: enter moves as they happen and get the AI's replies
 - [ ] Verify the hard-coded map tiles against the physical game

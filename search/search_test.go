@@ -45,7 +45,7 @@ func TestCombos(t *testing.T) {
 		// Sets like {1, 2, 4} pass here and are dropped later by consistent().
 		3: {{0, 1, 2}, {1, 2, 3}, {1, 2, 4}, {1, 3, 4}, {2, 3, 4}},
 	} {
-		if got := combos(us, all, n); !reflect.DeepEqual(got, want) {
+		if got := combos(us, all, n, true); !reflect.DeepEqual(got, want) {
 			t.Errorf("combos(n=%v): Want: %v, Got: %v", n, want, got)
 		}
 	}
@@ -55,12 +55,32 @@ func TestSolve(t *testing.T) {
 	us := getRuleSet()
 	all := []int{0, 1, 2, 3, 4}
 	// Player 0 is known to hold rule 1; player 1 can't hold rule 2.
-	got := Solve(us, [][]int{{1}, {0, 1, 3, 4}, all})
+	got := Solve(us, [][]int{{1}, {0, 1, 3, 4}, all}, true)
 	want := []Solution{
 		{Rules: []int{1, 0, 2}, Location: 4},
 		{Rules: []int{1, 3, 2}, Location: 0},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("Solve: Want: %v, Got: %v", want, got)
+	}
+}
+
+func TestSolveNonMinimal(t *testing.T) {
+	us := getRuleSet()
+	all := []int{0, 1, 2, 3, 4}
+	// {1, 2, 4} pins hex 0 but rule 2 is redundant ({1, 4} already does).
+	has := func(sols []Solution) bool {
+		for _, s := range sols {
+			if reflect.DeepEqual(s.Rules, []int{1, 2, 4}) {
+				return true
+			}
+		}
+		return false
+	}
+	if has(Solve(us, [][]int{all, all, all}, true)) {
+		t.Error("minimal search returned a redundant set")
+	}
+	if !has(Solve(us, [][]int{all, all, all}, false)) {
+		t.Error("non-minimal search missed {1, 2, 4}")
 	}
 }

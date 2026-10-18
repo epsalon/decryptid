@@ -44,7 +44,19 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   rules that rule the hex out. `advise_test.go` checks the result against
   re-solving the game with the cube actually placed. Keep that test passing
   when you change the model.
-- **`main.go`**: the CLI (`-v`, `-cube PLAYER`, `-rules`).
+- **`game/turn.go`**: `AdviseTurn` scores every question and search for one
+  player. It makes one `search.Each` pass to count our worlds by (player,
+  rule, location), our worlds by pairs of players' rules, and all worlds by
+  (k, rk, j, rj, location) for the other players k and j. Gain and leak are
+  both in bits of location entropy. `Choose` applies the search threshold and
+  never wastes a turn on a zero-gain question. `turn_test.go` checks it
+  against brute force.
+- **`sim`**: self-play. `Play` deals a random board and a uniformly sampled
+  world (`Game.SampleWorld`), runs the two setup cube rounds, then plays
+  turns following the rulebook: a failed search or a "no" answer costs a
+  penalty cube, and no one may touch a cubed hex. Each AI sees only its own
+  rule (`match.view`).
+- **`main.go`** / **`advise_cli.go`**: the CLI (`-v`, `-cube`, `-turn`, `-sim`, `-rules`).
 
 ## Invariants and gotchas
 
@@ -56,6 +68,10 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   in `search`, `12` in `rule`). The board has 108 hexes, which must stay ≤ 128 bits.
 - **`RuleSpec` literals in `rule/rules.go` are positional.** Adding a field means
   updating each constructor.
+- **Clue sets are minimal by default**: every clue is needed to pin the
+  cryptid. The user believes this matches the real game. `clues any` relaxes it.
+- **Tune policies with `-sim`, not intuition.** Use a few hundred games:
+  the standard error of a win rate is about 0.03 at 200 games.
 - **"Distance N" in rule names means "within N"**, distance 0 included.
   Rule names are user input (`rule PLAYER NAME`), so renaming a rule breaks game files.
 - **Player colours are display-only.** `game.PlayerColors` must stay in the
@@ -74,8 +90,8 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
 
 ## Roadmap
 
-1. Suggest the next question to ask: pick the (hex, player) whose answer splits
-   our remaining worlds best, while revealing little to others. `AdviseCube`'s
-   counting approach should carry over.
-2. Support interactive or incremental input instead of re-running on a whole file.
+1. Make the search decision value-based instead of a fixed threshold. Count
+   what a failed search teaches us, and search sooner when an opponent's view
+   is nearly certain (we can compute every opponent's view).
+2. Interactive play: enter moves as they happen and get the AI's replies.
 3. Verify the tile data.

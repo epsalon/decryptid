@@ -18,9 +18,22 @@ func main() {
 	listRules := flag.Bool("rules", false, "list rule names and numbers (for 'rule' lines) and exit")
 	basic := flag.Bool("basic", false, "with -rules, list only basic-mode rules")
 	cube := flag.String("cube", "", "rank hexes where `PLAYER` (whose rule must be known) can place a cube, least informative to others first")
-	top := flag.Int("n", 10, "with -cube, how many options to show")
+	top := flag.Int("n", 10, "with -cube or -turn, how many options to show")
+	turn := flag.String("turn", "", "advise `PLAYER` (whose rule must be known) on their turn: what to ask or where to search")
+	lambda := flag.Float64("lambda", 0.5, "with -turn, how much to avoid giving others information (0 = ignore)")
+	searchAt := flag.Float64("search-at", 0.15, "with -turn, search once the likeliest hex has at least this chance")
+	simGames := flag.Int("sim", 0, "play `N` AI-vs-AI games on random boards and report results")
+	simPlayers := flag.Int("players", 4, "with -sim, number of players")
+	simAdvanced := flag.Bool("advanced", true, "with -sim, play the advanced game")
+	simPolicies := flag.String("policies", "ai,greedy,cautious,random", "with -sim, comma-separated policies, shuffled into seats each game (ai, greedy, cautious, random, or lambda:searchAt)")
+	seed := flag.Int64("seed", 1, "with -sim, random seed")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [-v] GAMEFILE|-\n       %s -cube PLAYER [-n N] GAMEFILE|-\n       %s -rules [-basic]\n", os.Args[0], os.Args[0], os.Args[0])
+		fmt.Fprintf(os.Stderr, `Usage: %[1]s [-v] GAMEFILE|-
+       %[1]s -cube PLAYER [-n N] GAMEFILE|-
+       %[1]s -turn PLAYER [-lambda L] [-search-at P] [-n N] GAMEFILE|-
+       %[1]s -sim N [-players N] [-advanced=false] [-policies A,B,...] [-seed S] [-v]
+       %[1]s -rules [-basic]
+`, os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -32,17 +45,24 @@ func main() {
 		}
 		return
 	}
+	if *simGames > 0 {
+		if err := simulate(*simGames, *simPlayers, *simAdvanced, *simPolicies, *seed, *verbose); err != nil {
+			fmt.Fprintln(os.Stderr, "decryptid:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if flag.NArg() != 1 {
 		flag.Usage()
 		os.Exit(2)
 	}
-	if err := run(flag.Arg(0), *verbose, *cube, *top); err != nil {
+	if err := run(flag.Arg(0), *verbose, *cube, *turn, *top, *lambda, *searchAt); err != nil {
 		fmt.Fprintln(os.Stderr, "decryptid:", err)
 		os.Exit(1)
 	}
 }
 
-func run(path string, verbose bool, cube string, top int) error {
+func run(path string, verbose bool, cube, turn string, top int, lambda, searchAt float64) error {
 	var in io.Reader = os.Stdin
 	if path != "-" {
 		f, err := os.Open(path)
@@ -58,6 +78,9 @@ func run(path string, verbose bool, cube string, top int) error {
 	}
 	if cube != "" {
 		return adviseCube(g, cube, top)
+	}
+	if turn != "" {
+		return adviseTurn(g, turn, top, lambda, searchAt)
 	}
 	res, err := g.Solve()
 	if err != nil {

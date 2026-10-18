@@ -21,6 +21,7 @@ var PlayerColors = []string{"yellow", "magenta", "blue", "cyan", "black"}
 //	stone|shed X Y COLOR      building at hex (X, Y); COLOR = white|blue|green|black
 //	players N                 number of players (default 3)
 //	mode basic|advanced       advanced adds "Not ..." rules and black buildings (default advanced)
+//	clues minimal|any         minimal: every clue is needed to pin the cryptid (default)
 //	disc PLAYER X Y           PLAYER's rule allows the cryptid at (X, Y)
 //	cube PLAYER X Y           PLAYER's rule rules out (X, Y)
 //	rule PLAYER NAME...       PLAYER's rule is known (name or number from -rules)
@@ -145,6 +146,18 @@ func parseLine(g *Game, f []string, known map[int]string, sawTiles *bool) error 
 			g.Advanced = true
 		default:
 			return fmt.Errorf("mode must be basic or advanced")
+		}
+	case "clues":
+		if err := need(1); err != nil {
+			return err
+		}
+		switch args[0] {
+		case "minimal":
+			g.AnyClues = false
+		case "any":
+			g.AnyClues = true
+		default:
+			return fmt.Errorf("clues must be minimal or any")
 		}
 	case "disc", "cube":
 		if err := need(3); err != nil {

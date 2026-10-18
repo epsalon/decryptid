@@ -15,11 +15,12 @@ type Solution struct {
 }
 
 // Solve finds every assignment of distinct rules to players such that
-// player p's rule is one of cands[p], the rules together match exactly one
-// hex, and every rule is needed (dropping any one leaves more than one hex).
-func Solve(masks []mask, cands [][]int) []Solution {
+// player p's rule is one of cands[p] and the rules together match exactly
+// one hex. If minimal is set, every rule must also be needed: dropping any
+// one leaves more than one hex.
+func Solve(masks []mask, cands [][]int, minimal bool) []Solution {
 	var out []Solution
-	Each(masks, cands, func(rules []int, loc int) {
+	Each(masks, cands, minimal, func(rules []int, loc int) {
 		out = append(out, Solution{Rules: append([]int(nil), rules...), Location: loc})
 	})
 	return out
@@ -27,7 +28,7 @@ func Solve(masks []mask, cands [][]int) []Solution {
 
 // Each calls fn for every solution Solve would return, without storing them.
 // The rules slice is reused between calls, so fn must copy it to keep it.
-func Each(masks []mask, cands [][]int, fn func(rules []int, loc int)) {
+func Each(masks []mask, cands [][]int, minimal bool, fn func(rules []int, loc int)) {
 	n := len(cands)
 	canHave := make([][]bool, n)
 	inUnion := make([]bool, len(masks))
@@ -45,8 +46,8 @@ func Each(masks []mask, cands [][]int, fn func(rules []int, loc int)) {
 		}
 	}
 
-	for _, set := range combos(masks, allowed, n) {
-		if !consistent(masks, set) {
+	for _, set := range combos(masks, allowed, n, minimal) {
+		if minimal && !consistent(masks, set) {
 			continue
 		}
 		loc := intersect(masks, set, -1).TrailingZeros()
@@ -65,9 +66,10 @@ func intersect(masks []mask, set []int, skip int) mask {
 }
 
 // combos returns every n-element subset of allowed (in increasing order)
-// whose masks intersect in exactly one hex. A branch is cut as soon as it
-// reaches one hex early, since any extra rule would then be redundant.
-func combos(masks []mask, allowed []int, n int) [][]int {
+// whose masks intersect in exactly one hex. With minimal set, a branch is
+// cut as soon as it reaches one hex early, since any extra rule would then
+// be redundant.
+func combos(masks []mask, allowed []int, n int, minimal bool) [][]int {
 	var out [][]int
 	cur := make([]int, 0, n)
 	var rec func(start int, m mask)
@@ -80,7 +82,8 @@ func combos(masks []mask, allowed []int, n int) [][]int {
 			r := allowed[i]
 			nm := m.And(masks[r])
 			c := nm.OnesCount()
-			if c == 0 || (c == 1) != (len(cur)+1 == n) {
+			last := len(cur)+1 == n
+			if c == 0 || (last && c != 1) || (minimal && !last && c == 1) {
 				continue
 			}
 			cur = append(cur, r)

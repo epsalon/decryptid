@@ -59,7 +59,7 @@ func (g *Game) AdviseCube(me int) ([]CubeOption, error) {
 	cnt := make([]int32, n*nr*nr*cells)
 	wt := make([]float64, n*nr)
 	idx := func(j, rj, r int) int { return ((j*nr+rj)*nr + r) * cells }
-	search.Each(p.masks, p.cands, func(rules []int, loc int) {
+	search.Each(p.masks, p.cands, !g.AnyClues, func(rules []int, loc int) {
 		possible := true
 		for k, r := range p.known {
 			if r >= 0 && rules[k] != r {
