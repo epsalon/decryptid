@@ -129,7 +129,7 @@ dialog textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 
 .ring { fill: none; stroke-width: 3; pointer-events: none; }
 .ring.select { stroke: #fff; stroke-dasharray: 4 3; }
 .badge { stroke: #fff; stroke-width: 1; }
-.badge-text { font-size: 9px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.badge-text { font-size: 13px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .tint { fill: none; pointer-events: none; }
 .ruled-out { fill: url(#ruled-out-hatch); fill-opacity: 0.18; pointer-events: none; }
 .ring.viable {
@@ -155,3 +155,23 @@ button:disabled { opacity: 0.45; cursor: default; border-color: var(--line); }
 .clues li { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0 2px 20px; }
 details { margin: 4px 0; }
 details summary { cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px 0; }
+
+/* Advice panel */
+.rec { border: 2px solid var(--accent); border-radius: 10px; padding: 10px 12px; margin: 10px 0; }
+.rec-action { font-size: 1.15rem; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rec .muted { font-size: 0.85rem; }
+.answer { align-items: center; margin-top: 8px; }
+table.advice { width: 100%; border-collapse: collapse; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+table.advice th { text-align: left; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--line); padding: 4px; }
+table.advice td { padding: 4px; border-bottom: 1px solid var(--line); }
+table.advice td .dot { margin-right: 4px; vertical-align: -1px; }
+table.advice button { min-height: 28px; padding: 2px 10px; }
+.settings { margin-top: 16px; }
+.slider { display: block; font-size: 0.85rem; margin: 8px 0; }
+.slider input { width: 100%; }
+.ring.best { stroke: #fff; stroke-width: 3.5; }
+.ring.ask { stroke: #60a5fa; stroke-width: 2.5; }
+.ring.search { stroke: #4ade80; stroke-width: 2.5; stroke-dasharray: 4 2; }
+.ring.cube-spot { stroke: #f8fafc; stroke-width: 2.5; stroke-dasharray: 2 2; }
+.badge.best { fill: #b5532a; } .badge.ask { fill: #2563eb; }
+.badge.search { fill: #15803d; } .badge.cube-spot { fill: #475569; }

@@ -94,7 +94,7 @@ function withDefaults(s) {
   s.game.markers ??= [];
   s.game.known ??= {};
   s.me ??= 1;
-  s.ui = { tab: 'setup', coords: false, tool: { player: 1, cube: false }, overlay: 'viable', hideClue: false, ...s.ui };
+  s.ui = { tab: 'setup', coords: false, tool: { player: 1, cube: false }, overlay: 'viable', hideClue: false, adviceMode: 'turn', lambda: 0.5, searchAt: 0.15, ...s.ui };
   s.history ??= { past: [], future: [] };
   return s;
 }

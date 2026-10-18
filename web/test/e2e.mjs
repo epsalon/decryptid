@@ -129,6 +129,38 @@ try {
   await page.waitForSelector('.status:has-text("Found it")');
   await page.screenshot({ path: out + 'phone-play.png', fullPage: true });
 
+  // --- Advice: the UI must recommend what the CLI recommends. ---
+  await page.click('[data-tab="advice"]');
+  await page.waitForSelector('.rec-action');
+  check((await page.textContent('.rec-action')).includes('Search 3,3'), 'solved example: advice is to search 3,3 (as the CLI says)');
+
+  const adv4 = (await readFile(join(root, '../examples/advanced.txt'), 'utf8')) + 'rule yellow Distance 2 from Standing Stone\n';
+  await page.click('[data-tab="setup"]');
+  await page.click('text=Import…');
+  await page.fill('dialog textarea', adv4);
+  await page.click('dialog button:has-text("Load")');
+  await page.click('[data-tab="advice"]');
+  await page.waitForFunction(() => document.querySelector('.rec-action')?.textContent.includes('Search 2,1'), null, { timeout: 30000 });
+  check(true, 'fresh 4-player game: search 2,1 at 17% (as the CLI says)');
+  await page.click('.settings summary');
+  await page.$eval('#search-at', (el) => { el.value = '0.5'; el.dispatchEvent(new Event('change')); });
+  await page.waitForFunction(() => /Ask\s*red about 11,1/.test(document.querySelector('.rec-action')?.textContent ?? ''), null, { timeout: 30000 });
+  check(true, 'with search-at 50%: ask red about 11,1 (as the CLI says)');
+  check(await count('#board .badge.best', 1), 'the recommended hex is marked on the board');
+  check((await page.locator('#board .badge.ask').count()) >= 1, 'other good question hexes are numbered on the board');
+  await page.screenshot({ path: out + 'phone-advice.png', fullPage: true });
+
+  // A "no" means placing a penalty cube: the panel switches to cube advice.
+  await page.click('[data-answer="cube"]');
+  await page.waitForSelector('[data-place]', { timeout: 30000 });
+  check(await count('#board [data-x="11"][data-y="1"] .cube', 1), "red's cube is recorded on 11,1");
+  const spot = await page.getAttribute('[data-place]', 'data-place');
+  await page.click('[data-place]');
+  const [cx, cy] = spot.split(',');
+  check(await count(`#board [data-x="${cx}"][data-y="${cy}"] .cube`, 1), `placing my penalty cube on the top spot (${spot})`);
+  await page.waitForSelector('[data-mode="turn"].on');
+  check(true, 'after the cube, advice returns to my turn');
+
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.check('#coords');
   await page.screenshot({ path: out + 'desktop.png' });

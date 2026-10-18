@@ -48,9 +48,10 @@ export class Board {
   }
 
   // render draws hexes (from the engine's 'board' op) with the game's
-  // markers. overlay maps "x,y" to {kind, label, weight}: a ring of the
-  // given kind, an optional badge label, and an optional tint strength
-  // (0-1). opts.coords shows x,y.
+  // markers. overlay maps "x,y" to {viable, kind, label, weight}: viable
+  // hexes get a halo (and, if any hex is viable, all others are hatched as
+  // ruled out); kind adds an inner ring of that style, label a badge, and
+  // weight (0-1) a tint. opts.coords shows x,y.
   render(hexes, markers = [], overlay = new Map(), opts = {}) {
     this.svg.replaceChildren();
     const defs = el('defs', {}, this.svg);
@@ -71,7 +72,7 @@ export class Board {
       if (m.cube) byHex.get(k).cube = m.player;
       else byHex.get(k).discs.push(m.player);
     }
-    const hasViable = Array.from(overlay.values()).some((o) => o.kind === 'viable');
+    const hasViable = Array.from(overlay.values()).some((o) => o.viable);
     for (const h of hexes) {
       const center = grid.getHex({ col: h.x, row: h.y });
       const key = `${h.x},${h.y}`;
@@ -79,7 +80,7 @@ export class Board {
       const t = TERRAIN[h.terrain];
       el('polygon', { points: points(), fill: t.fill, class: 'hex-bg' }, g);
       const o = overlay.get(key);
-      if (hasViable && (!o || o.kind !== 'viable')) {
+      if (hasViable && !o?.viable) {
         el('polygon', { points: points(), class: 'ruled-out' }, g);
       }
       if (o?.weight != null) {
@@ -91,11 +92,12 @@ export class Board {
       const pieces = byHex.get(key);
       if (pieces) drawPieces(g, pieces);
       if (opts.coords) el('text', { y: S * 0.74, class: 'coord' }, g).textContent = key;
+      if (o?.viable) el('polygon', { points: points(0.92), class: 'ring viable' }, g);
+      if (o?.kind) el('polygon', { points: points(o.viable ? 0.74 : 0.92), class: `ring ${o.kind}` }, g);
       if (o) {
-        el('polygon', { points: points(0.92), class: `ring ${o.kind}` }, g);
         if (o.label != null) {
-          el('circle', { cx: S * 0.5, cy: -S * 0.5, r: S * 0.24, class: `badge ${o.kind}` }, g);
-          el('text', { x: S * 0.5, y: -S * 0.5, class: 'badge-text' }, g).textContent = o.label;
+          el('circle', { cx: S * 0.45, cy: -S * 0.45, r: S * 0.34, class: `badge ${o.kind}` }, g);
+          el('text', { x: S * 0.45, y: -S * 0.45, class: 'badge-text' }, g).textContent = o.label;
         }
       }
     }

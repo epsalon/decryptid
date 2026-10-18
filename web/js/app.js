@@ -7,6 +7,7 @@ import { Board } from './board.js';
 import { SetupPanel } from './setup.js';
 import { MePanel } from './me.js';
 import { PlayPanel } from './play.js';
+import { AdvicePanel } from './advice.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -48,7 +49,7 @@ const app = {
     const s = this.analysis.summary;
     if (!s || this.store.state.ui.overlay !== 'viable') return o;
     const max = s.locations[0]?.worlds || 1;
-    for (const l of s.locations) o.set(`${l.x},${l.y}`, { kind: 'viable', weight: l.worlds / max });
+    for (const l of s.locations) o.set(`${l.x},${l.y}`, { viable: true, weight: l.worlds / max });
     return o;
   },
 };
@@ -57,6 +58,7 @@ const panels = {
   setup: { title: 'Setup', panel: new SetupPanel($('tab-body'), app.store, app.engine, toast) },
   me: { title: 'Me', panel: new MePanel($('tab-body'), app) },
   play: { title: 'Play', panel: new PlayPanel($('tab-body'), app) },
+  advice: { title: 'Advice', panel: new AdvicePanel($('tab-body'), app) },
 };
 const current = () => panels[app.store.state.ui.tab] ?? panels.setup;
 const board = new Board($('board'), (x, y) => current().panel.onHex(x, y));
@@ -117,6 +119,7 @@ function render() {
   renderBoard().catch((e) => toast(e.message));
 }
 
+app.rerender = render;
 app.store.subscribe(render);
 $('coords').checked = !!app.store.state.ui.coords;
 $('coords').onchange = (e) => app.store.update((s) => (s.ui.coords = e.target.checked));

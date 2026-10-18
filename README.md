@@ -14,6 +14,11 @@ clue, and lists every hex where the cryptid can still be.
 
 ### Web UI
 
+Set up the board (copy it from the official app), pick your colour and clue,
+then record discs and cubes as they're placed. The board highlights where the
+cryptid can still be, and the **Advice** tab tells you what to ask, where to
+search, and where to put your cubes.
+
 Visit **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** or run it locally:
 
 ```sh
@@ -149,5 +154,6 @@ go test ./...
 - [x] Question/search advice (`-turn`) and self-play tournaments (`-sim`)
 - [ ] Value-based search decision (vs. a fixed threshold), and searching
       earlier when an opponent is close to solving
-- [ ] Interactive play: enter moves as they happen and get the AI's replies
+- [x] Web UI: setup, live analysis, and AI advice while you play
+- [ ] Play against AI opponents in the browser
 - [ ] Verify the hard-coded map tiles against the physical game
