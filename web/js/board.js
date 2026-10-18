@@ -53,6 +53,26 @@ export class Board {
     });
   }
 
+  // spotlight dims the board except hex (x, y) and rings it, until called
+  // with null. It survives re-renders.
+  spotlight(x, y = 0) {
+    this.spot = x == null ? null : { x, y };
+    this.applySpotlight();
+  }
+
+  applySpotlight() {
+    this.svg.querySelector('.spot-ring')?.remove();
+    this.svg.querySelector('.hex.spot')?.classList.remove('spot');
+    this.svg.classList.toggle('spotlit', !!this.spot);
+    if (!this.spot) return;
+    const g = this.svg.querySelector(`[data-x="${this.spot.x}"][data-y="${this.spot.y}"]`);
+    if (!g) return;
+    g.classList.add('spot');
+    const ring = el('g', { class: 'spot-ring', transform: g.getAttribute('transform') }, this.svg.lastElementChild);
+    el('polygon', { points: points(1.08), class: 'spot-outer' }, ring);
+    el('polygon', { points: points(1.08), class: 'spot-inner' }, ring);
+  }
+
   // render draws hexes (from the engine's 'board' op) with the game's
   // markers. overlay maps "x,y" to {viable, kind, label, weight}: viable
   // hexes get a halo whose thickness shows weight (0-1, likelihood), and if
@@ -121,6 +141,7 @@ export class Board {
       }
     }
     if (opts.tiles) drawTileBorders(root);
+    this.applySpotlight();
   }
 }
 

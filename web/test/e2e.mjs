@@ -295,7 +295,41 @@ try {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.check('#coords');
   await page.screenshot({ path: out + 'desktop.png' });
+  // --- Hex references: hovering a coordinate spotlights its hex. ---
+  await page.click('[data-tab="setup"]');
+  await page.click('[data-act="new"]').catch(() => {}); // (no-op outside a match)
+  const ref = page.locator('#tab-body .hexref').first();
+  if (await ref.count()) {
+    const hex = await ref.getAttribute('data-hex');
+    await ref.hover();
+    const [hx, hy] = hex.split(',');
+    check(await count('#board.spotlit', 1) && await count(`#board .hex.spot[data-x="${hx}"][data-y="${hy}"]`, 1) && await count('#board .spot-ring', 1),
+      `hovering coordinate ${hex} spotlights that hex`);
+    await page.mouse.move(5, 5);
+    check(await count('#board.spotlit', 0), 'moving away clears the spotlight');
+  } else {
+    check(false, 'setup lists coordinates as hex references');
+  }
+
   check(errors.length === 0, `no console errors${errors.length ? ': ' + errors.join('; ') : ''}`);
+
+  // --- On a touch phone, touching a coordinate spotlights it; if the board is
+  // scrolled away, a floating copy of it appears. ---
+  const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  page = await phone.newPage();
+  await page.goto(url);
+  await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  await page.tap('text=Random board');
+  await page.waitForSelector('.status.ok');
+  const shedRef = page.locator('[data-struct="shed,green"] .hexref');
+  await shedRef.scrollIntoViewIfNeeded();
+  await page.evaluate(() => scrollTo(0, document.body.scrollHeight)); // board off screen
+  const touched = await shedRef.getAttribute('data-hex');
+  await shedRef.tap();
+  check(await count('.board-peek', 1) && await count(`.board-peek .hex.spot[data-x="${touched.split(',')[0]}"][data-y="${touched.split(',')[1]}"]`, 1),
+    `phone: touching ${touched} pops up the board with that hex spotlit`);
+  check(await count('.board-peek', 0) && await count('#board.spotlit', 0), 'phone: the spotlight clears after a moment');
+  await phone.close();
 } finally {
   await browser.close();
   server.close();

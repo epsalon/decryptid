@@ -7,6 +7,7 @@
 // advisors as the self-play simulator, seeing only their own clue.
 
 import { PLAYERS, ruleLabel } from './state.js';
+import { hexRef, linkHexRefs } from './hexref.js';
 
 // Difficulty levels map to the self-play policies (see sim.Policies).
 export const DIFFICULTY = {
@@ -273,7 +274,7 @@ export class MatchPanel {
     let status;
     if (m.phase === 'over') {
       status = `<div class="rec"><div class="rec-action">${m.winner ? `${dot(m.winner)} ${m.winner === m.seat ? 'You win!' : `${name(m.winner)} wins.`}` : 'Game over.'}</div>
-        <div class="muted">The cryptid was on ${m.location.x},${m.location.y} (★).</div></div>
+        <div class="muted">The cryptid was on ${hexRef(m.location.x, m.location.y)} (★).</div></div>
         <h3>Everyone's clues</h3><ul class="clues">${m.rules.map((r, i) => `<li><span>${dot(i + 1)} ${name(i + 1)}${i + 1 === m.seat ? ' (you)' : ''}</span><span>${ruleLabel(r)}</span></li>`).join('')}</ul>`;
     } else if (!mine) {
       status = `<p class="status">${dot(n.who)} ${name(n.who)} is ${n.what === 'cube' ? 'placing a cube' : 'taking a turn'}…</p>`;
@@ -294,7 +295,7 @@ export class MatchPanel {
       ${status}
       <label class="check"><input type="checkbox" id="hints" ${ui.matchHints ? 'checked' : ''}> Solver hints (highlighting and the Advice tab)</label>
       <h3>Log <span class="muted">(newest first)</span></h3>
-      <ul class="log">${m.log.slice(0, 12).map((l) => `<li>${l}</li>`).join('')}</ul>
+      <ul class="log">${m.log.slice(0, 12).map((l) => `<li>${linkHexRefs(l)}</li>`).join('')}</ul>
       <div class="actions">${m.phase === 'over' ? '<button data-act="new">New match</button>' : '<button data-act="giveup" class="danger">Give up</button>'}</div>`;
     const q = (s) => this.root.querySelectorAll(s);
     q('[data-action]').forEach((b) => (b.onclick = () => { this.action = b.dataset.action; this.render(); }));

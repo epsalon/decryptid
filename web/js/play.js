@@ -2,6 +2,7 @@
 // the solver makes of them.
 
 import { PLAYERS, setMarkers, undo, redo, ruleLabel } from './state.js';
+import { hexRef } from './hexref.js';
 
 export class PlayPanel {
   constructor(root, app) {
@@ -80,7 +81,7 @@ export class PlayPanel {
       <label class="check"><input type="checkbox" id="show-viable" ${ui.overlay === 'viable' ? 'checked' : ''}> Highlight possible hexes <span class="muted">(thicker outline = likelier)</span></label>
       ${summary ? `
       <h3>Likeliest hexes</h3>
-      <ol class="locs">${top.map((l) => `<li><span>${l.x},${l.y}</span><span class="bar"><i style="width:${(100 * l.worlds) / summary.locations[0].worlds}%"></i></span><span>${pct(l.worlds / total)}</span></li>`).join('')}</ol>
+      <ol class="locs">${top.map((l) => `<li><span>${hexRef(l.x, l.y)}</span><span class="bar"><i style="width:${(100 * l.worlds) / summary.locations[0].worlds}%"></i></span><span>${pct(l.worlds / total)}</span></li>`).join('')}</ol>
       ${summary.locations.length > top.length ? `<p class="hint">…and ${summary.locations.length - top.length} more.</p>` : ''}
       <h3>Possible clues</h3>
       ${summary.playerRules.map((rs, i) => `

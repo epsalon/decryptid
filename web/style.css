@@ -195,3 +195,22 @@ footer a { color: inherit; }
 .drag-ghost { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 10; margin: -16px 0 0 -16px; }
 .drag-ghost .structure-icon { display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6)); }
 .structure-icon { flex: none; overflow: visible; }
+
+/* Hex references: coordinates in panels that spotlight their hex */
+.hexref {
+  font-variant-numeric: tabular-nums; border-bottom: 1.5px dotted currentColor;
+  cursor: help; border-radius: 3px; padding: 0 1px;
+}
+.hexref:hover, .hexref:focus { background: var(--accent-soft); outline: none; }
+#board.spotlit .hex:not(.spot), .board-peek svg.spotlit .hex:not(.spot) { opacity: 0.3; transition: opacity 0.12s; }
+.spot-ring { pointer-events: none; }
+.spot-outer { fill: none; stroke: #000; stroke-width: 9; }
+.spot-inner { fill: none; stroke: #fff; stroke-width: 5; animation: spot-pulse 0.9s ease-in-out infinite; }
+@keyframes spot-pulse { 50% { stroke: #ffd400; stroke-width: 7; } }
+@media (prefers-reduced-motion: reduce) { .spot-inner { animation: none; } }
+.board-peek {
+  position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 20;
+  width: min(94vw, 460px); background: var(--board-bg); border-radius: 10px; padding: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5); pointer-events: none;
+}
+.board-peek svg { width: 100%; height: auto; display: block; }

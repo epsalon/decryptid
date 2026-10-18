@@ -2,6 +2,7 @@
 
 import { structuresFor, setupProblems, defaultGame } from './state.js';
 import { structureIcon } from './board.js';
+import { hexRef } from './hexref.js';
 
 const label = (s) => `${s.color[0].toUpperCase()}${s.color.slice(1)} ${s.type}`;
 const same = (a, b) => a.type === b.type && a.color === b.color;
@@ -200,7 +201,7 @@ export class SetupPanel {
           const on = this.placing && same(this.placing, s);
           return `<button data-struct="${s.type},${s.color}" class="struct ${on ? 'on' : ''}">
             ${structureIcon(s.type, s.color, 18)}${label(s)}
-            <span class="where">${b ? `${b.x},${b.y}` : on ? 'tap a hex' : '—'}</span></button>`;
+            <span class="where">${b ? hexRef(b.x, b.y) : on ? 'tap a hex' : '—'}</span></button>`;
         }).join('')}
       </div>
       <p class="status ${problems.length ? 'warn' : 'ok'}">${problems.length ? problems.join(' ') : '✓ Board ready.'}</p>

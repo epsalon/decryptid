@@ -3,6 +3,7 @@
 
 import { PLAYERS, setMarkers } from './state.js';
 import { matchActive } from './match.js';
+import { hexRef } from './hexref.js';
 
 const pct = (p) => (p >= 0.995 ? '100%' : p < 0.01 ? '<1%' : `${Math.round(p * 100)}%`);
 const bits = (b) => b.toFixed(2);
@@ -151,11 +152,11 @@ export class AdvicePanel {
     const name = (p) => `<span class="dot" style="background:${PLAYERS[p - 1].color}"></span>${PLAYERS[p - 1].name}`;
     let rec;
     if (d.search) {
-      rec = `<div class="rec"><div class="rec-action">Search <b>${d.search.x},${d.search.y}</b></div>
+      rec = `<div class="rec"><div class="rec-action">Search <b>${hexRef(d.search.x, d.search.y)}</b></div>
         <div class="muted">${pct(d.search.p)} chance the cryptid is there.
         Place your disc, then each player answers in turn; record their answers in <b>Play</b>.</div></div>`;
     } else if (d.ask) {
-      rec = `<div class="rec"><div class="rec-action">Ask ${name(d.ask.player)} about <b>${d.ask.x},${d.ask.y}</b></div>
+      rec = `<div class="rec"><div class="rec-action">Ask ${name(d.ask.player)} about <b>${hexRef(d.ask.x, d.ask.y)}</b></div>
         <div class="muted">${pct(d.ask.pYes)} chance of a disc. Expected to teach you ${bits(d.ask.gain)} bits and give others ${bits(d.ask.leak)}.</div>
         ${matchActive(this.app.store.state) ? '' : `<div class="actions answer"><span>They placed:</span>
           <button data-answer="disc">● Disc</button><button data-answer="cube">■ Cube</button></div>`}</div>`;
@@ -169,10 +170,10 @@ export class AdvicePanel {
       ${rec}
       <h3>Best questions</h3>
       <table class="advice"><thead><tr><th>#</th><th>Ask</th><th>Hex</th><th title="Chance of a disc">Disc</th><th title="Bits you learn">Gain</th><th title="Bits others learn">Leak</th></tr></thead>
-      <tbody>${qs.map((q, i) => `<tr><td>${i + 1}</td><td>${name(q.player)}</td><td>${q.x},${q.y}</td><td>${pct(q.pYes)}</td><td>${bits(q.gain)}</td><td>${bits(q.leak)}</td></tr>`).join('')}</tbody></table>
+      <tbody>${qs.map((q, i) => `<tr><td>${i + 1}</td><td>${name(q.player)}</td><td>${hexRef(q.x, q.y)}</td><td>${pct(q.pYes)}</td><td>${bits(q.gain)}</td><td>${bits(q.leak)}</td></tr>`).join('')}</tbody></table>
       ${ss.length ? `<h3>Likeliest hexes to search</h3>
       <table class="advice"><thead><tr><th>Hex</th><th>Chance it's there</th></tr></thead>
-      <tbody>${ss.map((s) => `<tr><td>${s.x},${s.y}</td><td>${pct(s.p)}</td></tr>`).join('')}</tbody></table>` : ''}`;
+      <tbody>${ss.map((s) => `<tr><td>${hexRef(s.x, s.y)}</td><td>${pct(s.p)}</td></tr>`).join('')}</tbody></table>` : ''}`;
   }
 
   cubeBody(cubes) {
@@ -181,8 +182,8 @@ export class AdvicePanel {
     return `
       <p class="hint">Hexes your clue rules out, least revealing first. Bits = how much the cube would tell the other players.</p>
       <table class="advice"><thead><tr><th>#</th><th>Hex</th><th>Bits</th><th></th></tr></thead>
-      <tbody>${top.map((c, i) => `<tr><td>${i + 1}</td><td>${c.x},${c.y}</td><td>${bits(c.bits)}</td>
+      <tbody>${top.map((c, i) => `<tr><td>${i + 1}</td><td>${hexRef(c.x, c.y)}</td><td>${bits(c.bits)}</td>
         <td>${matchActive(this.app.store.state) ? '' : `<button data-place="${c.x},${c.y}">Place</button>`}</td></tr>`).join('')}</tbody></table>
-      <p class="hint">Worst option: ${cubes.at(-1).x},${cubes.at(-1).y} at ${bits(cubes.at(-1).bits)} bits. Tap a numbered hex to place there.</p>`;
+      <p class="hint">Worst option: ${hexRef(cubes.at(-1).x, cubes.at(-1).y)} at ${bits(cubes.at(-1).bits)} bits. Tap a numbered hex to place there.</p>`;
   }
 }

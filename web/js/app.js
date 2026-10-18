@@ -9,6 +9,7 @@ import { MePanel } from './me.js';
 import { PlayPanel } from './play.js';
 import { AdvicePanel } from './advice.js';
 import { MatchPanel, matchActive } from './match.js';
+import { installHexRefs } from './hexref.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -64,6 +65,7 @@ const panels = {
 };
 const current = () => panels[app.store.state.ui.tab] ?? panels.setup;
 const board = new Board($('board'), (x, y) => current().panel.onHex(x, y));
+installHexRefs(board);
 
 function renderTabs() {
   $('tabs').innerHTML = Object.entries(panels)
