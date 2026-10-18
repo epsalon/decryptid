@@ -102,19 +102,27 @@ function analyze() {
   );
 }
 
-// The board layout only changes with the setup, so it is fetched from the
-// engine only then; markers and overlays are redrawn on every change.
-let hexes = [];
-let hexesFor = '';
+// Terrain and animal territories only change with the tiles, so they are
+// fetched from the engine only then. Structures are drawn from the game
+// state directly, so placing or moving one redraws at once, without
+// waiting for the engine; markers and overlays are redrawn on every change.
+let terrain = [];
+let terrainFor = '';
 async function renderBoard() {
   const { game, ui } = app.store.state;
-  const key = JSON.stringify([game.spec, game.advanced]);
-  if (key !== hexesFor) {
-    const h = await app.engine.latest('board', 'board', { game });
+  const key = JSON.stringify(game.spec.tiles);
+  if (key !== terrainFor) {
+    const bare = { ...game, spec: { tiles: game.spec.tiles, buildings: [] }, markers: [] };
+    const h = await app.engine.latest('board', 'board', { game: bare });
     if (h === undefined) return; // superseded by a newer change
-    hexes = h;
-    hexesFor = key;
+    terrain = h;
+    terrainFor = key;
   }
+  const at = new Map(game.spec.buildings.map((b) => [`${b.x},${b.y}`, b]));
+  const hexes = terrain.map((h) => {
+    const b = at.get(`${h.x},${h.y}`);
+    return b ? { ...h, structure: b.type, color: b.color } : h;
+  });
   const tiles = ui.tab === 'setup' ? game.spec.tiles : null; // tile numbers only while setting up
   board.render(hexes, game.markers, current().panel.overlay(), { coords: ui.coords, tiles });
 }
