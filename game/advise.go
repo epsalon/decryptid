@@ -15,17 +15,18 @@ const cells = board.Width * board.Height
 // it tells the other players. Scores are expectations over the rules the
 // other players may hold, summed over those players.
 type CubeOption struct {
-	X, Y int
+	X int `json:"x"`
+	Y int `json:"y"`
 	// Bits is the information the cube gives about the world (who holds
 	// which rule, and so where the cryptid is): -log2 of the fraction of a
 	// player's possible worlds that survive. Never negative.
-	Bits float64
+	Bits float64 `json:"bits"`
 	// PerPlayer[j] is player j+1's share of Bits (0 for the placer).
-	PerPlayer []float64
+	PerPlayer []float64 `json:"perPlayer"`
 	// LocBits is the drop in the players' uncertainty (entropy) about the
 	// cryptid's location. It can be negative: ruling out the likeliest
 	// hexes can leave the rest more evenly spread.
-	LocBits float64
+	LocBits float64 `json:"locBits"`
 }
 
 // AdviseCube ranks the hexes where player me (1-based) may place a cube
@@ -59,20 +60,18 @@ func (g *Game) AdviseCube(me int) ([]CubeOption, error) {
 	cnt := make([]int32, n*nr*nr*cells)
 	wt := make([]float64, n*nr)
 	idx := func(j, rj, r int) int { return ((j*nr+rj)*nr + r) * cells }
-	search.Each(p.masks, p.cands, !g.AnyClues, func(rules []int, loc int) {
-		possible := true
-		for k, r := range p.known {
-			if r >= 0 && rules[k] != r {
-				possible = false
-				break
+	// Others' views: all worlds, sampled when there are very many.
+	search.EachSampled(p.masks, p.cands, !g.AnyClues, g.setSampler(p), func(rules []int, loc int) {
+		for j, rj := range rules {
+			if j != m {
+				cnt[idx(j, rj, rules[m])+loc]++
 			}
 		}
+	})
+	// Our view: exact.
+	search.Each(p.masks, ourCands(p), !g.AnyClues, func(rules []int, loc int) {
 		for j, rj := range rules {
-			if j == m {
-				continue
-			}
-			cnt[idx(j, rj, rules[m])+loc]++
-			if possible {
+			if j != m {
 				wt[j*nr+rj]++
 			}
 		}
@@ -108,6 +107,9 @@ func (g *Game) AdviseCube(me int) ([]CubeOption, error) {
 				}
 			}
 			t, h := entropy(hist[:])
+			if t == 0 {
+				continue // lost to sampling; vanishingly rare
+			}
 			views = append(views, view{j, rj, wt[j*nr+rj] / sum, t, h})
 		}
 	}
@@ -131,6 +133,9 @@ func (g *Game) AdviseCube(me int) ([]CubeOption, error) {
 				}
 			}
 			t, e := entropy(hist[:])
+			if t == 0 {
+				continue // lost to sampling
+			}
 			opt.PerPlayer[v.j] += v.weight * math.Log2(v.total/t)
 			opt.LocBits += v.weight * (v.entropy - e)
 		}

@@ -1,5 +1,7 @@
 package board
 
+import "fmt"
+
 type Landscape int
 const (
 	Forest Landscape = iota
@@ -99,20 +101,20 @@ var Tiles = []Tile{
 type Board [9][12]Hex
 
 type TileId struct {
-	Id int
-	Flipped bool
+	Id      int  `json:"id"`
+	Flipped bool `json:"flipped,omitempty"`
 }
 
 type BuildingSpec struct {
-	X int
-	Y int
-	B BuildingType
-	C BuildingColor
+	X int           `json:"x"`
+	Y int           `json:"y"`
+	B BuildingType  `json:"type"`
+	C BuildingColor `json:"color"`
 }
 
 type BoardSpec struct {
-	Tiles [3][2]TileId
-	Buildings []BuildingSpec
+	Tiles     [3][2]TileId   `json:"tiles"`
+	Buildings []BuildingSpec `json:"buildings"`
 }
 
 func calcPos(bidx int, tidx int, tsz int, flip bool) int {
@@ -166,3 +168,51 @@ func (b *Board) Markers(p int) (discs, cubes []bool) {
 	}
 	return discs, cubes
 }
+
+// Short lowercase names used in JSON and game files.
+var (
+	landscapeKeys = []string{"forest", "swamp", "mountain", "desert", "water"}
+	territoryKeys = []string{"", "bear", "cougar"}
+	buildingKeys  = []string{"", "stone", "shed"}
+	colorKeys     = []string{"", "white", "blue", "green", "black"}
+)
+
+func lookup(keys []string, text []byte, what string) (int, error) {
+	for i, k := range keys {
+		if k == string(text) {
+			return i, nil
+		}
+	}
+	return 0, fmt.Errorf("unknown %s %q", what, text)
+}
+
+func (l Landscape) MarshalText() ([]byte, error) { return []byte(landscapeKeys[l]), nil }
+func (l *Landscape) UnmarshalText(b []byte) error {
+	i, err := lookup(landscapeKeys, b, "terrain")
+	*l = Landscape(i)
+	return err
+}
+func (t Territory) MarshalText() ([]byte, error) { return []byte(territoryKeys[t]), nil }
+func (t *Territory) UnmarshalText(b []byte) error {
+	i, err := lookup(territoryKeys, b, "territory")
+	*t = Territory(i)
+	return err
+}
+func (b BuildingType) MarshalText() ([]byte, error) { return []byte(buildingKeys[b]), nil }
+func (b *BuildingType) UnmarshalText(t []byte) error {
+	i, err := lookup(buildingKeys, t, "structure")
+	*b = BuildingType(i)
+	return err
+}
+func (c BuildingColor) MarshalText() ([]byte, error) { return []byte(colorKeys[c]), nil }
+func (c *BuildingColor) UnmarshalText(b []byte) error {
+	i, err := lookup(colorKeys, b, "color")
+	*c = BuildingColor(i)
+	return err
+}
+
+// Key returns the color's short name, as used in game files.
+func (c BuildingColor) Key() string { return colorKeys[c] }
+
+// Key returns the structure's short name, as used in game files.
+func (b BuildingType) Key() string { return buildingKeys[b] }

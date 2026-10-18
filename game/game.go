@@ -16,19 +16,20 @@ import (
 
 // Game is a game in progress. Players are numbered from 1.
 type Game struct {
-	Spec     board.BoardSpec
-	Players  int
-	Advanced bool           // whether "Not ..." rules and black buildings are in play
-	AnyClues bool           // allow clue sets where some clue is redundant (default: every clue is needed)
-	Markers  []Marker       // discs and cubes on the board
-	Known    map[int]string // player -> rule name, for rules we know
+	Spec     board.BoardSpec `json:"spec"`
+	Players  int             `json:"players"`
+	Advanced bool            `json:"advanced,omitempty"` // whether "Not ..." rules and black buildings are in play
+	AnyClues bool            `json:"anyClues,omitempty"` // allow clue sets where some clue is redundant (default: every clue is needed)
+	Markers  []Marker        `json:"markers,omitempty"`  // discs and cubes on the board
+	Known    map[int]string  `json:"known,omitempty"`    // player -> rule name, for rules we know
 }
 
 // Marker is a disc or cube placed by a player at board hex (X, Y).
 type Marker struct {
-	Player int
-	X, Y   int
-	Cube   bool
+	Player int  `json:"player"`
+	X      int  `json:"x"`
+	Y      int  `json:"y"`
+	Cube   bool `json:"cube,omitempty"`
 }
 
 // Rules returns the rules that can be in play for this game's mode.

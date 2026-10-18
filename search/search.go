@@ -29,6 +29,12 @@ func Solve(masks []mask, cands [][]int, minimal bool) []Solution {
 // Each calls fn for every solution Solve would return, without storing them.
 // The rules slice is reused between calls, so fn must copy it to keep it.
 func Each(masks []mask, cands [][]int, minimal bool, fn func(rules []int, loc int)) {
+	EachSampled(masks, cands, minimal, nil, fn)
+}
+
+// EachSampled is Each, but skips (without enumerating its assignments)
+// every rule set for which keep returns false. A nil keep keeps all sets.
+func EachSampled(masks []mask, cands [][]int, minimal bool, keep func(set []int) bool, fn func(rules []int, loc int)) {
 	n := len(cands)
 	canHave := make([][]bool, n)
 	inUnion := make([]bool, len(masks))
@@ -48,6 +54,9 @@ func Each(masks []mask, cands [][]int, minimal bool, fn func(rules []int, loc in
 
 	for _, set := range combos(masks, allowed, n, minimal) {
 		if minimal && !consistent(masks, set) {
+			continue
+		}
+		if keep != nil && !keep(set) {
 			continue
 		}
 		loc := intersect(masks, set, -1).TrailingZeros()
@@ -128,4 +137,12 @@ func assign(set []int, canHave [][]bool, fn func([]int)) {
 		}
 	}
 	rec(0)
+}
+
+// CountSets returns how many rule sets Each would visit (each set yields
+// one or more assignments).
+func CountSets(masks []mask, cands [][]int, minimal bool) int {
+	n := 0
+	EachSampled(masks, cands, minimal, func([]int) bool { n++; return false }, nil)
+	return n
 }

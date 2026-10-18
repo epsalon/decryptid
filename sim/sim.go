@@ -108,7 +108,7 @@ func Play(rng *rand.Rand, cfg Config, seats []Policy) (Result, error) {
 // deal makes a random board with at least one valid world and picks one.
 func (m *match) deal(seats []Policy) error {
 	for attempt := 0; attempt < 100; attempt++ {
-		g := &game.Game{Spec: randomSpec(m.rng, m.cfg.Advanced), Players: m.cfg.Players, Advanced: m.cfg.Advanced}
+		g := &game.Game{Spec: RandomSpec(m.rng, m.cfg.Advanced), Players: m.cfg.Players, Advanced: m.cfg.Advanced}
 		rules, x, y, ok, err := g.SampleWorld(m.rng)
 		if err != nil {
 			return err
@@ -127,7 +127,8 @@ func (m *match) deal(seats []Policy) error {
 	return fmt.Errorf("no valid world on 100 random boards")
 }
 
-func randomSpec(rng *rand.Rand, advanced bool) board.BoardSpec {
+// RandomSpec makes a random board: random tile layout and building spots.
+func RandomSpec(rng *rand.Rand, advanced bool) board.BoardSpec {
 	var s board.BoardSpec
 	for i, t := range rng.Perm(len(board.Tiles)) {
 		s.Tiles[i/2][i%2] = board.TileId{Id: t + 1, Flipped: rng.Intn(2) == 1}

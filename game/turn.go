@@ -11,32 +11,34 @@ import (
 
 // Question is asking Player (1-based) whether the cryptid could be at (X, Y).
 type Question struct {
-	Player int
-	X, Y   int
-	PYes   float64 // chance, from our view, that the answer is a disc
-	Gain   float64 // expected bits we learn about the cryptid's location
+	Player int     `json:"player"`
+	X      int     `json:"x"`
+	Y      int     `json:"y"`
+	PYes   float64 `json:"pYes"` // chance, from our view, that the answer is a disc
+	Gain   float64 `json:"gain"` // expected bits we learn about the cryptid's location
 	// Leak is the expected drop in the other players' uncertainty about
 	// the location (summed over them): from the answer, for players other
 	// than the one asked, plus our penalty cube when the answer is a cube.
 	// Same units as Gain.
-	Leak  float64
-	Score float64 // Gain - lambda*Leak
+	Leak  float64 `json:"leak"`
+	Score float64 `json:"score"` // Gain - lambda*Leak
 }
 
 // Search is searching (X, Y), which wins if the cryptid is there.
 type Search struct {
-	X, Y int
-	P    float64 // chance, from our view, that the cryptid is there
+	X int     `json:"x"`
+	Y int     `json:"y"`
+	P float64 `json:"p"` // chance, from our view, that the cryptid is there
 }
 
 // TurnAdvice ranks a player's options for their turn.
 type TurnAdvice struct {
-	Questions []Question // best Score first
-	Searches  []Search   // most likely first; only hexes with P > 0
-	Entropy   float64    // our uncertainty about the location, in bits
-	Locations int        // hexes the cryptid may be on, from our view
-	CubeLeak  float64    // location bits our best penalty cube would give others
-	MaxGain   float64    // the most any question could teach us
+	Questions []Question `json:"questions"` // best Score first
+	Searches  []Search   `json:"searches"`  // most likely first; only hexes with P > 0
+	Entropy   float64    `json:"entropy"`   // our uncertainty about the location, in bits
+	Locations int        `json:"locations"` // hexes the cryptid may be on, from our view
+	CubeLeak  float64    `json:"cubeLeak"`  // location bits our best penalty cube would give others
+	MaxGain   float64    `json:"maxGain"`   // the most any question could teach us
 }
 
 // AdviseTurn scores every question and search open to player me (1-based),
@@ -78,31 +80,28 @@ func (g *Game) AdviseTurn(me int, lambda float64) (*TurnAdvice, error) {
 	others := make([]int32, no*nr*no*nr*cells)
 	oidx := func(k, rk, j, rj int) int { return (((oi(k)*nr+rk)*no+oi(j))*nr + rj) * cells }
 	var total float64
-	search.Each(p.masks, p.cands, !g.AnyClues, func(rules []int, loc int) {
-		possible := true
-		for k, r := range p.known {
-			if r >= 0 && rules[k] != r {
-				possible = false
-				break
-			}
-		}
+	// Others' views: all worlds, sampled when there are very many.
+	search.EachSampled(p.masks, p.cands, !g.AnyClues, g.setSampler(p), func(rules []int, loc int) {
 		for k, rk := range rules {
+			if k == m {
+				continue
+			}
 			for j, rj := range rules {
-				if k == j {
-					continue
-				}
-				if possible {
-					pairMine[pair(k, rk, j, rj)]++
-				}
-				if k != m && j != m {
+				if j != k && j != m {
 					others[oidx(k, rk, j, rj)+loc]++
 				}
 			}
 		}
-		if possible {
-			total++
+	})
+	// Our view: exact.
+	search.Each(p.masks, ourCands(p), !g.AnyClues, func(rules []int, loc int) {
+		total++
+		for k, rk := range rules {
+			mine[(k*nr+rk)*cells+loc]++
 			for j, rj := range rules {
-				mine[(j*nr+rj)*cells+loc]++
+				if j != k {
+					pairMine[pair(k, rk, j, rj)]++
+				}
 			}
 		}
 	})
@@ -120,6 +119,53 @@ func (g *Game) AdviseTurn(me int, lambda float64) (*TurnAdvice, error) {
 	}
 	if cubes, err := g.AdviseCube(me); err == nil && len(cubes) > 0 {
 		adv.CubeLeak = cubes[0].LocBits
+	}
+
+	// Other player k's view of j's answer, for each rule rk that k may hold
+	// in our worlds: k's location counts before any answer (all), the
+	// entropy of that, and which of j's rules have any worlds in it.
+	type kview struct {
+		k, rk  int
+		all    [cells]float64
+		h0     float64
+		rjs    []int
+		weight []float64 // pairMine weight per rule of j
+	}
+	kviews := make([][]*kview, n) // by j
+	for j := 0; j < n; j++ {
+		if j == m {
+			continue
+		}
+		for k := 0; k < n; k++ {
+			if k == m || k == j {
+				continue
+			}
+			for rk := 0; rk < nr; rk++ {
+				v := &kview{k: k, rk: rk, weight: make([]float64, nr)}
+				var w float64
+				for rj := 0; rj < nr; rj++ {
+					v.weight[rj] = pairMine[pair(k, rk, j, rj)]
+					w += v.weight[rj]
+				}
+				if w == 0 {
+					continue // k can't hold rk in our worlds
+				}
+				for rj := 0; rj < nr; rj++ {
+					any := false
+					for loc, c := range others[oidx(k, rk, j, rj):][:cells] {
+						if c != 0 {
+							v.all[loc] += float64(c)
+							any = true
+						}
+					}
+					if any {
+						v.rjs = append(v.rjs, rj)
+					}
+				}
+				_, v.h0 = entropy(v.all[:])
+				kviews[j] = append(kviews[j], v)
+			}
+		}
 	}
 
 	for h := 0; h < cells; h++ {
@@ -151,44 +197,31 @@ func (g *Game) AdviseTurn(me int, lambda float64) (*TurnAdvice, error) {
 			q.PYes = ty / total
 			q.Gain = adv.Entropy - (ty*hy+tn*hn)/total
 			q.Leak = (tn / total) * adv.CubeLeak
-			for k := 0; k < n; k++ {
-				if k == m || k == j {
-					continue
+			for _, v := range kviews[j] {
+				// Our weight on each answer, given k holds rk.
+				var wy, wn float64
+				for rj, w := range v.weight {
+					if p.masks[rj].Bit(h) {
+						wy += w
+					} else {
+						wn += w
+					}
 				}
-				for rk := 0; rk < nr; rk++ {
-					// Our weight on each answer, given k holds rk.
-					var wy, wn float64
-					for rj := 0; rj < nr; rj++ {
-						w := pairMine[pair(k, rk, j, rj)]
-						if p.masks[rj].Bit(h) {
-							wy += w
-						} else {
-							wn += w
+				// k's location distribution, split by the answer.
+				var ky, kn [cells]float64
+				for _, rj := range v.rjs {
+					if p.masks[rj].Bit(h) {
+						for loc, c := range others[oidx(v.k, v.rk, j, rj):][:cells] {
+							ky[loc] += float64(c)
 						}
 					}
-					if wy+wn == 0 {
-						continue
-					}
-					// k's location distribution, split by the answer.
-					var ky, kn [cells]float64
-					for rj := 0; rj < nr; rj++ {
-						dst := &kn
-						if p.masks[rj].Bit(h) {
-							dst = &ky
-						}
-						for loc, c := range others[oidx(k, rk, j, rj):][:cells] {
-							dst[loc] += float64(c)
-						}
-					}
-					var kall [cells]float64
-					for loc := range kall {
-						kall[loc] = ky[loc] + kn[loc]
-					}
-					_, h0 := entropy(kall[:])
-					_, hy := entropy(ky[:])
-					_, hn := entropy(kn[:])
-					q.Leak += (wy*(h0-hy) + wn*(h0-hn)) / total
 				}
+				for loc := range kn {
+					kn[loc] = v.all[loc] - ky[loc]
+				}
+				_, hy := entropy(ky[:])
+				_, hn := entropy(kn[:])
+				q.Leak += (wy*(v.h0-hy) + wn*(v.h0-hn)) / total
 			}
 			q.Score = q.Gain - lambda*q.Leak
 			adv.MaxGain = math.Max(adv.MaxGain, q.Gain)

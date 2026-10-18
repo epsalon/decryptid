@@ -10,3 +10,8 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# Web build outputs (make web)
+web/decryptid.wasm
+web/wasm_exec.js
+node_modules/

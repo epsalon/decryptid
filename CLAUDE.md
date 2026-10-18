@@ -56,6 +56,14 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   turns following the rulebook: a failed search or a "no" answer costs a
   penalty cube, and no one may touch a cubed hex. Each AI sees only its own
   rule (`match.view`).
+- **`api`**: JSON request/response handler for the web UI (`Handle`), testable
+  natively. **`wasm/`** wraps it as the JS function `decryptid(json)`.
+  `make web` builds `web/decryptid.wasm` plus `wasm_exec.js`; `make smoke`
+  runs `web/test/smoke.mjs` under Node (it needs a `node` binary; pass `NODE=`).
+- **Sampling (`game/sample.go`)**: with more than `SampleLimit` worlds, the
+  advisors estimate *other* players' views from a hash-sampled subset of rule
+  sets. Our own view is always exact. This keeps fresh 5-player boards at
+  about 0.4 s natively and 1.5 s in wasm.
 - **`main.go`** / **`advise_cli.go`**: the CLI (`-v`, `-cube`, `-turn`, `-sim`, `-rules`).
 
 ## Invariants and gotchas
