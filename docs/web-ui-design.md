@@ -1,6 +1,6 @@
 # Web UI design
 
-Status: **draft for review**. Nothing here is built yet.
+Status: **implemented** (milestones 1–6). Later items are still open.
 
 ## Goals
 

@@ -23,7 +23,8 @@ type Request struct {
 	Text     string     `json:"text,omitempty"`     // parse
 	Players  int        `json:"players,omitempty"`  // randomSetup
 	Advanced bool       `json:"advanced,omitempty"` // rules, randomSetup
-	Seed     int64      `json:"seed,omitempty"`     // randomSetup
+	Seed     int64      `json:"seed,omitempty"`     // randomSetup, newMatch
+	Rules    []string   `json:"rules,omitempty"`    // masks
 }
 
 // Response carries either a result or an error message.
@@ -40,6 +41,17 @@ type Hex struct {
 	Animal    board.Territory     `json:"animal,omitempty"`
 	Structure board.BuildingType  `json:"structure,omitempty"`
 	Color     board.BuildingColor `json:"color,omitempty"`
+}
+
+// Match is a freshly dealt game against AI opponents: a random board, each
+// seat's secret rule, and where the cryptid is.
+type Match struct {
+	Game     *game.Game `json:"game"`
+	Rules    []string   `json:"rules"`
+	Location struct {
+		X int `json:"x"`
+		Y int `json:"y"`
+	} `json:"location"`
 }
 
 // TurnResult is turn advice plus the action the AI would take.
@@ -89,20 +101,13 @@ func handle(r *Request) (any, error) {
 	case "parse":
 		return game.Parse(strings.NewReader(r.Text))
 	case "randomSetup":
-		players := r.Players
-		if players == 0 {
-			players = 4
+		m, err := deal(r)
+		if err != nil {
+			return nil, err
 		}
-		rng := rand.New(rand.NewSource(r.Seed))
-		for i := 0; i < 100; i++ {
-			g := &game.Game{Spec: sim.RandomSpec(rng, r.Advanced), Players: players, Advanced: r.Advanced}
-			if _, _, _, ok, err := g.SampleWorld(rng); err != nil {
-				return nil, err
-			} else if ok {
-				return g, nil
-			}
-		}
-		return nil, fmt.Errorf("no valid random board found")
+		return m.Game, nil
+	case "newMatch":
+		return deal(r)
 	}
 	if err := needGame(); err != nil {
 		return nil, err
@@ -122,6 +127,23 @@ func handle(r *Request) (any, error) {
 		return hexes, nil
 	case "summary":
 		return g.Summary()
+	case "masks":
+		// For each named rule, which hexes it allows (index y*12 + x).
+		byName := map[string]int{}
+		rules := g.Rules()
+		for i, rl := range rules {
+			byName[rl.Name] = i
+		}
+		b := board.MakeBoard(g.Spec)
+		out := make([][]bool, len(r.Rules))
+		for i, name := range r.Rules {
+			j, ok := byName[name]
+			if !ok {
+				return nil, fmt.Errorf("unknown rule %q", name)
+			}
+			out[i] = rules[j].OnBoard(&b).ToBoolSlice()
+		}
+		return out, nil
 	case "adviseCube":
 		return g.AdviseCube(r.Player)
 	case "adviseTurn":
@@ -140,4 +162,31 @@ func handle(r *Request) (any, error) {
 		return TurnResult{TurnAdvice: adv, Ask: q, Search: s}, nil
 	}
 	return nil, fmt.Errorf("unknown op %q", r.Op)
+}
+
+// deal makes a random board with at least one valid world, and samples one
+// world uniformly: the secret rule of each seat and the cryptid's hex.
+func deal(r *Request) (*Match, error) {
+	players := r.Players
+	if players == 0 {
+		players = 4
+	}
+	rng := rand.New(rand.NewSource(r.Seed))
+	for i := 0; i < 100; i++ {
+		g := &game.Game{Spec: sim.RandomSpec(rng, r.Advanced), Players: players, Advanced: r.Advanced}
+		rules, x, y, ok, err := g.SampleWorld(rng)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			continue
+		}
+		m := &Match{Game: g}
+		for _, rl := range rules {
+			m.Rules = append(m.Rules, rl.Name)
+		}
+		m.Location.X, m.Location.Y = x, y
+		return m, nil
+	}
+	return nil, fmt.Errorf("no valid random board found")
 }

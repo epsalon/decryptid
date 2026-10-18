@@ -89,3 +89,28 @@ func TestErrors(t *testing.T) {
 		}
 	}
 }
+
+func TestMatch(t *testing.T) {
+	var m Match
+	if err := json.Unmarshal(call(t, map[string]any{"op": "newMatch", "players": 4, "advanced": true, "seed": 5}), &m); err != nil {
+		t.Fatal(err)
+	}
+	if len(m.Rules) != 4 || m.Game.Players != 4 {
+		t.Fatalf("newMatch: %+v", m)
+	}
+	var masks [][]bool
+	json.Unmarshal(call(t, map[string]any{"op": "masks", "game": m.Game, "rules": m.Rules}), &masks)
+	if len(masks) != 4 {
+		t.Fatalf("masks: %d", len(masks))
+	}
+	// The cryptid's hex is the one hex every seat's rule allows.
+	for i := 0; i < 108; i++ {
+		all := true
+		for _, mk := range masks {
+			all = all && mk[i]
+		}
+		if all != (i == m.Location.Y*12+m.Location.X) {
+			t.Errorf("hex %d: allowed by all = %v, cryptid at (%d,%d)", i, all, m.Location.X, m.Location.Y)
+		}
+	}
+}

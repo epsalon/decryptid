@@ -8,6 +8,7 @@ import { SetupPanel } from './setup.js';
 import { MePanel } from './me.js';
 import { PlayPanel } from './play.js';
 import { AdvicePanel } from './advice.js';
+import { MatchPanel, matchActive } from './match.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -59,6 +60,7 @@ const panels = {
   me: { title: 'Me', panel: new MePanel($('tab-body'), app) },
   play: { title: 'Play', panel: new PlayPanel($('tab-body'), app) },
   advice: { title: 'Advice', panel: new AdvicePanel($('tab-body'), app) },
+  match: { title: 'vs AI', panel: new MatchPanel($('tab-body'), app) },
 };
 const current = () => panels[app.store.state.ui.tab] ?? panels.setup;
 const board = new Board($('board'), (x, y) => current().panel.onHex(x, y));
@@ -75,6 +77,10 @@ function analyze() {
   const { game } = app.store.state;
   const a = app.analysis;
   const problems = setupProblems(game);
+  if (matchActive(app.store.state) && !app.store.state.ui.matchHints) {
+    Object.assign(a, { key: '', summary: null, error: null, pending: false, blocked: 'Solver hints are off during a match. Turn them on in the <b>vs AI</b> tab.' });
+    return;
+  }
   if (problems.length) {
     Object.assign(a, { key: '', summary: null, error: null, pending: false, blocked: `Finish the setup first: ${problems.join(' ')}` });
     return;
@@ -133,5 +139,8 @@ document.addEventListener('keydown', (e) => {
 
 render();
 app.engine.ready
-  .then(() => ($('engine-status').textContent = ''))
+  .then(() => {
+    $('engine-status').textContent = '';
+    if (matchActive(app.store.state)) panels.match.panel.advance(); // resume after a reload
+  })
   .catch((e) => ($('engine-status').textContent = `Engine failed to load: ${e.message}`));

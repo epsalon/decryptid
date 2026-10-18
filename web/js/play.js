@@ -17,7 +17,11 @@ export class PlayPanel {
   // rules: at most one cube per hex, nothing new on a cubed hex, and one
   // piece per player per hex.
   onHex(x, y) {
-    const { game, ui } = this.app.store.state;
+    const { game, ui, match } = this.app.store.state;
+    if (match && match.phase !== 'over') {
+      this.app.toast('During a match, moves are made in the vs AI tab.');
+      return;
+    }
     const { player, cube } = ui.tool;
     const here = game.markers.filter((m) => m.x === x && m.y === y);
     const mine = here.find((m) => m.player === player);

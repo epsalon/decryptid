@@ -161,6 +161,66 @@ try {
   await page.waitForSelector('[data-mode="turn"].on');
   check(true, 'after the cube, advice returns to my turn');
 
+  // --- vs AI: a real match against three AIs. ---
+  const matchState = () => page.evaluate(() => JSON.parse(localStorage.getItem('decryptid.v1')).match);
+  const myPieces = () => page.$$eval('#board .cube, #board .disc', (els) => els.length);
+  // placeMyCube taps hexes until one is accepted (the panel rejects hexes
+  // my clue allows, or that hold a cube), like a player trying spots.
+  async function placeMyCube() {
+    const before = await myPieces();
+    for (let i = 0; i < 108; i++) {
+      await page.click(`#board [data-x="${i % 12}"][data-y="${Math.floor(i / 12)}"]`, { force: true });
+      if ((await myPieces()) > before) return true;
+    }
+    return false;
+  }
+  const myMove = () => page.waitForFunction(() => /Your turn|Place a (setup|penalty) cube|wins|Game over/.test(document.querySelector('#tab-body')?.textContent ?? ''), null, { timeout: 60000 });
+
+  await page.click('[data-tab="match"]');
+  await page.click('[data-o="players"][data-v="4"]');
+  await page.click('[data-o="advanced"][data-v="1"]');
+  await page.click('[data-o="difficulty"][data-v="hard"]');
+  await page.click('[data-o="seat"][data-v="1"]');
+  await page.click('[data-act="start"]');
+  await page.waitForSelector('.rec-action:has-text("setup cube")', { timeout: 30000 });
+  check((await matchState()).rules.length === 4, 'a match deals four secret clues');
+  await page.click('[data-tab="advice"]');
+  check((await page.textContent('#tab-body')).includes('hints are off'), 'solver hints are off by default in a match');
+  await page.click('[data-tab="setup"]');
+  check((await page.textContent('#tab-body')).includes('locked'), 'setup is locked during a match');
+  await page.click('[data-tab="match"]');
+
+  // Two setup rounds: my cube, then the three AIs place theirs.
+  check(await placeMyCube(), 'I can place my first setup cube');
+  await myMove();
+  check(await placeMyCube(), 'I can place my second setup cube');
+  await myMove();
+  check(await count('#board .cube', 8), 'everyone placed two setup cubes');
+
+  // My turn: ask red about some hex; on a "no" I owe a penalty cube.
+  await page.click('[data-action="ask"]');
+  await page.click('[data-target="2"]');
+  const logLen = (await matchState()).log.length;
+  for (let i = 0; i < 108 && (await matchState()).log.length === logLen; i++) {
+    await page.click(`#board [data-x="${i % 12}"][data-y="${Math.floor(i / 12)}"]`, { force: true });
+  }
+  check(/asks red about/.test((await matchState()).log[0]), 'my question is answered and logged');
+  for (let guard = 0; guard < 20; guard++) {
+    await myMove();
+    const m = await matchState();
+    if (m.phase === 'over') break;
+    if (m.phase === 'penalty') { await placeMyCube(); continue; }
+    // My turn again: search where the cryptid is (as if I'd deduced it).
+    await page.click('[data-action="search"]');
+    await page.click(`#board [data-x="${m.location.x}"][data-y="${m.location.y}"]`, { force: true });
+  }
+  const end = await matchState();
+  check(end.phase === 'over' && end.winner > 0, `the match ends with a winner (${['', 'yellow', 'red', 'green', 'cyan'][end.winner]})`);
+  check(end.log.some((l) => /^(red|green|cyan) (asks|searches)/.test(l)), 'the AIs took turns');
+  check(await count('.clues li', 4), 'everyone\'s clues are revealed');
+  check(await count('#board .badge.best', 1), 'the cryptid\'s hex is starred');
+  await page.screenshot({ path: out + 'phone-match.png', fullPage: true });
+
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.check('#coords');
   await page.screenshot({ path: out + 'desktop.png' });

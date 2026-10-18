@@ -66,11 +66,13 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   about 0.4 s natively and 1.5 s in wasm.
 - **`web/`**: static web UI (no framework, no build step besides the wasm).
   `js/app.js` wires a `Store` (`state.js`, autosaved to localStorage, with
-  marker undo/redo) to panels (`setup.js`, `me.js`, `play.js`, `advice.js`), each with
+  marker undo/redo) to panels (`setup.js`, `me.js`, `play.js`, `advice.js`, `match.js`), each with
   `render()`, `onHex(x, y)` and `overlay()`. `board.js` draws SVG with
   Honeycomb geometry (`vendor/`, flat-top, offset -1). `engine.js` talks to
   `worker.js`, which runs the wasm. The game JSON is the same shape as Go's
-  `game.Game`. Test with `make e2e`, a Playwright script that also cross-checks
+  `game.Game`. `match.js` runs games against AI seats: the engine deals
+  (`newMatch`) and answers come from rule `masks`; the turn rules mirror
+  `sim`, so keep the two in step. Test with `make e2e`, a Playwright script that also cross-checks
   the UI against CLI results.
 - **`main.go`** / **`advise_cli.go`**: the CLI (`-v`, `-cube`, `-turn`, `-sim`, `-rules`).
 

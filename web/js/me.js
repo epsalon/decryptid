@@ -17,7 +17,11 @@ export class MePanel {
   }
 
   render() {
-    const { game, me, ui } = this.app.store.state;
+    const { game, me, ui, match } = this.app.store.state;
+    if (match && match.phase !== 'over') {
+      this.root.innerHTML = '<p class="status">In a match against the AI your seat and clue are dealt to you: see the <b>vs AI</b> tab.</p>';
+      return;
+    }
     const rules = this.app.rulesFor(game.advanced);
     const clue = game.known[me] ?? '';
     this.root.innerHTML = `

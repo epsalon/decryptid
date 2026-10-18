@@ -24,6 +24,7 @@ export class SetupPanel {
 
   // onHex handles a board tap while this panel is shown.
   onHex(x, y) {
+    if (this.store.state.match && this.store.state.match.phase !== 'over') return;
     const game = this.store.state.game;
     const here = game.spec.buildings.find((b) => b.x === x && b.y === y);
     if (!this.placing) {
@@ -49,6 +50,10 @@ export class SetupPanel {
 
   render() {
     const { game } = this.store.state;
+    if (this.store.state.match && this.store.state.match.phase !== 'over') {
+      this.root.innerHTML = '<p class="status">A match against the AI is in progress, so the setup is locked. Finish it or give up in the <b>vs AI</b> tab.</p>';
+      return;
+    }
     const problems = setupProblems(game);
     this.root.innerHTML = `
       <div class="field"><span>Players</span>

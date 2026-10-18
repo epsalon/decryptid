@@ -63,8 +63,8 @@ main { display: grid; gap: 12px; padding: 0 16px 24px; }
 .board-tools { display: flex; justify-content: flex-end; color: #ddd; font-size: 0.85rem; padding: 4px 4px 0; }
 
 #panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px 16px; }
-#tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px -4px 8px; }
-#tabs button { border: 0; background: none; padding: 8px 12px; font: inherit; color: var(--muted); border-bottom: 3px solid transparent; }
+#tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: -4px -4px 8px; overflow-x: auto; scrollbar-width: none; }
+#tabs button { border: 0; background: none; padding: 8px 10px; white-space: nowrap; font: inherit; color: var(--muted); border-bottom: 3px solid transparent; }
 #tabs button[aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
 
 button, select, textarea { font: inherit; color: inherit; }
@@ -174,3 +174,11 @@ table.advice button { min-height: 28px; padding: 2px 10px; }
 .ring.cube-spot { stroke: #f8fafc; stroke-width: 2.5; stroke-dasharray: 2 2; }
 .badge.best { fill: #b5532a; } .badge.ask { fill: #2563eb; }
 .badge.search { fill: #15803d; } .badge.cube-spot { fill: #475569; }
+
+/* vs AI panel */
+.log { font-size: 0.85rem; list-style: none; padding-left: 0; margin: 4px 0 12px; }
+.log li { padding: 2px 0; }
+.log li:first-child { font-weight: 600; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+.rec .seg { margin: 6px 0; }
+.ring.select { stroke: #fff; stroke-dasharray: 4 3; stroke-width: 2.5; }

@@ -2,6 +2,7 @@
 // my cube (at setup, or as a penalty after a "no").
 
 import { PLAYERS, setMarkers } from './state.js';
+import { matchActive } from './match.js';
 
 const pct = (p) => (p >= 0.995 ? '100%' : p < 0.01 ? '<1%' : `${Math.round(p * 100)}%`);
 const bits = (b) => b.toFixed(2);
@@ -68,6 +69,10 @@ export class AdvicePanel {
   }
 
   onHex(x, y) {
+    if (matchActive(this.app.store.state)) {
+      this.app.toast('During a match, moves are made in the vs AI tab.');
+      return;
+    }
     const r = this.advice.result;
     if (r?.mode === 'cube' && r.data.some((c) => c.x === x && c.y === y)) {
       this.placeCube(x, y);
@@ -152,8 +157,8 @@ export class AdvicePanel {
     } else if (d.ask) {
       rec = `<div class="rec"><div class="rec-action">Ask ${name(d.ask.player)} about <b>${d.ask.x},${d.ask.y}</b></div>
         <div class="muted">${pct(d.ask.pYes)} chance of a disc. Expected to teach you ${bits(d.ask.gain)} bits and give others ${bits(d.ask.leak)}.</div>
-        <div class="actions answer"><span>They placed:</span>
-          <button data-answer="disc">● Disc</button><button data-answer="cube">■ Cube</button></div></div>`;
+        ${matchActive(this.app.store.state) ? '' : `<div class="actions answer"><span>They placed:</span>
+          <button data-answer="disc">● Disc</button><button data-answer="cube">■ Cube</button></div>`}</div>`;
     } else {
       rec = '<p class="status warn">No legal action.</p>';
     }
@@ -177,7 +182,7 @@ export class AdvicePanel {
       <p class="hint">Hexes your clue rules out, least revealing first. Bits = how much the cube would tell the other players.</p>
       <table class="advice"><thead><tr><th>#</th><th>Hex</th><th>Bits</th><th></th></tr></thead>
       <tbody>${top.map((c, i) => `<tr><td>${i + 1}</td><td>${c.x},${c.y}</td><td>${bits(c.bits)}</td>
-        <td><button data-place="${c.x},${c.y}">Place</button></td></tr>`).join('')}</tbody></table>
+        <td>${matchActive(this.app.store.state) ? '' : `<button data-place="${c.x},${c.y}">Place</button>`}</td></tr>`).join('')}</tbody></table>
       <p class="hint">Worst option: ${cubes.at(-1).x},${cubes.at(-1).y} at ${bits(cubes.at(-1).bits)} bits. Tap a numbered hex to place there.</p>`;
   }
 }
