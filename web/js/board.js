@@ -53,6 +53,15 @@ export class Board {
   // (0-1). opts.coords shows x,y.
   render(hexes, markers = [], overlay = new Map(), opts = {}) {
     this.svg.replaceChildren();
+    const defs = el('defs', {}, this.svg);
+    const pat = el('pattern', {
+      id: 'viable-hatch',
+      width: '8',
+      height: '8',
+      patternTransform: 'rotate(45 0 0)',
+      patternUnits: 'userSpaceOnUse',
+    }, defs);
+    el('line', { x1: '0', y1: '0', x2: '0', y2: '8', stroke: 'var(--viable-stroke, #ff007a)', 'stroke-width': '1.75' }, pat);
     const root = el('g', {}, this.svg);
     const byHex = new Map();
     for (const m of markers) {
