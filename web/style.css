@@ -91,12 +91,6 @@ select { background: var(--panel); border: 1px solid var(--line); border-radius:
 .structs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .struct { display: flex; align-items: center; gap: 8px; text-align: left; font-size: 0.85rem; }
 .struct .where { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
-.icon { width: 14px; height: 14px; flex: none; border: 1.5px solid #555; }
-.icon.stone { border-radius: 4px; }
-.icon.shed { clip-path: polygon(50% 0, 100% 45%, 100% 100%, 0 100%, 0 45%); border: 0; }
-.icon.white { background: #f7f7f7; } .icon.blue { background: #2563eb; }
-.icon.green { background: #16a34a; } .icon.black { background: #1f1f1f; }
-.icon.shed.white { background: #ddd; }
 
 .status { font-size: 0.9rem; margin: 14px 0 8px; }
 .status.ok { color: var(--ok); } .status.warn { color: var(--warn); }
@@ -198,5 +192,6 @@ footer a { color: inherit; }
 .setup-mode .hex.has-structure, .struct { touch-action: none; }
 .setup-mode .hex.has-structure { cursor: grab; }
 .hex.drop-target .hex-bg { stroke: #fff; stroke-width: 3; filter: brightness(1.25); }
-.drag-ghost { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 10; margin: -14px 0 0 -14px; }
-.drag-ghost .icon { width: 28px; height: 28px; display: block; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
+.drag-ghost { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 10; margin: -16px 0 0 -16px; }
+.drag-ghost .structure-icon { display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6)); }
+.structure-icon { flex: none; overflow: visible; }

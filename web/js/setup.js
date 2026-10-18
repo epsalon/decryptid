@@ -1,6 +1,7 @@
 // Setup panel: players, mode, map tiles, structures, import/export.
 
 import { structuresFor, setupProblems, defaultGame } from './state.js';
+import { structureIcon } from './board.js';
 
 const label = (s) => `${s.color[0].toUpperCase()}${s.color.slice(1)} ${s.type}`;
 const same = (a, b) => a.type === b.type && a.color === b.color;
@@ -77,7 +78,7 @@ export class SetupPanel {
         if (Math.hypot(e.clientX - d.x0, e.clientY - d.y0) < 6) return;
         d.ghost = document.createElement('div');
         d.ghost.className = 'drag-ghost';
-        d.ghost.innerHTML = `<span class="icon ${d.s.type} ${d.s.color}"></span>`;
+        d.ghost.innerHTML = structureIcon(d.s.type, d.s.color, 32);
         document.body.appendChild(d.ghost);
       }
       e.preventDefault();
@@ -198,7 +199,7 @@ export class SetupPanel {
           const b = game.spec.buildings.find((b) => same(b, s));
           const on = this.placing && same(this.placing, s);
           return `<button data-struct="${s.type},${s.color}" class="struct ${on ? 'on' : ''}">
-            <span class="icon ${s.type} ${s.color}"></span>${label(s)}
+            ${structureIcon(s.type, s.color, 18)}${label(s)}
             <span class="where">${b ? `${b.x},${b.y}` : on ? 'tap a hex' : '—'}</span></button>`;
         }).join('')}
       </div>

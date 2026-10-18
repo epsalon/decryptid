@@ -124,10 +124,22 @@ export class Board {
   }
 }
 
+// Structure outlines around (0, 0): a standing stone is an octagon, a shed
+// a little house.
+const STRUCTURE_POINTS = {
+  stone: regular(8, S * 0.34, Math.PI / 8),
+  shed: '-10,10 10,10 10,-2 0,-12 -10,-2',
+};
+
 function drawStructure(g, type, color) {
-  const attrs = { fill: STRUCTURE_FILL[color], class: `structure ${color}` };
-  if (type === 'stone') el('polygon', { points: regular(8, S * 0.34, Math.PI / 8), ...attrs }, g);
-  else el('polygon', { points: '-10,10 10,10 10,-2 0,-12 -10,-2', ...attrs }, g); // a shed: a little house
+  el('polygon', { points: STRUCTURE_POINTS[type], fill: STRUCTURE_FILL[color], class: `structure ${color}` }, g);
+}
+
+// structureIcon is an inline SVG of a structure, drawn exactly as on the
+// board, for use outside it (setup chips, the drag ghost).
+export function structureIcon(type, color, size = 16) {
+  return `<svg class="structure-icon" width="${size}" height="${size}" viewBox="-13 -13 26 26" aria-hidden="true">
+    <polygon points="${STRUCTURE_POINTS[type]}" fill="${STRUCTURE_FILL[color]}" class="structure ${color}"/></svg>`;
 }
 
 // drawPieces puts each player's disc in a fixed spot around the hex
