@@ -48,9 +48,60 @@ export function setupProblems(game) {
   return problems;
 }
 
+// rulesGrouped groups engine rule names for a <select>, keeping each
+// name's number (1-based index), which game files may refer to.
+export function ruleGroups(names) {
+  const groups = new Map();
+  names.forEach((name, i) => {
+    const base = name.replace(/^Not /, '');
+    const g = /^On /.test(base) ? 'On one of two terrains' : base.replace(/ from .*/, '').replace('Distance', 'Within');
+    const key = (name.startsWith('Not ') ? 'Not: ' : '') + g;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push({ name, number: i + 1 });
+  });
+  return groups;
+}
+
+// ruleLabel is a friendlier display form of an engine rule name.
+export const ruleLabel = (name) => name.replace(/Distance (\d) from/, 'Within $1 of');
+
+const MAX_HISTORY = 200;
+
+// setMarkers replaces the markers, recording the old ones for undo.
+export function setMarkers(state, markers) {
+  state.history.past.push(state.game.markers);
+  if (state.history.past.length > MAX_HISTORY) state.history.past.shift();
+  state.history.future = [];
+  state.game.markers = markers;
+}
+
+export function undo(state) {
+  if (!state.history.past.length) return false;
+  state.history.future.push(state.game.markers);
+  state.game.markers = state.history.past.pop();
+  return true;
+}
+
+export function redo(state) {
+  if (!state.history.future.length) return false;
+  state.history.past.push(state.game.markers);
+  state.game.markers = state.history.future.pop();
+  return true;
+}
+
+// withDefaults fills in fields that older saved states may lack.
+function withDefaults(s) {
+  s.game.markers ??= [];
+  s.game.known ??= {};
+  s.me ??= 1;
+  s.ui = { tab: 'setup', coords: false, tool: { player: 1, cube: false }, overlay: 'viable', hideClue: false, ...s.ui };
+  s.history ??= { past: [], future: [] };
+  return s;
+}
+
 export class Store {
   constructor() {
-    this.state = load() ?? { game: defaultGame(), me: 1, ui: { tab: 'setup', coords: false } };
+    this.state = withDefaults(load() ?? { game: defaultGame() });
     this.listeners = [];
   }
   subscribe(fn) {

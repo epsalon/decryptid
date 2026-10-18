@@ -48,7 +48,9 @@ export class Board {
   }
 
   // render draws hexes (from the engine's 'board' op) with the game's
-  // markers. overlay maps "x,y" to {kind, label}; opts.coords shows x,y.
+  // markers. overlay maps "x,y" to {kind, label, weight}: a ring of the
+  // given kind, an optional badge label, and an optional tint strength
+  // (0-1). opts.coords shows x,y.
   render(hexes, markers = [], overlay = new Map(), opts = {}) {
     this.svg.replaceChildren();
     const root = el('g', {}, this.svg);
@@ -65,13 +67,16 @@ export class Board {
       const g = el('g', { 'data-x': h.x, 'data-y': h.y, transform: `translate(${center.x},${center.y})`, class: 'hex' }, root);
       const t = TERRAIN[h.terrain];
       el('polygon', { points: points(), fill: t.fill, class: 'hex-bg' }, g);
-      el('text', { x: -S * 0.5, y: -S * 0.42, class: 'glyph' }, g).textContent = t.glyph;
+      const o = overlay.get(key);
+      if (o?.weight != null) {
+        el('polygon', { points: points(), class: 'tint', 'fill-opacity': (0.25 + 0.55 * o.weight).toFixed(2) }, g);
+      }
+      el('text', { x: -S * 0.52, y: -S * 0.6, class: 'glyph' }, g).textContent = t.glyph;
       if (h.animal) el('polygon', { points: points(0.84), class: `territory ${h.animal}` }, g);
       if (h.structure) drawStructure(g, h.structure, h.color);
       const pieces = byHex.get(key);
       if (pieces) drawPieces(g, pieces);
       if (opts.coords) el('text', { y: S * 0.74, class: 'coord' }, g).textContent = key;
-      const o = overlay.get(key);
       if (o) {
         el('polygon', { points: points(0.92), class: `ring ${o.kind}` }, g);
         if (o.label != null) {
@@ -89,14 +94,17 @@ function drawStructure(g, type, color) {
   else el('polygon', { points: '-10,10 10,10 10,-2 0,-12 -10,-2', ...attrs }, g); // a shed: a little house
 }
 
+// drawPieces puts each player's disc in a fixed spot around the hex
+// (pentagon corners, player 1 at the bottom), so pieces are recognisable
+// by position as well as colour. The cube goes in the middle, over any
+// structure.
 function drawPieces(g, { discs, cube }) {
-  discs.sort((a, b) => a - b);
-  discs.forEach((p, i) => {
-    const x = (i - (discs.length - 1) / 2) * S * 0.3;
-    el('circle', { cx: x, cy: S * 0.52, r: S * 0.14, fill: PLAYERS[p - 1].color, class: 'disc' }, g);
-  });
+  for (const p of discs) {
+    const a = Math.PI / 2 + ((p - 1) * 2 * Math.PI) / 5;
+    el('circle', { cx: S * 0.52 * Math.cos(a), cy: S * 0.52 * Math.sin(a), r: S * 0.27, fill: PLAYERS[p - 1].color, class: 'disc' }, g);
+  }
   if (cube) {
-    const s = S * 0.34;
-    el('rect', { x: -s / 2, y: -S * 0.62 - s / 2, width: s, height: s, fill: PLAYERS[cube - 1].color, class: 'cube' }, g);
+    const s = S * 0.5;
+    el('rect', { x: -s / 2, y: -s / 2, width: s, height: s, rx: 2, fill: PLAYERS[cube - 1].color, class: 'cube' }, g);
   }
 }
