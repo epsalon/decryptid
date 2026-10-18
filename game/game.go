@@ -17,7 +17,7 @@ import (
 type Game struct {
 	Spec     board.BoardSpec
 	Players  int
-	Advanced bool           // whether "Not ..." rules are in play
+	Advanced bool           // whether "Not ..." rules and black buildings are in play
 	Markers  []Marker       // discs and cubes on the board
 	Known    map[int]string // player -> rule name, for rules we know
 }
@@ -33,7 +33,7 @@ type Marker struct {
 func (g *Game) Rules() []rule.RuleSpec {
 	var out []rule.RuleSpec
 	for _, r := range rule.AllRules() {
-		if g.Advanced || !r.Negated() {
+		if g.Advanced || !r.Advanced() {
 			out = append(out, r)
 		}
 	}

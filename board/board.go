@@ -42,9 +42,10 @@ const (
 	White
 	Blue
 	Green
+	Black // advanced game only
 )
 func (c BuildingColor) String() string {
-	names := []string {"None", "White", "Blue", "Green"}
+	names := []string {"None", "White", "Blue", "Green", "Black"}
 	return names[c]
 }
 

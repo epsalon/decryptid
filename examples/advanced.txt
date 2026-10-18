@@ -1,0 +1,12 @@
+# Advanced game on the demo board: black buildings and "Not ..." rules.
+tiles 6F 1F 3 5F 4 2F
+stone  0 1 blue
+stone 10 8 white
+stone  1 4 green
+stone  4 6 black
+shed   8 2 blue
+shed   7 4 white
+shed  10 6 green
+shed   3 0 black
+players 4
+mode advanced

@@ -16,6 +16,7 @@ type RuleSpec struct {
 	hr hexRule
 	d int
 	neg bool
+	advanced bool // only in play in advanced games
 }
 
 func (r RuleSpec) String() string {
@@ -116,7 +117,8 @@ func Apply(br BoardRule, b *board.Board, p int) {
 func (b BoardRule) ToBoolSlice() []bool {
 	return b.arr
 }
-// Negated reports whether this is a "Not ..." rule (advanced mode only).
-func (r RuleSpec) Negated() bool {
-	return r.neg
+// Advanced reports whether the rule is only used in advanced games: "Not ..."
+// rules and rules about black structures.
+func (r RuleSpec) Advanced() bool {
+	return r.neg || r.advanced
 }

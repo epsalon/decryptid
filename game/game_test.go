@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/epsalon/decryptid/board"
@@ -98,4 +99,64 @@ func TestParseErrors(t *testing.T) {
 	if _, err := g.Solve(); err == nil {
 		t.Error("unknown rule: want error")
 	}
+}
+
+func TestBlackBuildings(t *testing.T) {
+	const black = "Distance 3 from Black structure"
+	has := func(g *Game) bool {
+		for _, r := range g.Rules() {
+			if r.Name == black {
+				return true
+			}
+		}
+		return false
+	}
+	if g := loadSetup(t); has(g) {
+		t.Errorf("basic game offers %q", black)
+	}
+
+	in := "tiles 6F 1F 3 5F 4 2F\nstone 4 6 black\nmode advanced\nrule 1 " + black + "\n"
+	g, err := Parse(strings.NewReader(in))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !has(g) {
+		t.Errorf("advanced game lacks %q", black)
+	}
+	b, _ := g.Board()
+	if h := b[6][4]; h.B != board.Stone || h.C != board.Black {
+		t.Errorf("hex (4,6) = %+v, want black stone", h)
+	}
+	res, err := g.Solve()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, l := range res.Locations() {
+		if d := hexDist(l.X, l.Y, 4, 6); d > 3 {
+			t.Errorf("location (%d,%d) is %d from the black stone", l.X, l.Y, d)
+		}
+	}
+
+	if _, err := Parse(strings.NewReader("tiles 1 2 3 4 5 6\nshed 0 0 black\nmode basic\n")); err == nil {
+		t.Error("black building in basic game: want error")
+	}
+}
+
+// hexDist is the hex distance between columns/rows in the board's layout
+// (odd columns shifted down), computed independently of the rule package.
+func hexDist(x1, y1, x2, y2 int) int {
+	cube := func(x, y int) (int, int, int) {
+		q := x
+		r := y - (x-(x&1))/2
+		return q, r, -q - r
+	}
+	a1, b1, c1 := cube(x1, y1)
+	a2, b2, c2 := cube(x2, y2)
+	abs := func(v int) int {
+		if v < 0 {
+			return -v
+		}
+		return v
+	}
+	return max(abs(a1-a2), abs(b1-b2), abs(c1-c2))
 }

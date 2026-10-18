@@ -11,6 +11,7 @@ func OnLandscapes(l board.Landscape, l2 board.Landscape) RuleSpec {
 				},
 				0,
 				false,
+				false,
 			}
 }
 
@@ -21,6 +22,7 @@ func D1Landscape(l board.Landscape) RuleSpec {
 				return h.L == l 
 			},
 			1,
+			false,
 			false,
 		}
 }
@@ -33,6 +35,7 @@ func D1AnyTerritory() RuleSpec {
 		},
 		1,
 		false,
+		false,
 	}
 }
 
@@ -43,6 +46,7 @@ func D2Territory(t board.Territory) RuleSpec {
 				return h.T == t 
 			},
 			2,
+			false,
 			false,
 		}
 }
@@ -55,6 +59,7 @@ func D2Structure(s board.BuildingType) RuleSpec {
 			},
 			2,
 			false,
+			false,
 		}
 }
 
@@ -66,6 +71,7 @@ func D3Color(s board.BuildingColor) RuleSpec {
 			},
 			3,
 			false,
+			s == board.Black,
 		}
 }
 
@@ -92,7 +98,7 @@ func AllRules() []RuleSpec {
 	for s := board.Stone; s <= board.Shed; s++ {
 		addWithNeg(D2Structure(s))
 	}
-	for s := board.White; s <= board.Green; s++ {
+	for s := board.White; s <= board.Black; s++ {
 		addWithNeg(D3Color(s))
 	}
 	return out

@@ -51,6 +51,7 @@ var bldgColor = []color.Attribute {
 	color.FgHiWhite,
 	color.FgHiBlue,
 	color.FgHiGreen,
+	color.FgBlack,
 }
 
 var playerColor = []color.Attribute {
@@ -88,7 +89,11 @@ func (h Hex) fillStr(x, y int) []string {
 	t := terrInfo[h.T]
 	lc := color.New(l.Color, color.FgBlack)
 	tc := color.New(l.Color, t.Color)
-	bc := color.New(bldgColor[h.C], color.BgBlack)
+	bg := color.BgBlack
+	if h.C == Black {
+		bg = color.BgHiWhite // black text needs a light background
+	}
+	bc := color.New(bldgColor[h.C], bg)
 	ps, psl := playerStr(h.Discs)
 	if (h.Cube != 0) {
 		ps = color.New(playerColor[h.Cube-1]).SprintfFunc()("x") + ps

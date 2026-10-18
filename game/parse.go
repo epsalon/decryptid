@@ -18,9 +18,9 @@ var PlayerColors = []string{"yellow", "magenta", "blue", "cyan", "black"}
 // ignored. Lines are:
 //
 //	tiles 6F 1F 3 5F 4 2F     six tile ids in reading order; F = flipped
-//	stone|shed X Y COLOR      building at hex (X, Y); COLOR = white|blue|green
+//	stone|shed X Y COLOR      building at hex (X, Y); COLOR = white|blue|green|black
 //	players N                 number of players (default 3)
-//	mode basic|advanced       advanced adds "Not ..." rules (default advanced)
+//	mode basic|advanced       advanced adds "Not ..." rules and black buildings (default advanced)
 //	disc PLAYER X Y           PLAYER's rule allows the cryptid at (X, Y)
 //	cube PLAYER X Y           PLAYER's rule rules out (X, Y)
 //	rule PLAYER NAME...       PLAYER's rule is known (name or number from -rules)
@@ -49,6 +49,13 @@ func Parse(r io.Reader) (*Game, error) {
 	}
 	if !sawTiles {
 		return nil, fmt.Errorf("missing 'tiles' line")
+	}
+	if !g.Advanced {
+		for _, b := range g.Spec.Buildings {
+			if b.C == board.Black {
+				return nil, fmt.Errorf("black buildings need 'mode advanced'")
+			}
+		}
 	}
 	rules := g.Rules()
 	for p, name := range known {
@@ -109,7 +116,7 @@ func parseLine(g *Game, f []string, known map[int]string, sawTiles *bool) error 
 		if err != nil {
 			return err
 		}
-		c, ok := map[string]board.BuildingColor{"white": board.White, "blue": board.Blue, "green": board.Green}[args[2]]
+		c, ok := map[string]board.BuildingColor{"white": board.White, "blue": board.Blue, "green": board.Green, "black": board.Black}[args[2]]
 		if !ok {
 			return fmt.Errorf("bad building color %q", args[2])
 		}
