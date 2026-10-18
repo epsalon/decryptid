@@ -5,7 +5,7 @@ Status: **implemented** (milestones 1–6). Later items are still open.
 ## Goals
 
 1. **A table-side assistant for a real game.** A player at a physical Cryptid table
-   enters the board from the official app, their own colour and clue, and each
+   enters the board from the official app or setup card, their own colour and clue, and each
    disc and cube as it is placed. They get the viable locations and AI advice:
    what to ask, where to search, where to put a cube.
 2. **Portable.** It runs in any modern browser, phone first, since that's

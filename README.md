@@ -19,7 +19,7 @@ clue, and lists every hex where the cryptid can still be.
 
 ### Web UI
 
-Set up the board (copy it from the official app), pick your colour and clue,
+Set up the board (copy it from the official app or setup card), pick your colour and clue,
 then record discs and cubes as they're placed. The board highlights where the
 cryptid can still be, and the **Advice** tab tells you what to ask, where to
 search, and where to put your cubes. No game at hand? The **vs AI** tab deals a
