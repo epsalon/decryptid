@@ -130,7 +130,8 @@ dialog textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 
 .ring.select { stroke: #fff; stroke-dasharray: 4 3; }
 .badge { stroke: #fff; stroke-width: 1; }
 .badge-text { font-size: 9px; font-weight: 700; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-.tint { fill: url(#viable-hatch); color: var(--viable-color, #ff007a); pointer-events: none; }
+.tint { fill: none; pointer-events: none; }
+.ruled-out { fill: url(#ruled-out-hatch); fill-opacity: 0.18; pointer-events: none; }
 .ring.viable {
   stroke: var(--viable-color, #ff007a);
   stroke-width: 3.5;

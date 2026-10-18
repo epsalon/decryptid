@@ -55,13 +55,14 @@ export class Board {
     this.svg.replaceChildren();
     const defs = el('defs', {}, this.svg);
     const pat = el('pattern', {
-      id: 'viable-hatch',
+      id: 'ruled-out-hatch',
       width: '8',
       height: '8',
       patternTransform: 'rotate(45 0 0)',
       patternUnits: 'userSpaceOnUse',
     }, defs);
-    el('line', { x1: '0', y1: '0', x2: '0', y2: '8', stroke: 'var(--viable-stroke, #ff007a)', 'stroke-width': '1.75' }, pat);
+    el('line', { x1: '0', y1: '0', x2: '0', y2: '8', stroke: '#000', 'stroke-width': '1.5' }, pat);
+
     const root = el('g', {}, this.svg);
     const byHex = new Map();
     for (const m of markers) {
@@ -70,6 +71,7 @@ export class Board {
       if (m.cube) byHex.get(k).cube = m.player;
       else byHex.get(k).discs.push(m.player);
     }
+    const hasViable = Array.from(overlay.values()).some((o) => o.kind === 'viable');
     for (const h of hexes) {
       const center = grid.getHex({ col: h.x, row: h.y });
       const key = `${h.x},${h.y}`;
@@ -77,8 +79,11 @@ export class Board {
       const t = TERRAIN[h.terrain];
       el('polygon', { points: points(), fill: t.fill, class: 'hex-bg' }, g);
       const o = overlay.get(key);
+      if (hasViable && (!o || o.kind !== 'viable')) {
+        el('polygon', { points: points(), class: 'ruled-out' }, g);
+      }
       if (o?.weight != null) {
-        el('polygon', { points: points(), class: 'tint', 'fill-opacity': (0.25 + 0.55 * o.weight).toFixed(2) }, g);
+        el('polygon', { points: points(), class: 'tint', 'fill-opacity': (0.15 + 0.25 * o.weight).toFixed(2) }, g);
       }
       el('text', { x: -S * 0.52, y: -S * 0.6, class: 'glyph' }, g).textContent = t.glyph;
       if (h.animal) el('polygon', { points: points(0.84), class: `territory ${h.animal}` }, g);
