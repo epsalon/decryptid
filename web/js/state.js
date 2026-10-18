@@ -14,7 +14,7 @@ export const PLAYERS = [
 
 // Seats are turn order; colours are just who sits there. game.colors lists
 // each seat's colour (same as Go's Game.Colors).
-export const seatColors = (game) => (game.colors?.length ? game.colors : PLAYERS.slice(0, game.players).map((p) => p.name));
+export const seatColors = (game) => (game.colors ?? PLAYERS.slice(0, game.players).map((p) => p.name));
 
 // seat describes seat p (1-based): its colour name, hex colour, and slot
 // (index in PLAYERS, which fixes where its discs sit in a hex).
@@ -56,6 +56,7 @@ export function structuresFor(game) {
 // setupProblems returns what's missing before the game can be analysed.
 export function setupProblems(game) {
   const problems = [];
+  if (seatColors(game).length < 3) problems.push('Choose at least 3 colours (Cryptid needs 3–5 players).');
   const ids = game.spec.tiles.flat().map((t) => t.id);
   if (new Set(ids).size !== 6) problems.push('Each of the 6 map tiles must be used once.');
   const missing = structuresFor(game).filter(

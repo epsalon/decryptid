@@ -63,13 +63,11 @@ try {
   await page.click('text=Random board');
   await page.waitForSelector('.status.ok');
   check(await count('#board .structure', 6), 'random board has 6 structures');
-  // Colours playing, in seat order: drop cyan, then add purple as seat 4.
-  await page.click('[data-color="cyan"]');
-  check(await count('[data-color].on', 3), 'removing a colour leaves 3 players');
-  await page.click('[data-color="purple"]');
-  check((await page.textContent('[data-color="purple"] .seat-no')) === '4', 'an added colour takes the next seat');
-  await page.click('[data-color="purple"]');
-  await page.click('[data-color="cyan"]');
+  // Colours playing: fewer than 3 is allowed while choosing, but flagged.
+  for (const c of ['cyan', 'green', 'red']) await page.click(`[data-color="${c}"]`);
+  check(await count('[data-color].on', 1) && (await page.textContent('.status.warn')).includes('at least 3'), 'fewer than 3 colours is an incomplete setup');
+  for (const c of ['red', 'green', 'cyan']) await page.click(`[data-color="${c}"]`);
+  check(await count('[data-color].on', 4) && await count('.status.ok', 1), 'reselecting colours makes the setup valid again');
   await page.screenshot({ path: out + 'phone-random.png', fullPage: true });
 
   // Place a structure by tapping its chip, then a hex.
@@ -244,6 +242,16 @@ try {
   check(await count(`#board [data-x="${cx}"][data-y="${cy}"] .cube`, 1), `placing my penalty cube on the top spot (${spot})`);
   await page.waitForSelector('[data-mode="turn"].on');
   check(true, 'after the cube, advice returns to my turn');
+
+  // Markers keep their colour when another colour leaves: drop red from the
+  // example game, and green's disc on 9,6 is still green.
+  await page.click('[data-tab="setup"]');
+  await page.click('text=Import…');
+  await page.fill('dialog textarea', example);
+  await page.click('dialog button:has-text("Load")');
+  await page.click('[data-color="red"]');
+  const fill = await page.getAttribute('#board [data-x="9"][data-y="6"] .disc', 'fill');
+  check(fill === '#34a853' && await count('#board [data-x="6"][data-y="2"] .disc', 0), 'removing red removes its markers; green keeps its disc');
 
   // --- vs AI: a real match against three AIs. ---
   const matchState = () => page.evaluate(() => JSON.parse(localStorage.getItem('decryptid.v1')).match);

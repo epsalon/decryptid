@@ -174,11 +174,11 @@ export class SetupPanel {
     const problems = setupProblems(game);
     this.root.innerHTML = `
       <h3>Players</h3>
-      <p class="hint">Tap the colours that are playing, clockwise from the first player.</p>
+      <p class="hint">Tap the colours that are playing.</p>
       <div class="chips">${PLAYERS.map((c) => {
         const i = seatColors(game).indexOf(c.name);
         return `<button data-color="${c.name}" class="chip ${i >= 0 ? 'on' : ''}" aria-pressed="${i >= 0}">
-          <span class="dot" style="background:${c.color}"></span>${c.name}${i >= 0 ? ` <b class="seat-no">${i + 1}</b>` : ''}</button>`;
+          <span class="dot" style="background:${c.color}"></span>${c.name}</button>`;
       }).join('')}</div>
       <div class="field"><span>Mode</span>
         <div class="seg">
@@ -247,32 +247,32 @@ export class SetupPanel {
     q('[data-act]').forEach((b) => (b.onclick = () => this[b.dataset.act]()));
   }
 
-  // toggleColor adds a colour as the last seat, or removes it along with its
-  // markers and known clue (later seats move up one).
+  // toggleColor adds or removes a colour. Order doesn't matter at the table,
+  // so seats follow the fixed colour order; markers, known clues and "me"
+  // move with their colour. Fewer than 3 is allowed while choosing; the
+  // setup check then asks for more.
   toggleColor(name) {
-    const colors = seatColors(this.store.state.game);
-    const i = colors.indexOf(name);
-    if (i < 0 && colors.length >= 5) return this.toast('Cryptid has at most 5 players.');
-    if (i >= 0 && colors.length <= 3) return this.toast('Cryptid needs at least 3 players.');
     this.store.update((s) => {
       const g = s.game;
-      if (i < 0) {
-        g.colors = [...colors, name];
-      } else {
-        const q = i + 1; // the seat that leaves
-        g.colors = colors.filter((c) => c !== name);
-        g.markers = g.markers.filter((m) => m.player !== q).map((m) => (m.player > q ? { ...m, player: m.player - 1 } : m));
-        g.known = Object.fromEntries(Object.entries(g.known).filter(([p]) => +p !== q).map(([p, r]) => [+p > q ? +p - 1 : +p, r]));
-        if (s.me === q) s.me = 0;
-        else if (s.me > q) s.me--;
-        s.history = { past: [], future: [] }; // undo steps refer to the old seats
-      }
-      g.players = g.colors.length;
+      const old = seatColors(g);
+      const on = new Set(old);
+      if (on.has(name)) on.delete(name);
+      else on.add(name);
+      const colors = PLAYERS.map((c) => c.name).filter((c) => on.has(c));
+      const moved = (p) => colors.indexOf(old[p - 1]) + 1; // 0 if its colour left
+      g.markers = g.markers.map((m) => ({ ...m, player: moved(m.player) })).filter((m) => m.player);
+      g.known = Object.fromEntries(Object.entries(g.known).map(([p, r]) => [moved(+p), r]).filter(([p]) => p));
+      s.me = s.me ? moved(s.me) : 0;
+      s.ui.tool.player = moved(s.ui.tool.player) || 1;
+      s.history = { past: [], future: [] }; // undo steps refer to the old seats
+      g.colors = colors;
+      g.players = colors.length;
     });
   }
 
   async random() {
     const { game } = this.store.state;
+    if (seatColors(game).length < 3) return this.toast('Choose at least 3 colours first.');
     const g = await this.engine.call('randomSetup', { players: game.players, advanced: game.advanced, seed: Date.now() % 1e9 });
     this.placing = null;
     this.store.update((s) => {

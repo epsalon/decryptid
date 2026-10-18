@@ -61,7 +61,7 @@ tiles 6F 1F 3 5F 4 2F      # six map tiles, left-to-right then top-to-bottom; F 
 stone 0 1 blue             # stone|shed X Y white|blue|green|black
 shed  8 2 blue
 players 3                  # 1-5, default 3
-colors red cyan purple     # optional: the colours playing, clockwise from the first player
+colors red cyan purple     # optional: the colours playing, in turn order
 mode basic                 # basic | advanced (default advanced)
 
 disc red 6 2           # disc|cube PLAYER X Y
