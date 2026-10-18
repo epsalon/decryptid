@@ -157,4 +157,4 @@ go test ./...
       earlier when an opponent is close to solving
 - [x] Web UI: setup, live analysis, and AI advice while you play
 - [x] Play against AI opponents in the browser (easy, normal, hard)
-- [ ] Verify the hard-coded map tiles against the physical game
+- [x] Map tiles verified against the physical game

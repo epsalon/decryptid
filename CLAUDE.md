@@ -95,8 +95,9 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   Rule names are user input (`rule PLAYER NAME`), so renaming a rule breaks game files.
 - **Player colours are display-only.** `game.PlayerColors` must stay in the
   same order as `playerColor` in `board/print.go`.
-- **The tile data in `board.Tiles` was checked** hex by hex against an
-  independent transcription. Flipped tiles are rotated 180°.
+- **The tile data in `board.Tiles` matches the physical game.** It was
+  checked hex by hex against an independent transcription and confirmed by
+  the user. Flipped tiles are rotated 180°.
 
 ## Conventions
 
@@ -111,5 +112,3 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
 1. Make the search decision value-based instead of a fixed threshold. Count
    what a failed search teaches us, and search sooner when an opponent's view
    is nearly certain (we can compute every opponent's view).
-2. Interactive play: enter moves as they happen and get the AI's replies.
-3. Verify the tile data.
