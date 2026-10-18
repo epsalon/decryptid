@@ -57,7 +57,8 @@ export class Board {
   // markers. overlay maps "x,y" to {viable, kind, label, weight}: viable
   // hexes get a halo whose thickness shows weight (0-1, likelihood), and if
   // any hex is viable all others are hatched as ruled out; kind adds an
-  // inner ring of that style, and label a badge. opts.coords shows x,y.
+  // inner ring of that style, and label a badge. opts.coords shows x,y;
+  // opts.tiles (the setup's tile slots) labels each slot with its tile number.
   render(hexes, markers = [], overlay = new Map(), opts = {}) {
     this.svg.replaceChildren();
     const defs = el('defs', {}, this.svg);
@@ -110,6 +111,7 @@ export class Board {
         }
       }
     }
+    if (opts.tiles) drawTileLabels(root, opts.tiles);
   }
 }
 
@@ -132,4 +134,17 @@ function drawPieces(g, { discs, cube }) {
     const s = S * 0.5;
     el('rect', { x: -s / 2, y: -s / 2, width: s, height: s, rx: 2, fill: PLAYERS[cube - 1].color, class: 'cube' }, g);
   }
+}
+
+// drawTileLabels writes each tile's number on its corner hex, where the
+// number is printed on the physical tile: top-left, or bottom-right when the
+// tile is rotated 180°. Slots are 6 columns by 3 rows.
+function drawTileLabels(root, tiles) {
+  const layer = el('g', { class: 'tile-labels' }, root);
+  tiles.forEach((row, r) => row.forEach((t, c) => {
+    const col = t.flipped ? 6 * c + 5 : 6 * c;
+    const hexRow = t.flipped ? 3 * r + 2 : 3 * r;
+    const h = grid.getHex({ col, row: hexRow });
+    el('text', { x: h.x, y: h.y, class: 'tile-label' }, layer).textContent = t.id;
+  }));
 }

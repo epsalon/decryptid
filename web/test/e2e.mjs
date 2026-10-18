@@ -70,6 +70,17 @@ try {
   const slots = await page.$$eval('[data-slot]', (s) => s.map((x) => x.value).join(''));
   check(new Set(slots).size === 6, `tiles stay distinct after a swap (${slots})`);
 
+  // Tile numbers sit on the slot's corner hex: top-left, or bottom-right when flipped.
+  check(await count('#board .tile-label', 6), 'setup shows the six tile numbers');
+  const labelAt = () => page.$eval('#board .tile-label', (t) => `${t.getAttribute('x')},${t.getAttribute('y')}`);
+  const hexAt = (x, y) => page.$eval(`#board [data-x="${x}"][data-y="${y}"]`, (g) => g.getAttribute('transform').match(/translate\(([^,]+),([^)]+)\)/).slice(1).join(','));
+  const flipped0 = await page.$eval('[data-flip="0,0"]', (b) => b.classList.contains('on'));
+  check((await labelAt()) === (await hexAt(flipped0 ? 5 : 0, flipped0 ? 2 : 0)), 'tile number is on the right corner');
+  await page.click('[data-flip="0,0"]');
+  check((await labelAt()) === (await hexAt(flipped0 ? 0 : 5, flipped0 ? 0 : 2)), 'flipping a tile moves its number to the opposite corner');
+  check((await page.textContent('#board .tile-label')) === (await page.inputValue('[data-slot="0,0"]')), 'the label shows the slot\'s tile number');
+  await page.click('[data-flip="0,0"]');
+
   // Advanced mode adds black structures; state survives a reload.
   await page.click('[data-mode="advanced"]');
   check(await count('[data-struct$=",black"]', 2), 'advanced mode adds black structures');
@@ -90,6 +101,7 @@ try {
   await page.click('dialog button:has-text("Load")');
   await page.click('[data-tab="play"]');
   await page.waitForSelector('.status:has-text("Found it")');
+  check(await count('#board .tile-label', 0), 'tile numbers are hidden outside setup');
   check(await count('#board .ring.viable', 1), 'example game: one viable hex, like the CLI');
   check(await count('#board [data-x="3"][data-y="3"] .ring.viable', 1), 'example game: the cryptid is at 3,3');
 

@@ -186,3 +186,8 @@ button.primary { background: var(--accent); color: #fff; border-color: var(--acc
 footer { text-align: center; font-size: 0.8rem; color: var(--muted); padding: 0 16px 24px; }
 footer a { color: inherit; }
 .disclaimer { max-width: 640px; margin: 6px auto 0; line-height: 1.4; }
+.tile-label {
+  font-size: 40px; font-weight: 800; fill: #fff; stroke: #111; stroke-width: 5px;
+  paint-order: stroke; stroke-linejoin: round; text-anchor: middle; dominant-baseline: central;
+  pointer-events: none;
+}

@@ -115,7 +115,8 @@ async function renderBoard() {
     hexes = h;
     hexesFor = key;
   }
-  board.render(hexes, game.markers, current().panel.overlay(), { coords: ui.coords });
+  const tiles = ui.tab === 'setup' ? game.spec.tiles : null; // tile numbers only while setting up
+  board.render(hexes, game.markers, current().panel.overlay(), { coords: ui.coords, tiles });
 }
 
 function render() {
