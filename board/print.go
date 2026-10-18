@@ -1,16 +1,23 @@
+// Terminal rendering of hexes and boards, in ANSI colours.
+//
+// Each hex is drawn as five lines (see fillStr):
+//
+//	 _____       top border (shared with the hex above)
+//	/Bear#\      animal territory, on the terrain's fill character
+//	/#Shed##\    structure, in the structure's colour
+//	\#●●x###/    discs (●) and cube (x), in player colours
+//	 \_3,4_/     bottom border with X,Y coordinates
 package board
 
-import "fmt"
-import "strings"
-import "github.com/fatih/color"
+import (
+	"fmt"
+	"strings"
 
-// .._____..   Cube = ◾
-// ./Cougr\.   Shack = ▲
-// /^^^^^^^\️   Stone = ⬣
-// \^^^^^^^/   Disc = ●
-// .\_____/.
+	"github.com/fatih/color"
+)
 
-
+// center pads txt (whose visible width is tl; it may contain colour codes)
+// with pad on both sides to width l.
 func center(txt string, tl int, pad string, l int) string {
 	pl := l - tl
 	if pl <= 0 {
@@ -21,32 +28,36 @@ func center(txt string, tl int, pad string, l int) string {
 	return strings.Repeat(pad, bp) + txt + strings.Repeat(pad, ap)
 }
 
+// ccenter is center with the text and the padding each in its own colour.
 func ccenter(txt string, tc *color.Color, pad string, pc *color.Color, l int) string {
 	return center(tc.SprintfFunc()(txt), len(txt), pc.SprintfFunc()(pad), l)
 }
 
-var landInfo = [] struct {
-  Char string
-  Color color.Attribute
+// landInfo is each terrain's fill character and background, by Landscape.
+var landInfo = []struct {
+	Char  string
+	Color color.Attribute
 }{
-  {"#", color.BgGreen},  // Forest
-  {"·", color.BgHiBlack},  // Swamp
-  {"^", color.BgWhite},  // Mountain
-  {"*", color.BgYellow}, // Desert
-  {"~", color.BgCyan}, // Water
+	{"#", color.BgGreen},   // Forest
+	{"·", color.BgHiBlack}, // Swamp
+	{"^", color.BgWhite},   // Mountain
+	{"*", color.BgYellow},  // Desert
+	{"~", color.BgCyan},    // Water
 }
 
-var terrInfo = [] struct {
-  Name string
-  Color color.Attribute
+// terrInfo is each animal territory's label and colour, by Territory.
+var terrInfo = []struct {
+	Name  string
+	Color color.Attribute
 }{
 	{"", color.FgBlack}, // NoTerr
 	{"Bear", color.FgBlack},
 	{"Cougr", color.FgRed},
 }
 
-var bldgIcon = []string {"", "Stone", "Shed"}
-var bldgColor = []color.Attribute {
+// bldgIcon (by BuildingType) and bldgColor (by BuildingColor) draw structures.
+var bldgIcon = []string{"", "Stone", "Shed"}
+var bldgColor = []color.Attribute{
 	color.FgBlack,
 	color.FgHiWhite,
 	color.FgHiBlue,
@@ -54,7 +65,9 @@ var bldgColor = []color.Attribute {
 	color.FgBlack,
 }
 
-var playerColor = []color.Attribute {
+// playerColor is each player's colour, matching the physical set's pieces.
+// It must stay in the same order as game.PlayerColors.
+var playerColor = []color.Attribute{
 	color.FgHiYellow,
 	color.FgHiRed,
 	color.FgHiGreen,
@@ -62,18 +75,18 @@ var playerColor = []color.Attribute {
 	color.FgHiMagenta, // purple
 }
 
+// playerStr draws a disc per player in the set, returning the string and
+// its visible width.
 func playerStr(playerSet PlayerSet) (string, int) {
 	var sb strings.Builder
-	var ln int
-	p := PlayerSet(1)
-	for _, c := range playerColor {
-		if playerSet & p != 0 {
-			sb.WriteString(color.New(c).SprintFunc()("●"))
-			ln += 1
+	n := 0
+	for i, c := range playerColor {
+		if playerSet&(1<<i) != 0 {
+			sb.WriteString(color.New(c).Sprint("●"))
+			n++
 		}
-		p <<= 1
 	}
-	return sb.String(), ln
+	return sb.String(), n
 }
 
 var highlightColor = color.New(color.BgHiRed, color.FgHiWhite, color.Bold)
@@ -84,6 +97,8 @@ func (h Hex) FillStr() []string {
 	return h.fillStr(-1, -1)
 }
 
+// fillStr renders the hex as 5 lines, labelled with coordinates (x, y)
+// unless x is negative.
 func (h Hex) fillStr(x, y int) []string {
 	l := landInfo[h.L]
 	t := terrInfo[h.T]
@@ -95,11 +110,11 @@ func (h Hex) fillStr(x, y int) []string {
 	}
 	bc := color.New(bldgColor[h.C], bg)
 	ps, psl := playerStr(h.Discs)
-	if (h.Cube != 0) {
+	if h.Cube != 0 {
 		ps = color.New(playerColor[h.Cube-1]).SprintfFunc()("x") + ps
-		psl += 1
+		psl++
 	}
-	return []string {
+	return []string{
 		" _____ ",
 		"/" + ccenter(t.Name, tc, l.Char, lc, 5) + "\\",
 		"/" + ccenter(bldgIcon[h.B], bc, l.Char, lc, 7) + "\\",
@@ -108,6 +123,8 @@ func (h Hex) fillStr(x, y int) []string {
 	}
 }
 
+// coordStr is the 5-wide bottom border label: "x,y" padded with '_',
+// on a highlight colour when hl is set.
 func coordStr(x, y int, hl bool) string {
 	txt := ""
 	if x >= 0 {
@@ -122,33 +139,37 @@ func coordStr(x, y int, hl bool) string {
 	return center(txt, len(txt), "_", 5)
 }
 
+// String draws a single hex.
 func (h Hex) String() string {
 	f := h.FillStr()
 	return "\n " + f[0] + "\n " + f[1] + "\n" + f[2] + "\n" + f[3] + "\n " + f[4] + "\n"
 }
 
-var emptyHex = []string {
-  "      ",
-  "/     ",
-  "/       ",
-  "\\       ",
-  "\\     ",
+// emptyHex fills the space of a hex that is off the board, so the borders
+// of the hexes around it still line up.
+var emptyHex = []string{
+	"      ",
+	"/     ",
+	"/       ",
+	"\\       ",
+	"\\     ",
 }
 
-// fillStr = [7, 7, 9, 9, 7]
-
-//0 .\_____/.......\_____/
-//1 ./LINE1\......./LINE1\
-//2 /*LINE2*\_____/*LINE2*\ 9 / 7 / 9 / 7 / 9 ...
-//3 \*LINE3*/LINE1\*LINE3*/ 9[ ]7[ ]9[ ]7[ ]9 ...
-//4 .\_____/*LINE2*\_____/  > 7[ ]9
-//5 ./LINE1\*LINE3*/LINE1\  > 
-//6 /*LINE2*\_____/*LINE2*\
-
+// String draws the whole board. Odd columns sit half a hex (two lines)
+// lower than even ones, so each text line pairs a line of the even-column
+// hexes with a line of the odd-column hexes, two lines further up:
+//
+//	 /LINE1\*LINE3*/LINE1\     even: line 1 (territory)  odd: line 3, row above
+//	/*LINE2*\_____/*LINE2*\    even: line 2 (structure)  odd: bottom, row above
+//	\*LINE3*/LINE1\*LINE3*/    even: line 3 (markers)    odd: line 1
+//	 \_____/*LINE2*\_____/     even: bottom border       odd: line 2
+//
+// Neighbouring hexes share a border character, so each hex's last
+// character is dropped except in the final column.
 func (b Board) String() string {
-	var fillStrs = make([][][]string, len(b))
+	fillStrs := make([][][]string, len(b))
 	for i, br := range b {
-		fillStrs[i] = make ([][]string, len(br))
+		fillStrs[i] = make([][]string, len(br))
 		for j, hex := range br {
 			fillStrs[i][j] = hex.fillStr(j, i)
 		}
@@ -156,32 +177,33 @@ func (b Board) String() string {
 	ncols := len(b[0])
 	var sb strings.Builder
 	sb.WriteString("\n")
-	sb.WriteString(strings.Repeat("  _____       ", ncols / 2))
+	sb.WriteString(strings.Repeat("  _____       ", ncols/2))
 	sb.WriteString("\n")
-	for row := 0; row < len(b) + 1; row++ {
+	for row := 0; row < len(b)+1; row++ {
 		lmx := 4
 		if row == len(b) {
-		  lmx = 2
+			lmx = 2
 		}
 		for l := 0; l < lmx; l++ {
 			if l == 0 || l == 3 {
 				sb.WriteString(" ")
 			}
 			for c := 0; c < ncols; c++ {
+				// Column c shows line xl+1 of the hex in row xr.
 				xr, xl := row, l
-				if c & 1 == 1 {
+				if c&1 == 1 {
 					xl = l - 2
 					if xl < 0 {
-					  xl += 4
-					  xr -= 1
+						xl += 4
+						xr--
 					}
 				}
-				if (xr < 0 || xr >= len(b) ) {
-					sb.WriteString(emptyHex[xl + 1])
+				if xr < 0 || xr >= len(b) {
+					sb.WriteString(emptyHex[xl+1])
 				} else {
-					fs := fillStrs[xr][c][xl + 1]
-					if c < ncols - 1 {
-					  fs = fs[:len(fs) - 1]
+					fs := fillStrs[xr][c][xl+1]
+					if c < ncols-1 {
+						fs = fs[:len(fs)-1]
 					}
 					sb.WriteString(fs)
 				}

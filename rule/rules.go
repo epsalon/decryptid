@@ -1,90 +1,77 @@
 package rule
 
-import "fmt"
-import "github.com/epsalon/decryptid/board"
+import (
+	"fmt"
 
-func OnLandscapes(l board.Landscape, l2 board.Landscape) RuleSpec {
-	return RuleSpec{
-				fmt.Sprintf("On %s or %s", l, l2),
-				func(h board.Hex) bool {
-					return h.L == l || h.L == l2 
-				},
-				0,
-				false,
-				false,
-			}
-}
+	"github.com/epsalon/decryptid/board"
+)
 
-func D1Landscape(l board.Landscape) RuleSpec {
+// OnLandscapes is "the habitat is on l or l2".
+func OnLandscapes(l, l2 board.Landscape) RuleSpec {
 	return RuleSpec{
-			fmt.Sprintf("Distance 1 from %s", l),
-			func(h board.Hex) bool {
-				return h.L == l 
-			},
-			1,
-			false,
-			false,
-		}
-}
-
-func D1AnyTerritory() RuleSpec {
-	return RuleSpec{
-		fmt.Sprintf("Distance 1 from either animal territory"),
-		func(h board.Hex) bool {
-			return h.T != board.NoTerritory 
-		},
-		1,
-		false,
-		false,
+		Name:  fmt.Sprintf("On %s or %s", l, l2),
+		match: func(h board.Hex) bool { return h.L == l || h.L == l2 },
 	}
 }
 
+// D1Landscape is "the habitat is within one space of l".
+func D1Landscape(l board.Landscape) RuleSpec {
+	return RuleSpec{
+		Name:  fmt.Sprintf("Distance 1 from %s", l),
+		match: func(h board.Hex) bool { return h.L == l },
+		dist:  1,
+	}
+}
+
+// D1AnyTerritory is "the habitat is within one space of either animal territory".
+func D1AnyTerritory() RuleSpec {
+	return RuleSpec{
+		Name:  "Distance 1 from either animal territory",
+		match: func(h board.Hex) bool { return h.T != board.NoTerritory },
+		dist:  1,
+	}
+}
+
+// D2Territory is "the habitat is within two spaces of t territory".
 func D2Territory(t board.Territory) RuleSpec {
 	return RuleSpec{
-			fmt.Sprintf("Distance 2 from %s territory", t),
-			func(h board.Hex) bool {
-				return h.T == t 
-			},
-			2,
-			false,
-			false,
-		}
+		Name:  fmt.Sprintf("Distance 2 from %s territory", t),
+		match: func(h board.Hex) bool { return h.T == t },
+		dist:  2,
+	}
 }
 
+// D2Structure is "the habitat is within two spaces of a structure of type s".
 func D2Structure(s board.BuildingType) RuleSpec {
 	return RuleSpec{
-			fmt.Sprintf("Distance 2 from %s", s),
-			func(h board.Hex) bool {
-				return h.B == s 
-			},
-			2,
-			false,
-			false,
-		}
+		Name:  fmt.Sprintf("Distance 2 from %s", s),
+		match: func(h board.Hex) bool { return h.B == s },
+		dist:  2,
+	}
 }
 
-func D3Color(s board.BuildingColor) RuleSpec {
+// D3Color is "the habitat is within three spaces of a c structure".
+func D3Color(c board.BuildingColor) RuleSpec {
 	return RuleSpec{
-			fmt.Sprintf("Distance 3 from %s structure", s),
-			func(h board.Hex) bool {
-				return h.C == s 
-			},
-			3,
-			false,
-			s == board.Black,
-		}
+		Name:     fmt.Sprintf("Distance 3 from %s structure", c),
+		match:    func(h board.Hex) bool { return h.C == c },
+		dist:     3,
+		advanced: c == board.Black,
+	}
 }
 
+// AllRules lists every rule, each followed by its "Not ..." version.
+// Basic games use the subset where Advanced() is false.
 func AllRules() []RuleSpec {
-	out := []RuleSpec{}
-	addWithNeg := func (r RuleSpec) {
+	var out []RuleSpec
+	addWithNeg := func(r RuleSpec) {
 		out = append(out, r)
 		r.Name = "Not " + r.Name
 		r.neg = true
 		out = append(out, r)
 	}
 	for l := board.Forest; l < board.Water; l++ {
-		for l2 := board.Landscape(int(l) + 1); l2 <= board.Water; l2++ {
+		for l2 := l + 1; l2 <= board.Water; l2++ {
 			addWithNeg(OnLandscapes(l, l2))
 		}
 	}
@@ -98,8 +85,8 @@ func AllRules() []RuleSpec {
 	for s := board.Stone; s <= board.Shed; s++ {
 		addWithNeg(D2Structure(s))
 	}
-	for s := board.White; s <= board.Black; s++ {
-		addWithNeg(D3Color(s))
+	for c := board.White; c <= board.Black; c++ {
+		addWithNeg(D3Color(c))
 	}
 	return out
 }

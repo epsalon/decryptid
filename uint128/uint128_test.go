@@ -21,7 +21,7 @@ var testSlice = []bool{
 	false, false, false, true} // 576460752303423488
 
 var testSlice2 = []bool{
-	false, false, false, false, false, false, false, false, 
+	false, false, false, false, false, false, false, false,
 	false, false, false, false, false, false, false, false,
 	false, false, false, false, false, false, false, false,
 	false, false, false, false, false, false, false, false,
@@ -38,9 +38,9 @@ var testSlice2 = []bool{
 	false, false, false, false, false, false, false, false,
 	false, false, false, true}
 
-func TestAnd (t *testing.T) {
+func TestAnd(t *testing.T) {
 	andSlice := make([]bool, len(testSlice))
-	for i := range(testSlice) {
+	for i := range testSlice {
 		andSlice[i] = testSlice[i] && testSlice2[i]
 	}
 	and128 := FromBoolSlice(testSlice).And(FromBoolSlice(testSlice2))
@@ -50,9 +50,9 @@ func TestAnd (t *testing.T) {
 	}
 }
 
-func TestAndNot (t *testing.T) {
+func TestAndNot(t *testing.T) {
 	andSlice := make([]bool, len(testSlice))
-	for i := range(testSlice) {
+	for i := range testSlice {
 		andSlice[i] = testSlice[i] && !testSlice2[i]
 	}
 	and128 := FromBoolSlice(testSlice).AndNot(FromBoolSlice(testSlice2))
@@ -62,7 +62,7 @@ func TestAndNot (t *testing.T) {
 	}
 }
 
-func TestOnesCount (t *testing.T) {
+func TestOnesCount(t *testing.T) {
 	c := FromBoolSlice(testSlice).OnesCount()
 	if c != 2 {
 		t.Errorf("Bad result for OnesCount. Expected 2, got %v", c)

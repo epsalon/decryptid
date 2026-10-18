@@ -1,124 +1,85 @@
+// Package rule defines Cryptid clues ("rules") and evaluates them on a board.
+//
+// Every clue has the same shape: "the habitat is within D spaces of a hex
+// that matches some test" (D = 0 means "on such a hex"), optionally
+// negated: "Not ...", meaning the habitat is anywhere else.
 package rule
 
 import "github.com/epsalon/decryptid/board"
 
-type BoardRule struct {
-	RuleSpec
-	arr []bool
-}
-
-type Rule func (*board.Board) []bool
-
-type hexRule func (board.Hex) bool
-
+// RuleSpec is one clue.
 type RuleSpec struct {
-	Name string
-	hr hexRule
-	d int
-	neg bool
-	advanced bool // only in play in advanced games
+	// Name is shown to users and used in game files and by number in
+	// -rules listings, so names and the order of AllRules must not change.
+	Name     string
+	match    func(board.Hex) bool // hexes the distance is measured from
+	dist     int                  // how far from a matching hex the habitat may be
+	neg      bool                 // "Not ...": the habitat is anywhere else
+	advanced bool                 // only in advanced games (black structures)
 }
 
 func (r RuleSpec) String() string {
 	return r.Name
 }
 
-type coord = struct {
-	X int
-	Y int
-}
-
-func max(a int, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a int, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func hexDistance(o coord, d int, lenX int, lenY int) []coord {
-	ox := o.X
-	oz := o.Y - (o.X - (o.X&1)) / 2
-	out := make([]coord, 0, 3 * d * (d+1) + 1)
-	for x := -d; x <= d; x++ {	
-		for  y := max(-d, -x-d); y <= min(d, -x+d); y++ {
-			z := -x-y
-			outX := ox + x
-			outY := oz + z + (outX - (outX & 1)) / 2
-			if (outX >= 0 && outX < lenX && outY >= 0 && outY < lenY) {
-				out = append(out, coord{outX, outY})
-			}
-		}
-	}
-	return out
-}
-
-func rCoord (c coord) int {
-	return c.Y * 12 + c.X
-}
-
-func distanceRule(hr hexRule, d int) Rule {
-	return func (b *board.Board) []bool {
-		out := make([]bool, 12 * 9)
-		for y, row := range *b {
-			for x, hex := range row {
-				if hr(hex) {
-					for _, c := range hexDistance(coord{x, y}, d, 12, 9) {
-						out[rCoord(c)] = true
-					}
-				}
-			}
-		}
-		return out
-	}
-}
-
-func negate(r Rule) Rule {
-	return func (b *board.Board) []bool {
-		br := r(b)
-		for i, v := range br {
-			br[i] = !v
-		}
-		return br
-	}
-}
-
-func (rs RuleSpec) OnBoard(b *board.Board) BoardRule {
-	br := BoardRule{RuleSpec:rs}
-	r := distanceRule(rs.hr, rs.d)
-	if rs.neg {
-		r = negate(r)
-	}
-	br.arr = r(b)
-	return br
-}
-
-func Apply(br BoardRule, b *board.Board, p int) {
-	for i, v := range br.arr {
-		h := &b[i / 12][i % 12]
-		if v {
-			h.Discs = h.Discs | (1 << (p-1))
-			if h.Cube == p {
-				h.Cube = 0
-			}
-		} else {
-			h.Discs = h.Discs &^ (1 << (p-1))
-			h.Cube = p
-		}
-	}
-}
-
-func (b BoardRule) ToBoolSlice() []bool {
-	return b.arr
-}
 // Advanced reports whether the rule is only used in advanced games: "Not ..."
 // rules and rules about black structures.
 func (r RuleSpec) Advanced() bool {
 	return r.neg || r.advanced
+}
+
+// BoardRule is a rule evaluated on a particular board.
+type BoardRule struct {
+	RuleSpec
+	allowed []bool // per hex, indexed y*board.Width + x
+}
+
+// ToBoolSlice returns, per hex (indexed y*board.Width + x), whether the
+// rule allows the habitat there.
+func (b BoardRule) ToBoolSlice() []bool {
+	return b.allowed
+}
+
+// OnBoard evaluates the rule on every hex of b.
+func (r RuleSpec) OnBoard(b *board.Board) BoardRule {
+	allowed := make([]bool, board.Width*board.Height)
+	for y, row := range b {
+		for x, h := range row {
+			if r.match(h) {
+				for _, c := range withinDistance(x, y, r.dist) {
+					allowed[c.y*board.Width+c.x] = true
+				}
+			}
+		}
+	}
+	if r.neg {
+		for i := range allowed {
+			allowed[i] = !allowed[i]
+		}
+	}
+	return BoardRule{RuleSpec: r, allowed: allowed}
+}
+
+type coord struct{ x, y int }
+
+// withinDistance returns the on-board hexes at most d steps from (x, y).
+//
+// The board uses "odd-q" offset coordinates: flat-top hexes in columns,
+// with odd columns shifted half a hex down. In cube coordinates (q, r, s
+// with q + r + s = 0) the distance between hexes is the largest of
+// |dq|, |dr|, |ds|, so we convert, enumerate every delta within d, and
+// convert back. See https://www.redblobgames.com/grids/hexagons/.
+func withinDistance(x, y, d int) []coord {
+	q, r := x, y-(x-(x&1))/2
+	out := make([]coord, 0, 3*d*(d+1)+1)
+	for dq := -d; dq <= d; dq++ {
+		for dr := max(-d, -dq-d); dr <= min(d, -dq+d); dr++ {
+			nx := q + dq
+			ny := r + dr + (nx-(nx&1))/2
+			if nx >= 0 && nx < board.Width && ny >= 0 && ny < board.Height {
+				out = append(out, coord{nx, ny})
+			}
+		}
+	}
+	return out
 }

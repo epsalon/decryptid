@@ -72,10 +72,11 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   code converts to cube coordinates via `r = y - (x - (x&1))/2`.
   `rule.hexDistance` and the test helper `game.hexDist` must agree with each other
   and with the renderer.
-- **Board size is hard-coded** in several places (`board.Width/Height`, `9 * 12`
-  in `search`, `12` in `rule`). The board has 108 hexes, which must stay ≤ 128 bits.
-- **`RuleSpec` literals in `rule/rules.go` are positional.** Adding a field means
-  updating each constructor.
+- **Board size** comes from `board.Width/Height`, except `boardCells = 9 * 12`
+  in `search`, which can't import `board`. The board has 108 hexes, and that
+  must stay ≤ 128 bits.
+- **The order of `rule.AllRules()` is user-facing**: rule numbers in `-rules`
+  and `rule PLAYER N` lines depend on it. Append new rules; never reorder them.
 - **Clue sets are minimal by default**: every clue is needed to pin the
   cryptid. The user believes this matches the real game. `clues any` relaxes it.
 - **Tune policies with `-sim`, not intuition.** Use a few hundred games:
@@ -84,13 +85,12 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   Rule names are user input (`rule PLAYER NAME`), so renaming a rule breaks game files.
 - **Player colours are display-only.** `game.PlayerColors` must stay in the
   same order as `playerColor` in `board/print.go`.
-- **The tile data in `board.Tiles` has not been checked** against the physical game.
-  Suspect it when results look wrong.
+- **The tile data in `board.Tiles` was checked** hex by hex against an
+  independent transcription. Flipped tiles are rotated 180°.
 
 ## Conventions
 
-- Older files (`board/`, `rule/`, `uint128/`) are not gofmt'd. Format only the
-  code you touch; don't reformat whole files in unrelated changes. New files are gofmt'd.
+- All code is gofmt'd and every exported identifier has a doc comment.
 - Tests use plain `testing`. `game/game_test.go` has a randomised end-to-end
   check: it builds markers from a known solution and asserts the solution survives.
   Extend it when changing solving logic.
