@@ -73,7 +73,7 @@ export class PlayPanel {
         </div>
       </div>
       <p class="hint">Tap a hex to place; tap again to remove. ${game.markers.length} marker${game.markers.length === 1 ? '' : 's'} on the board.</p>
-      <label class="check"><input type="checkbox" id="show-viable" ${ui.overlay === 'viable' ? 'checked' : ''}> Highlight possible hexes</label>
+      <label class="check"><input type="checkbox" id="show-viable" ${ui.overlay === 'viable' ? 'checked' : ''}> Highlight possible hexes <span class="muted">(thicker outline = likelier)</span></label>
       ${summary ? `
       <h3>Likeliest hexes</h3>
       <ol class="locs">${top.map((l) => `<li><span>${l.x},${l.y}</span><span class="bar"><i style="width:${(100 * l.worlds) / summary.locations[0].worlds}%"></i></span><span>${pct(l.worlds / total)}</span></li>`).join('')}</ol>

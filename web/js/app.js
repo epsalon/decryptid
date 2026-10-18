@@ -42,7 +42,7 @@ const app = {
     return this.rules[advanced];
   },
 
-  // viableOverlay highlights the hexes the cryptid may be on, tinted by
+  // viableOverlay highlights the hexes the cryptid may be on, weighted by
   // how many worlds put it there.
   viableOverlay() {
     const o = new Map();
