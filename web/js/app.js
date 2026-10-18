@@ -8,7 +8,7 @@ import { SetupPanel } from './setup.js';
 import { MePanel } from './me.js';
 import { PlayPanel } from './play.js';
 import { AdvicePanel } from './advice.js';
-import { MatchPanel, matchActive } from './match.js';
+import { MatchPanel, matchActive, dropStaleMatch } from './match.js';
 import { installHexRefs } from './hexref.js';
 
 const $ = (id) => document.getElementById(id);
@@ -131,6 +131,7 @@ async function renderBoard() {
 }
 
 function render() {
+  dropStaleMatch(app.store.state);
   // Lets structures on the board grab touches for dragging, only in setup.
   document.body.classList.toggle('setup-mode', app.store.state.ui.tab === 'setup' && !matchActive(app.store.state));
   analyze();

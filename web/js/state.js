@@ -21,8 +21,12 @@ export const seatColors = (game) => (game.colors ?? PLAYERS.slice(0, game.player
 export function seat(game, p) {
   const name = seatColors(game)[p - 1];
   const slot = PLAYERS.findIndex((c) => c.name === name);
+  if (slot < 0) return { name: `player ${p}`, color: '#999', slot: (p - 1) % PLAYERS.length }; // no such seat
   return { name, color: PLAYERS[slot].color, slot };
 }
+
+// boardKey identifies a game's board and players, ignoring the markers.
+export const boardKey = (game) => JSON.stringify([game.spec, game.advanced, seatColors(game)]);
 
 // seatLabel is a coloured dot plus the seat's colour name.
 export const seatLabel = (game, p) => {

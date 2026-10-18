@@ -315,6 +315,15 @@ try {
   check(await count('.clues li', 4), 'everyone\'s clues are revealed');
   check(await count('#board .badge.best', 1), 'the cryptid\'s hex is starred');
   await page.screenshot({ path: out + 'phone-match.png', fullPage: true });
+  // A finished match keeps its reveal across tab switches, but is dropped
+  // once the setup changes (it used to crash the vs AI tab).
+  await page.click('[data-tab="setup"]');
+  await page.click('[data-tab="match"]');
+  check(await count('.clues li', 4), 'a finished match still shows its reveal after switching tabs');
+  await page.click('[data-tab="setup"]');
+  await page.click('[data-color="purple"]');
+  await page.click('[data-tab="match"]');
+  check(await count('[data-act="start"]', 1), 'after changing the setup, vs AI offers a new match');
 
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.check('#coords');

@@ -6,7 +6,7 @@
 // when a search gets a disc from everyone. AI seats decide with the same
 // advisors as the self-play simulator, seeing only their own clue.
 
-import { PLAYERS, ruleLabel, seat as seatOf } from './state.js';
+import { PLAYERS, ruleLabel, seat as seatOf, boardKey } from './state.js';
 import { hexRef, linkHexRefs } from './hexref.js';
 
 // Difficulty levels map to the self-play policies (see sim.Policies).
@@ -27,6 +27,16 @@ const ordinal = (n) => ['1st', '2nd', '3rd', '4th', '5th'][n - 1];
 // matchActive reports whether a match is running (and so editing the
 // game by hand is locked).
 export const matchActive = (state) => !!state.match && state.match.phase !== 'over';
+
+// dropStaleMatch forgets a finished match once the game has moved on (the
+// setup was edited, or another game loaded), so its log and reveal never
+// refer to seats or a board that are gone.
+export function dropStaleMatch(state) {
+  const m = state.match;
+  if (!m || m.phase !== 'over') return;
+  const fits = m.board ? m.board === boardKey(state.game) : m.rules?.length === state.game.players && m.seat <= state.game.players;
+  if (!fits) state.match = null;
+}
 
 export class MatchPanel {
   constructor(root, app) {
@@ -105,7 +115,9 @@ export class MatchPanel {
         log: [`New ${n}-player ${r.game.advanced ? 'advanced' : 'basic'} game. You are ${name(seat)}.`],
         winner: 0,
         last: null,
+        board: null, // set below, once the game is in place
       };
+      s.match.board = boardKey(s.game);
     });
     this.masksFor = null;
     await this.ensureMasks();
