@@ -2,6 +2,11 @@
 
 A solver for the board game [Cryptid](https://boardgamegeek.com/boardgame/246784/cryptid).
 
+> **Unofficial fan project.** Decryptid is not affiliated with, endorsed by, or
+> sponsored by Osprey Games or Cryptid's designers, Hal Duncan and Ruth
+> Veevers. Cryptid is a trademark of its owner. This project uses no official
+> artwork, rulebook text, or app code; it needs a copy of the game to be useful.
+
 **Web UI:** Play online at **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** (runs entirely in your browser using WebAssembly).
 
 In Cryptid, each player holds one secret clue, and the cryptid lives on the
@@ -161,6 +166,7 @@ go test ./...
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The web app bundles the Go runtime (BSD 3-Clause)
+MIT, see [LICENSE](LICENSE). The MIT license covers this project's own code
+only; it grants no rights in Cryptid itself, its name, or its components. The web app bundles the Go runtime (BSD 3-Clause)
 and [honeycomb-grid](https://github.com/flauwekeul/honeycomb) (MIT); their
 notices are in [web/THIRD_PARTY_NOTICES.txt](web/THIRD_PARTY_NOTICES.txt).

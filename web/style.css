@@ -185,3 +185,4 @@ button.primary { background: var(--accent); color: #fff; border-color: var(--acc
 
 footer { text-align: center; font-size: 0.8rem; color: var(--muted); padding: 0 16px 24px; }
 footer a { color: inherit; }
+.disclaimer { max-width: 640px; margin: 6px auto 0; line-height: 1.4; }
