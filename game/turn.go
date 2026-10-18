@@ -26,31 +26,68 @@ type Question struct {
 
 // Search is searching (X, Y), which wins if the cryptid is there.
 type Search struct {
-	X int     `json:"x"`
-	Y int     `json:"y"`
-	P float64 `json:"p"` // chance, from our view, that the cryptid is there
+	X     int     `json:"x"`
+	Y     int     `json:"y"`
+	P     float64 `json:"p"`     // chance, from our view, that the cryptid is there (we win)
+	Gain  float64 `json:"gain"`  // expected bits we learn about the location when it fails
+	Leak  float64 `json:"leak"`  // expected bits given to others, as for questions
+	Score float64 `json:"score"` // winValue*P + Gain - lambda*Leak, comparable with Question.Score
 }
 
 // TurnAdvice ranks a player's options for their turn.
 type TurnAdvice struct {
 	Questions []Question `json:"questions"` // best Score first
-	Searches  []Search   `json:"searches"`  // most likely first; only hexes with P > 0
+	Searches  []Search   `json:"searches"`  // the likeliest hexes (P > 0), best Score first
 	Entropy   float64    `json:"entropy"`   // our uncertainty about the location, in bits
 	Locations int        `json:"locations"` // hexes the cryptid may be on, from our view
 	CubeLeak  float64    `json:"cubeLeak"`  // location bits our best penalty cube would give others
 	MaxGain   float64    `json:"maxGain"`   // the most any question could teach us
 }
 
+// TurnOptions tune how AdviseTurn scores moves.
+type TurnOptions struct {
+	// Lambda weighs information given to others against information
+	// gained (0 ignores it).
+	Lambda float64
+	// WinValue is what winning is worth in bits, so searches (which may
+	// win) rank against questions (see scoreSearches).
+	WinValue float64
+	// Order weighs leaks by turn order: the player d turns after us counts
+	// Order^(d-1), rescaled so the weights average 1. Below 1, helping the
+	// next players costs more; 0 or 1 weighs everyone equally.
+	Order float64
+}
+
+// orderWeights returns each player's leak weight (see TurnOptions.Order);
+// ours is 0.
+func orderWeights(me, n int, order float64) []float64 {
+	w := make([]float64, n)
+	if order <= 0 {
+		order = 1
+	}
+	var sum float64
+	for d := 1; d < n; d++ {
+		k := (me - 1 + d) % n
+		w[k] = math.Pow(order, float64(d-1))
+		sum += w[k]
+	}
+	for k := range w {
+		w[k] *= float64(n-1) / sum
+	}
+	return w
+}
+
 // AdviseTurn scores every question and search open to player me (1-based),
-// whose rule must be known. lambda weighs information given to others
-// against information gained (0 ignores it).
+// whose rule must be known; see TurnOptions.
 //
 // Gain is the mutual information between the answer and the cryptid's
 // location over the worlds we consider possible. For leak, as in
 // AdviseCube, another player k knows only their own rule rk and considers
 // every world where k holds rk; the answer narrows that, and we average the
 // drop in their location entropy over the worlds we consider possible.
-func (g *Game) AdviseTurn(me int, lambda float64) (*TurnAdvice, error) {
+func (g *Game) AdviseTurn(me int, opt TurnOptions) (*TurnAdvice, error) {
+	lambda, winValue := opt.Lambda, opt.WinValue
+	weights := orderWeights(me, g.Players, opt.Order)
 	if me < 1 || me > g.Players {
 		return nil, fmt.Errorf("player %d out of range 1-%d", me, g.Players)
 	}
@@ -118,7 +155,9 @@ func (g *Game) AdviseTurn(me int, lambda float64) (*TurnAdvice, error) {
 		}
 	}
 	if cubes, err := g.AdviseCube(me); err == nil && len(cubes) > 0 {
-		adv.CubeLeak = cubes[0].LocBits
+		for k, l := range cubes[0].LocPerPlayer {
+			adv.CubeLeak += weights[k] * l
+		}
 	}
 
 	// Other player k's view of j's answer, for each rule rk that k may hold
@@ -221,7 +260,7 @@ func (g *Game) AdviseTurn(me int, lambda float64) (*TurnAdvice, error) {
 				}
 				_, hy := entropy(ky[:])
 				_, hn := entropy(kn[:])
-				q.Leak += (wy*(v.h0-hy) + wn*(v.h0-hn)) / total
+				q.Leak += weights[v.k] * (wy*(v.h0-hy) + wn*(v.h0-hn)) / total
 			}
 			q.Score = q.Gain - lambda*q.Leak
 			adv.MaxGain = math.Max(adv.MaxGain, q.Gain)
@@ -234,6 +273,10 @@ func (g *Game) AdviseTurn(me int, lambda float64) (*TurnAdvice, error) {
 	sort.SliceStable(adv.Searches, func(a, b int) bool {
 		return adv.Searches[a].P > adv.Searches[b].P
 	})
+	g.scoreSearches(p, adv, me, lambda, winValue, total, weights)
+	sort.SliceStable(adv.Searches, func(a, b int) bool {
+		return adv.Searches[a].Score > adv.Searches[b].Score
+	})
 	return adv, nil
 }
 
@@ -244,6 +287,11 @@ func (g *Game) AdviseTurn(me int, lambda float64) (*TurnAdvice, error) {
 func (a *TurnAdvice) Choose(searchAt float64) (*Question, *Search) {
 	if len(a.Searches) > 0 {
 		s := &a.Searches[0]
+		for i := range a.Searches {
+			if a.Searches[i].P > s.P {
+				s = &a.Searches[i]
+			}
+		}
 		if s.P >= searchAt-1e-9 || a.MaxGain < 1e-9 {
 			return nil, s
 		}
@@ -252,6 +300,32 @@ func (a *TurnAdvice) Choose(searchAt float64) (*Question, *Search) {
 		if a.Questions[i].Gain >= 1e-9 || a.MaxGain < 1e-9 {
 			return &a.Questions[i], nil
 		}
+	}
+	return nil, nil
+}
+
+// ChooseScored picks the best-scoring move, question or search, from one
+// ranking (see AdviseTurn's winValue). A question that teaches us nothing
+// is never chosen while another move exists. At most one result is non-nil.
+func (a *TurnAdvice) ChooseScored() (*Question, *Search) {
+	var q *Question
+	for i := range a.Questions {
+		if a.Questions[i].Gain >= 1e-9 {
+			q = &a.Questions[i]
+			break
+		}
+	}
+	var s *Search
+	if len(a.Searches) > 0 {
+		s = &a.Searches[0]
+	}
+	switch {
+	case q != nil && (s == nil || q.Score > s.Score):
+		return q, nil
+	case s != nil:
+		return nil, s
+	case len(a.Questions) > 0:
+		return &a.Questions[0], nil
 	}
 	return nil, nil
 }

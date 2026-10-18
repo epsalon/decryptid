@@ -11,9 +11,9 @@ import { hexRef, linkHexRefs } from './hexref.js';
 
 // Difficulty levels map to the self-play policies (see sim.Policies).
 export const DIFFICULTY = {
-  easy: { label: 'Easy', lambda: 0.5, searchAt: 1, random: true, hint: 'asks random questions' },
-  normal: { label: 'Normal', lambda: 0.5, searchAt: 1, hint: 'asks good questions, searches only when certain' },
-  hard: { label: 'Hard', lambda: 0.5, searchAt: 0.15, hint: 'the strongest policy found in self-play' },
+  easy: { label: 'Easy', lambda: 0.5, searchAt: 1, winValue: 0, random: true, hint: 'asks random questions' },
+  normal: { label: 'Normal', lambda: 0.5, searchAt: 1, winValue: 0, hint: 'asks good questions, searches only when certain' },
+  hard: { label: 'Hard', lambda: 0.5, winValue: 16, hint: 'the strongest policy found in self-play' },
 };
 
 const AI_DELAY = 700; // ms between AI moves, so they can be followed
@@ -144,7 +144,7 @@ export class MatchPanel {
 
   async aiTurn(p) {
     const d = DIFFICULTY[this.match.difficulty];
-    const r = await this.app.engine.call('adviseTurn', { game: this.view(p), player: p, lambda: d.lambda, searchAt: d.searchAt });
+    const r = await this.app.engine.call('adviseTurn', { game: this.view(p), player: p, lambda: d.lambda, searchAt: d.searchAt ?? 0.15, winValue: d.winValue });
     if (r.search) return this.search(p, r.search.x, r.search.y);
     let q = r.ask;
     if (q && d.random) q = r.questions[Math.floor(Math.random() * r.questions.length)];

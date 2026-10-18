@@ -13,7 +13,7 @@ func TestSamplingAccuracy(t *testing.T) {
 	defer func(old int) { SampleLimit = old }(SampleLimit)
 
 	SampleLimit = 0
-	exactTurn, err := g.AdviseTurn(1, 0.5)
+	exactTurn, err := g.AdviseTurn(1, TurnOptions{Lambda: 0.5})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,7 +22,7 @@ func TestSamplingAccuracy(t *testing.T) {
 	t.Logf("%d possible worlds for us", s.Worlds)
 
 	SampleLimit = 50000
-	turn, _ := g.AdviseTurn(1, 0.5)
+	turn, _ := g.AdviseTurn(1, TurnOptions{Lambda: 0.5})
 	cube, _ := g.AdviseCube(1)
 
 	leak := map[[3]int]float64{}

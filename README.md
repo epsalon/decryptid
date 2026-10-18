@@ -124,8 +124,13 @@ or a search. That player's clue must be given with a `rule` line.
     (for players other than the one asked) and the penalty cube you'd place
     if the answer is "no". Leak uses the same per-opponent reasoning as cube advice.
   - `-lambda` sets the weight (default 0.5).
-- **Search** the likeliest hex once its chance reaches `-search-at`
-  (default 15%), or when no question would teach you anything.
+- **Searches** are ranked with the questions, scored as
+  **W × chance of winning + gain − λ·leak**.
+  - *Gain* is what a failed search teaches you: who refused first.
+  - *Leak* counts your disc (which reveals that your clue allows the hex), the
+    answers, and the penalty cube if it fails.
+  - `-win-value` sets W (default 16 bits). `-win-value 0 -search-at P` brings
+    back the older rule: search once a hex has at least chance P.
 
 The defaults come from self-play (`-sim`). It plays complete games with
 random boards and random valid clue sets, shuffling the competing policies into
@@ -133,6 +138,12 @@ seats. In those tournaments:
 
 - **Searching early is what wins.** A 10–20% threshold beat waiting for
   certainty by 3–4×. A failed search costs only a cube and still reveals answers.
+- **One ranking for searches and questions**, with W = 16, ties that tuned
+  threshold head-to-head (0.26 vs 0.24 and 0.19 vs 0.21 wins per seat, over
+  400/300 games). It's the default because it explains every move with the
+  same score. Lower W (2–8) searches too late and loses.
+- **Weighting leaks by turn order** (making it costlier to help the next
+  player, or the last) made no measurable difference in 900 head-to-head games.
 - **Avoiding leaks** (λ=0.5 vs 0) helped clearly with 5 players, but made
   little difference with 4.
 - **3-player basic games** usually end on the first or second turn. Your own
@@ -158,8 +169,8 @@ go test ./...
 - [x] Basic and advanced modes, including black buildings
 - [x] Least-revealing cube placement (`-cube`)
 - [x] Question/search advice (`-turn`) and self-play tournaments (`-sim`)
-- [ ] Value-based search decision (vs. a fixed threshold), and searching
-      earlier when an opponent is close to solving
+- [x] Value-based search decision: one ranking for searches and questions
+- [ ] Search sooner when an opponent is close to solving
 - [x] Web UI: setup, live analysis, and AI advice while you play
 - [x] Play against AI opponents in the browser (easy, normal, hard)
 - [x] Map tiles verified against the physical game

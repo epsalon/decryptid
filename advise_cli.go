@@ -9,12 +9,13 @@ import (
 	"github.com/epsalon/decryptid/sim"
 )
 
-func adviseTurn(g *game.Game, who string, top int, lambda, searchAt float64) error {
+func adviseTurn(g *game.Game, who string, top int, lambda, searchAt, winValue float64) error {
 	me, err := game.ParsePlayer(who)
 	if err != nil {
 		return err
 	}
-	adv, err := g.AdviseTurn(me, lambda)
+	pol := sim.Policy{Lambda: lambda, SearchAt: searchAt, WinValue: winValue}
+	adv, err := g.AdviseTurn(me, pol.TurnOptions())
 	if err != nil {
 		return err
 	}
@@ -22,7 +23,7 @@ func adviseTurn(g *game.Game, who string, top int, lambda, searchAt float64) err
 	if err != nil {
 		return err
 	}
-	q, s := adv.Choose(searchAt)
+	q, s := pol.Choose(adv)
 	switch {
 	case s != nil:
 		b[s.Y][s.X].Highlighted = true
@@ -54,12 +55,13 @@ func adviseTurn(g *game.Game, who string, top int, lambda, searchAt float64) err
 		fmt.Printf("  %-8s %-7s %-34s %5.0f %6.3f %6.3f %6.3f\n", game.PlayerColors[q.Player-1],
 			fmt.Sprintf("(%d,%d)", q.X, q.Y), describe(b[q.Y][q.X]), 100*q.PYes, q.Gain, q.Leak, q.Score)
 	}
-	fmt.Println("\nLikeliest hexes to search:")
+	fmt.Printf("\nBest searches (score = %g x win%% + gain - %.2f x leak):\n", winValue, lambda)
+	fmt.Printf("  %-7s %-34s %5s %6s %6s %6s\n", "hex", "", "win%", "gain", "leak", "score")
 	for i, s := range adv.Searches {
 		if i == top {
 			break
 		}
-		fmt.Printf("  (%d,%d) %-34s %5.1f%%\n", s.X, s.Y, describe(b[s.Y][s.X]), 100*s.P)
+		fmt.Printf("  %-7s %-34s %5.1f %6.3f %6.3f %6.3f\n", fmt.Sprintf("(%d,%d)", s.X, s.Y), describe(b[s.Y][s.X]), 100*s.P, s.Gain, s.Leak, s.Score)
 	}
 	return nil
 }

@@ -213,10 +213,11 @@ try {
   await page.click('[data-tab="advice"]');
   await page.waitForFunction(() => document.querySelector('.rec-action')?.textContent.includes('Search 2,1'), null, { timeout: 30000 });
   check(true, 'fresh 4-player game: search 2,1 at 17% (as the CLI says)');
+  check((await page.locator('table.advice tr.search').count()) >= 1 && (await page.locator('table.advice tr.ask').count()) >= 1, 'one ranking mixes searches and questions');
   await page.click('.settings summary');
-  await page.$eval('#search-at', (el) => { el.value = '0.5'; el.dispatchEvent(new Event('change')); });
+  await page.$eval('#win-value', (el) => { el.value = '1'; el.dispatchEvent(new Event('change')); });
   await page.waitForFunction(() => /Ask\s*red about 11,1/.test(document.querySelector('.rec-action')?.textContent ?? ''), null, { timeout: 30000 });
-  check(true, 'with search-at 50%: ask red about 11,1 (as the CLI says)');
+  check(true, 'with a win worth only 1 bit: ask red about 11,1 (as the CLI says)');
   check(await count('#board .badge.best', 1), 'the recommended hex is marked on the board');
   check((await page.locator('#board .badge.ask').count()) >= 1, 'other good question hexes are numbered on the board');
   await page.screenshot({ path: out + 'phone-advice.png', fullPage: true });

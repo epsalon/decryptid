@@ -21,11 +21,12 @@ func main() {
 	top := flag.Int("n", 10, "with -cube or -turn, how many options to show")
 	turn := flag.String("turn", "", "advise `PLAYER` (whose rule must be known) on their turn: what to ask or where to search")
 	lambda := flag.Float64("lambda", 0.5, "with -turn, how much to avoid giving others information (0 = ignore)")
-	searchAt := flag.Float64("search-at", 0.15, "with -turn, search once the likeliest hex has at least this chance")
+	searchAt := flag.Float64("search-at", 0.15, "with -turn and -win-value 0, search once the likeliest hex has at least this chance")
+	winValue := flag.Float64("win-value", 16, "with -turn, rank searches with questions, valuing a win at this many bits (0 = use -search-at instead)")
 	simGames := flag.Int("sim", 0, "play `N` AI-vs-AI games on random boards and report results")
 	simPlayers := flag.Int("players", 4, "with -sim, number of players")
 	simAdvanced := flag.Bool("advanced", true, "with -sim, play the advanced game")
-	simPolicies := flag.String("policies", "ai,greedy,cautious,random", "with -sim, comma-separated policies, shuffled into seats each game (ai, greedy, cautious, random, or lambda:searchAt)")
+	simPolicies := flag.String("policies", "ai,greedy,cautious,random", "with -sim, comma-separated policies, shuffled into seats each game (ai, threshold, greedy, cautious, random, lambda:searchAt or lambda/winValue)")
 	seed := flag.Int64("seed", 1, "with -sim, random seed")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %[1]s [-v] GAMEFILE|-
@@ -56,13 +57,13 @@ func main() {
 		flag.Usage()
 		os.Exit(2)
 	}
-	if err := run(flag.Arg(0), *verbose, *cube, *turn, *top, *lambda, *searchAt); err != nil {
+	if err := run(flag.Arg(0), *verbose, *cube, *turn, *top, *lambda, *searchAt, *winValue); err != nil {
 		fmt.Fprintln(os.Stderr, "decryptid:", err)
 		os.Exit(1)
 	}
 }
 
-func run(path string, verbose bool, cube, turn string, top int, lambda, searchAt float64) error {
+func run(path string, verbose bool, cube, turn string, top int, lambda, searchAt, winValue float64) error {
 	var in io.Reader = os.Stdin
 	if path != "-" {
 		f, err := os.Open(path)
@@ -80,7 +81,7 @@ func run(path string, verbose bool, cube, turn string, top int, lambda, searchAt
 		return adviseCube(g, cube, top)
 	}
 	if turn != "" {
-		return adviseTurn(g, turn, top, lambda, searchAt)
+		return adviseTurn(g, turn, top, lambda, searchAt, winValue)
 	}
 	res, err := g.Solve()
 	if err != nil {

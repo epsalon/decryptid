@@ -48,9 +48,11 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   player. It makes one `search.Each` pass to count our worlds by (player,
   rule, location), our worlds by pairs of players' rules, and all worlds by
   (k, rk, j, rj, location) for the other players k and j. Gain and leak are
-  both in bits of location entropy. `Choose` applies the search threshold and
-  never wastes a turn on a zero-gain question. `turn_test.go` checks it
-  against brute force.
+  both in bits of location entropy. `search_score.go` scores the 12 likeliest
+  searches the same way (outcome = who refuses first), plus
+  `WinValue × P(win)`, so `ChooseScored` ranks everything together; the older
+  threshold `Choose` remains. `TurnOptions` carries λ, WinValue and Order.
+  `turn_test.go` checks both against brute force.
 - **`sim`**: self-play. `Play` deals a random board and a uniformly sampled
   world (`Game.SampleWorld`), runs the two setup cube rounds, then plays
   turns following the rulebook: a failed search or a "no" answer costs a
@@ -113,6 +115,6 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
 
 ## Roadmap
 
-1. Make the search decision value-based instead of a fixed threshold. Count
-   what a failed search teaches us, and search sooner when an opponent's view
-   is nearly certain (we can compute every opponent's view).
+1. Search sooner when an opponent's view is nearly certain (we can compute
+   every opponent's view). Tried and found not to matter: weighting leaks by
+   turn order (`TurnOptions.Order`), ~900 head-to-head games.

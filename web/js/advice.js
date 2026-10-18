@@ -9,6 +9,12 @@ const pct = (p) => (p >= 0.995 ? '100%' : p < 0.01 ? '<1%' : `${Math.round(p * 1
 const bits = (b) => b.toFixed(2);
 const TOP = 6;
 
+// moves merges questions and searches into one ranking by score.
+const moves = (d) =>
+  [...d.questions.slice(0, TOP).map((q) => ({ kind: 'ask', ...q })), ...(d.searches ?? []).map((s) => ({ kind: 'search', ...s }))]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, TOP + 2);
+
 export class AdvicePanel {
   constructor(root, app) {
     this.root = root;
@@ -21,13 +27,13 @@ export class AdvicePanel {
   request() {
     const { game, me, ui } = this.app.store.state;
     const mode = ui.adviceMode;
-    const key = JSON.stringify([game, me, mode, ui.lambda, ui.searchAt]);
+    const key = JSON.stringify([game, me, mode, ui.lambda, ui.winValue]);
     const a = this.advice;
     if (key === a.key) return;
     a.key = key;
     a.pending = true;
     const op = mode === 'cube' ? 'adviseCube' : 'adviseTurn';
-    this.app.engine.latest('advice', op, { game, player: me, lambda: ui.lambda, searchAt: ui.searchAt }).then(
+    this.app.engine.latest('advice', op, { game, player: me, lambda: ui.lambda, winValue: ui.winValue }).then(
       (result) => {
         if (result === undefined || a.key !== key) return;
         Object.assign(a, { result: { mode, data: result }, error: null, pending: false });
@@ -60,11 +66,10 @@ export class AdvicePanel {
     if (r.mode === 'cube') {
       r.data.slice(0, TOP).forEach((c, i) => mark(c.x, c.y, 'cube-spot', i + 1));
     } else {
-      const { ask, search, questions, searches } = r.data;
-      if (search) mark(search.x, search.y, 'best', 'S');
+      const { ask, search } = r.data;
+      if (search) mark(search.x, search.y, 'best', '1');
       if (ask) mark(ask.x, ask.y, 'best', '1');
-      questions.slice(0, TOP).forEach((q, i) => mark(q.x, q.y, 'ask', i + 1));
-      (searches ?? []).slice(0, 3).forEach((s) => mark(s.x, s.y, 'search', 'S'));
+      moves(r.data).forEach((m, i) => mark(m.x, m.y, m.kind, i + 1));
     }
     return o;
   }
@@ -123,9 +128,10 @@ export class AdvicePanel {
       <details class="settings"><summary>Settings</summary>
         <label class="slider">Avoid helping others (λ) <b>${ui.lambda.toFixed(2)}</b>
           <input type="range" id="lambda" min="0" max="1.5" step="0.05" value="${ui.lambda}"></label>
-        <label class="slider">Search once a hex has <b>${pct(ui.searchAt)}</b> chance
-          <input type="range" id="search-at" min="0.05" max="1" step="0.05" value="${ui.searchAt}"></label>
-        <p class="hint">Defaults (0.5 and 15%) won most often in AI-vs-AI self-play.</p>
+        <label class="slider">Value of a win <b>${ui.winValue} bits</b>
+          <input type="range" id="win-value" min="1" max="40" step="1" value="${ui.winValue}"></label>
+        <p class="hint">Moves are scored as value × chance of winning + what you learn − λ × what others learn.
+          Defaults (λ 0.5, win 16 bits) won most often in AI-vs-AI self-play.</p>
       </details>`;
 
     const q = (sel) => this.root.querySelectorAll(sel);
@@ -145,7 +151,7 @@ export class AdvicePanel {
       el.onchange = () => this.app.store.update((s) => (s.ui[field] = +el.value));
     };
     slider('#lambda', 'lambda');
-    slider('#search-at', 'searchAt');
+    slider('#win-value', 'winValue');
   }
 
   turnBody(d) {
@@ -153,7 +159,7 @@ export class AdvicePanel {
     let rec;
     if (d.search) {
       rec = `<div class="rec"><div class="rec-action">Search <b>${hexRef(d.search.x, d.search.y)}</b></div>
-        <div class="muted">${pct(d.search.p)} chance the cryptid is there.
+        <div class="muted">${pct(d.search.p)} chance the cryptid is there; if not, expected to teach you ${bits(d.search.gain)} bits and give others ${bits(d.search.leak)}.
         Place your disc, then each player answers in turn; record their answers in <b>Play</b>.</div></div>`;
     } else if (d.ask) {
       rec = `<div class="rec"><div class="rec-action">Ask ${name(d.ask.player)} about <b>${hexRef(d.ask.x, d.ask.y)}</b></div>
@@ -163,17 +169,18 @@ export class AdvicePanel {
     } else {
       rec = '<p class="status warn">No legal action.</p>';
     }
-    const qs = d.questions.slice(0, TOP);
-    const ss = (d.searches ?? []).slice(0, 3);
+    const ms = moves(d);
     return `
       <p class="status">Cryptid is on one of <b>${d.locations}</b> hexes from your view (${bits(d.entropy)} bits of uncertainty).</p>
       ${rec}
-      <h3>Best questions</h3>
-      <table class="advice"><thead><tr><th>#</th><th>Ask</th><th>Hex</th><th title="Chance of a disc">Disc</th><th title="Bits you learn">Gain</th><th title="Bits others learn">Leak</th></tr></thead>
-      <tbody>${qs.map((q, i) => `<tr><td>${i + 1}</td><td>${name(q.player)}</td><td>${hexRef(q.x, q.y)}</td><td>${pct(q.pYes)}</td><td>${bits(q.gain)}</td><td>${bits(q.leak)}</td></tr>`).join('')}</tbody></table>
-      ${ss.length ? `<h3>Likeliest hexes to search</h3>
-      <table class="advice"><thead><tr><th>Hex</th><th>Chance it's there</th></tr></thead>
-      <tbody>${ss.map((s) => `<tr><td>${hexRef(s.x, s.y)}</td><td>${pct(s.p)}</td></tr>`).join('')}</tbody></table>` : ''}`;
+      <h3>Best moves</h3>
+      <table class="advice"><thead><tr><th>#</th><th>Move</th><th>Hex</th>
+        <th title="Chance this move wins the game">Win</th><th title="Chance of a disc (questions)">Disc</th>
+        <th title="Bits you learn (if it doesn't win)">Gain</th><th title="Bits others learn">Leak</th><th title="Overall score">Score</th></tr></thead>
+      <tbody>${ms.map((m, i) => `<tr class="${m.kind}"><td>${i + 1}</td>
+        <td>${m.kind === 'search' ? '<b>Search</b>' : `Ask ${name(m.player)}`}</td><td>${hexRef(m.x, m.y)}</td>
+        <td>${m.kind === 'search' ? pct(m.p) : '–'}</td><td>${m.kind === 'ask' ? pct(m.pYes) : '–'}</td>
+        <td>${bits(m.gain)}</td><td>${bits(m.leak)}</td><td>${m.score.toFixed(2)}</td></tr>`).join('')}</tbody></table>`;
   }
 
   cubeBody(cubes) {

@@ -15,30 +15,52 @@ import (
 type Policy struct {
 	Name     string
 	Lambda   float64 // weight of information given to others vs. gained
-	SearchAt float64 // search once the likeliest hex has at least this chance
+	SearchAt float64 // search once the likeliest hex has at least this chance (if WinValue is 0)
+	WinValue float64 // if > 0, rank searches with questions; a win is worth this many bits
+	Order    float64 // leak weight by turn order, see game.TurnOptions (0 = equal)
 	Random   bool    // ask random questions and place random cubes
 }
 
-// Default is the strongest policy found so far by self-play: searching
-// early pays off, and avoiding leaks helps most with more players.
-var Default = Policy{Name: "ai", Lambda: 0.5, SearchAt: 0.15}
+// Default is the strongest policy found so far by self-play. It ranks
+// searches and questions together, valuing a win at 16 bits; that ties the
+// best fixed search threshold (15%) head-to-head, and gives one ranking.
+// SearchAt is the fallback threshold if WinValue is set to 0.
+var Default = Policy{Name: "ai", Lambda: 0.5, SearchAt: 0.15, WinValue: 16}
 
 // Policies are the built-in strategies, by name.
 var Policies = map[string]Policy{
-	"ai":       Default,
-	"greedy":   {Name: "greedy", Lambda: 0, SearchAt: 0.15},  // ignores leaks
-	"cautious": {Name: "cautious", Lambda: 0.5, SearchAt: 1}, // searches only when certain
-	"random":   {Name: "random", Random: true, SearchAt: 1},  // random questions and cubes
+	"ai":        Default,
+	"threshold": {Name: "threshold", Lambda: 0.5, SearchAt: 0.15}, // searches once a hex has 15%
+	"greedy":    {Name: "greedy", Lambda: 0, SearchAt: 0.15},      // ignores leaks
+	"cautious":  {Name: "cautious", Lambda: 0.5, SearchAt: 1},     // searches only when certain
+	"random":    {Name: "random", Random: true, SearchAt: 1},      // random questions and cubes
 }
 
-// ParsePolicy accepts a built-in name or "lambda:searchAt", e.g. "0.3:0.8".
+// ParsePolicy accepts a built-in name, "lambda:searchAt" for a threshold
+// policy (e.g. "0.3:0.8"), or "lambda/winValue" for one ranking of searches
+// and questions (e.g. "0.5/3"); a third field sets the turn-order weight (e.g. "0.5/8/0.5").
 func ParsePolicy(s string) (Policy, error) {
 	if p, ok := Policies[s]; ok {
 		return p, nil
 	}
 	var p Policy
+	if _, err := fmt.Sscanf(s, "%g/%g/%g", &p.Lambda, &p.WinValue, &p.Order); err == nil && p.WinValue > 0 {
+		p.Name = s
+		return p, nil
+	}
+	p = Policy{}
+	if _, err := fmt.Sscanf(s, "%g:%g:%g", &p.Lambda, &p.SearchAt, &p.Order); err == nil {
+		p.Name = s
+		return p, nil
+	}
+	p = Policy{}
+	if _, err := fmt.Sscanf(s, "%g/%g", &p.Lambda, &p.WinValue); err == nil && p.WinValue > 0 {
+		p.Name = s
+		return p, nil
+	}
+	p = Policy{}
 	if _, err := fmt.Sscanf(s, "%g:%g", &p.Lambda, &p.SearchAt); err != nil {
-		return p, fmt.Errorf("unknown policy %q (want one of ai, greedy, cautious, random, or lambda:searchAt)", s)
+		return p, fmt.Errorf("unknown policy %q (want one of ai, threshold, greedy, cautious, random, lambda:searchAt or lambda/winValue)", s)
 	}
 	p.Name = s
 	return p, nil
@@ -190,11 +212,11 @@ func (m *match) answer(p, x, y int) bool {
 
 func (m *match) turn(p int) (won bool, err error) {
 	pol := m.players[p-1].policy
-	adv, err := m.view(p).AdviseTurn(p, pol.Lambda)
+	adv, err := m.view(p).AdviseTurn(p, pol.TurnOptions())
 	if err != nil {
 		return false, err
 	}
-	q, s := adv.Choose(pol.SearchAt)
+	q, s := pol.Choose(adv)
 	if pol.Random && q != nil {
 		q = &adv.Questions[m.rng.Intn(len(adv.Questions))]
 	}
@@ -239,4 +261,17 @@ func yesNo(b bool) string {
 		return "yes"
 	}
 	return "no"
+}
+
+// Choose picks this policy's move from turn advice.
+func (p Policy) Choose(a *game.TurnAdvice) (*game.Question, *game.Search) {
+	if p.WinValue > 0 {
+		return a.ChooseScored()
+	}
+	return a.Choose(p.SearchAt)
+}
+
+// TurnOptions are the advisor settings for this policy.
+func (p Policy) TurnOptions() game.TurnOptions {
+	return game.TurnOptions{Lambda: p.Lambda, WinValue: p.WinValue, Order: p.Order}
 }

@@ -20,6 +20,7 @@ type Request struct {
 	Player   int        `json:"player,omitempty"`   // 1-based, for advice
 	Lambda   *float64   `json:"lambda,omitempty"`   // adviseTurn; default sim.Default
 	SearchAt *float64   `json:"searchAt,omitempty"` // adviseTurn; default sim.Default
+	WinValue *float64   `json:"winValue,omitempty"` // adviseTurn; default sim.Default; > 0 ranks searches with questions
 	Text     string     `json:"text,omitempty"`     // parse
 	Players  int        `json:"players,omitempty"`  // randomSetup
 	Advanced bool       `json:"advanced,omitempty"` // rules, randomSetup
@@ -147,18 +148,21 @@ func handle(r *Request) (any, error) {
 	case "adviseCube":
 		return g.AdviseCube(r.Player)
 	case "adviseTurn":
-		lambda, searchAt := sim.Default.Lambda, sim.Default.SearchAt
+		pol := sim.Default
 		if r.Lambda != nil {
-			lambda = *r.Lambda
+			pol.Lambda = *r.Lambda
 		}
 		if r.SearchAt != nil {
-			searchAt = *r.SearchAt
+			pol.SearchAt = *r.SearchAt
 		}
-		adv, err := g.AdviseTurn(r.Player, lambda)
+		if r.WinValue != nil {
+			pol.WinValue = *r.WinValue
+		}
+		adv, err := g.AdviseTurn(r.Player, pol.TurnOptions())
 		if err != nil {
 			return nil, err
 		}
-		q, s := adv.Choose(searchAt)
+		q, s := pol.Choose(adv)
 		return TurnResult{TurnAdvice: adv, Ask: q, Search: s}, nil
 	}
 	return nil, fmt.Errorf("unknown op %q", r.Op)

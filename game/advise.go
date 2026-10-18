@@ -27,6 +27,8 @@ type CubeOption struct {
 	// cryptid's location. It can be negative: ruling out the likeliest
 	// hexes can leave the rest more evenly spread.
 	LocBits float64 `json:"locBits"`
+	// LocPerPlayer[j] is player j+1's share of LocBits (0 for the placer).
+	LocPerPlayer []float64 `json:"locPerPlayer"`
 }
 
 // AdviseCube ranks the hexes where player me (1-based) may place a cube
@@ -120,7 +122,7 @@ func (g *Game) AdviseCube(me int) ([]CubeOption, error) {
 		if p.masks[mine].Bit(h) || p.board[y][x].Cube != 0 {
 			continue
 		}
-		opt := CubeOption{X: x, Y: y, PerPlayer: make([]float64, n)}
+		opt := CubeOption{X: x, Y: y, PerPlayer: make([]float64, n), LocPerPlayer: make([]float64, n)}
 		for _, v := range views {
 			// Worlds j keeps: those where the placer's rule rules out h.
 			var hist [cells]float64
@@ -138,6 +140,7 @@ func (g *Game) AdviseCube(me int) ([]CubeOption, error) {
 			}
 			opt.PerPlayer[v.j] += v.weight * math.Log2(v.total/t)
 			opt.LocBits += v.weight * (v.entropy - e)
+			opt.LocPerPlayer[v.j] += v.weight * (v.entropy - e)
 		}
 		for _, b := range opt.PerPlayer {
 			opt.Bits += b
