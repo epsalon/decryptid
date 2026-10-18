@@ -101,6 +101,10 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
 
 ## Conventions
 
+- **License: MIT.** The web build must link only the Go standard library
+  (`make check-wasm-deps`, run in CI). `board/print.go` is `//go:build !js`
+  for that reason. A new dependency shipped in `web/` needs its notice added to
+  `web/THIRD_PARTY_NOTICES.txt`.
 - All code is gofmt'd and every exported identifier has a doc comment.
 - Tests use plain `testing`. `game/game_test.go` has a randomised end-to-end
   check: it builds markers from a known solution and asserts the solution survives.

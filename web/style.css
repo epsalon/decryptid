@@ -182,3 +182,6 @@ table.advice button { min-height: 28px; padding: 2px 10px; }
 button.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
 .rec .seg { margin: 6px 0; }
 .ring.select { stroke: #fff; stroke-dasharray: 4 3; stroke-width: 2.5; }
+
+footer { text-align: center; font-size: 0.8rem; color: var(--muted); padding: 0 16px 24px; }
+footer a { color: inherit; }

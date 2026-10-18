@@ -1,4 +1,8 @@
-// Terminal rendering of hexes and boards, in ANSI colours.
+//go:build !js
+
+// Terminal rendering of hexes and boards, in ANSI colours. Left out of the
+// WebAssembly build (which draws its own SVG), so the web engine links only
+// the Go standard library.
 //
 // Each hex is drawn as five lines (see fillStr):
 //

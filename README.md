@@ -158,3 +158,9 @@ go test ./...
 - [x] Web UI: setup, live analysis, and AI advice while you play
 - [x] Play against AI opponents in the browser (easy, normal, hard)
 - [x] Map tiles verified against the physical game
+
+## License
+
+MIT, see [LICENSE](LICENSE). The web app bundles the Go runtime (BSD 3-Clause)
+and [honeycomb-grid](https://github.com/flauwekeul/honeycomb) (MIT); their
+notices are in [web/THIRD_PARTY_NOTICES.txt](web/THIRD_PARTY_NOTICES.txt).

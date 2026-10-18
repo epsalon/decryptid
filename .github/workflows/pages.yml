@@ -30,7 +30,7 @@ jobs:
           go-version-file: 'go.mod'
 
       - name: Test
-        run: go vet ./... && go test ./...
+        run: go vet ./... && go test ./... && make check-wasm-deps
 
       - name: Build WebAssembly
         run: make web && rm -rf web/test
