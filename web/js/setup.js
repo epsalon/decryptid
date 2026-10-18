@@ -66,7 +66,7 @@ export class SetupPanel {
         </div>
       </div>
       <h3>Map tiles</h3>
-      <p class="hint">Copy the layout from the official app. ⟲ marks a tile that is upside down.</p>
+      <p class="hint">Copy the layout from the official app or setup card. ⟲ marks a tile that is upside down.</p>
       <div class="tiles">
         ${game.spec.tiles.flatMap((row, r) => row.map((t, c) => `
           <div class="tile">
