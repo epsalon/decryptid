@@ -12,7 +12,7 @@ import (
 
 // PlayerColors are the names accepted for players 1-5, matching the colors
 // the board printer uses for their discs and cubes.
-var PlayerColors = []string{"yellow", "magenta", "blue", "cyan", "black"}
+var PlayerColors = []string{"yellow", "red", "green", "cyan", "purple"}
 
 // Parse reads a game description. Blank lines and text after '#' are
 // ignored. Lines are:

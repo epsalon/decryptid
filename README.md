@@ -40,7 +40,7 @@ shed  8 2 blue
 players 3                  # 1-5, default 3
 mode basic                 # basic | advanced (default advanced)
 
-disc magenta 6 2           # disc|cube PLAYER X Y
+disc red 6 2           # disc|cube PLAYER X Y
 cube yellow  3 5
 rule yellow Distance 1 from Swamp   # optional: a player's known clue (name or number)
 ```
@@ -48,7 +48,7 @@ rule yellow Distance 1 from Swamp   # optional: a player's known clue (name or n
 - **Coordinates:** `X` is the column (0–11) and `Y` is the row (0–8). Every hex on
   the printed board shows its `X,Y`. Odd columns sit half a hex lower.
 - **Players:** a number 1–5 or the colour the printer uses for them:
-  yellow, magenta, blue, cyan, black.
+  yellow, red, green, cyan, purple (the physical set's colours).
 - **Advanced mode** adds the "Not …" clues and black buildings.
   Black buildings in a basic game are an error.
 - A hex can hold at most one cube.

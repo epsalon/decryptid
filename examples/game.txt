@@ -1,4 +1,4 @@
-# Sample game in progress on the demo board. Players are 1-3 or yellow, magenta, blue.
+# Sample game in progress on the demo board. Players are 1-3 or yellow, red, green.
 tiles 6F 1F 3 5F 4 2F
 stone  0 1 blue
 stone 10 8 white
@@ -11,13 +11,13 @@ mode basic
 
 # Answers to questions so far: a disc means "could be here" for that
 # player's rule, a cube means "can't be here". At most one cube per hex.
-disc magenta 6 2
+disc red    6 2
 disc yellow  1 1
-disc blue    9 6
-disc magenta 4 4
+disc green    9 6
+disc red    4 4
 cube yellow  3 5
-cube blue    7 1
-cube magenta 2 3
+cube green    7 1
+cube red    2 3
 cube yellow  5 7
 
 # I'm yellow and know my own rule (name or number from `decryptid -rules -basic`).

@@ -56,10 +56,10 @@ var bldgColor = []color.Attribute {
 
 var playerColor = []color.Attribute {
 	color.FgHiYellow,
-	color.FgHiMagenta,
-	color.FgHiBlue,
+	color.FgHiRed,
+	color.FgHiGreen,
 	color.FgHiCyan,
-	color.FgHiBlack,
+	color.FgHiMagenta, // purple
 }
 
 func playerStr(playerSet PlayerSet) (string, int) {
