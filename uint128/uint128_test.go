@@ -80,3 +80,19 @@ func TestFromBool(t *testing.T) {
 		t.Errorf("Bad encoding for array. Expected %+v, got %+v", exp, u)
 	}
 }
+
+func TestBits(t *testing.T) {
+	var u Uint128
+	for _, i := range []int{3, 64, 100} {
+		u = u.SetBit(i)
+	}
+	if !u.Bit(3) || !u.Bit(64) || !u.Bit(100) || u.Bit(4) || u.OnesCount() != 3 {
+		t.Errorf("SetBit/Bit mismatch: %v", u)
+	}
+	if tz := u.TrailingZeros(); tz != 3 {
+		t.Errorf("TrailingZeros = %v, want 3", tz)
+	}
+	if tz := (Uint128{Hi: 2}).TrailingZeros(); tz != 65 {
+		t.Errorf("TrailingZeros = %v, want 65", tz)
+	}
+}

@@ -143,3 +143,25 @@ func MakeBoard(s BoardSpec) Board {
 	}
 	return b
 }
+
+// Width and Height are the board's size in hexes. Hex (x, y) is b[y][x];
+// odd columns sit half a hex lower than even ones.
+const (
+	Width  = 12
+	Height = 9
+)
+
+// Markers returns, for player p (1-based), which hexes hold that player's
+// discs (their rule allows the cryptid there) and cubes (it doesn't).
+// Hexes are indexed y*Width + x.
+func (b *Board) Markers(p int) (discs, cubes []bool) {
+	discs = make([]bool, Width*Height)
+	cubes = make([]bool, Width*Height)
+	for y, row := range b {
+		for x, h := range row {
+			discs[y*Width+x] = h.Discs&(1<<(p-1)) != 0
+			cubes[y*Width+x] = h.Cube == p
+		}
+	}
+	return discs, cubes
+}

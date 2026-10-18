@@ -1,0 +1,10 @@
+# Board setup from the original rules_main.go demo, no markers yet.
+tiles 6F 1F 3 5F 4 2F
+stone  0 1 blue
+stone 10 8 white
+stone  1 4 green
+shed   8 2 blue
+shed   7 4 white
+shed  10 6 green
+players 3
+mode basic

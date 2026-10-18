@@ -1,99 +1,124 @@
+// Package search finds rule combinations that pin the cryptid to one hex.
+// Rules are represented as bit masks over the 108 board hexes.
 package search
 
-import "fmt"
-import "log"
 import "github.com/epsalon/decryptid/uint128"
 
-type Rule interface {
-	ToBoolSlice() []bool
-	fmt.Stringer
+const boardCells = 9 * 12
+
+type mask = uint128.Uint128
+
+// Solution is one assignment of rules to players that leaves exactly one hex.
+type Solution struct {
+	Rules    []int // Rules[p] is the index of player p's rule
+	Location int   // index of the cryptid's hex (y*12 + x)
 }
 
-type RuleSet []Rule
-
-type rule = uint128.Uint128
-type ruleSet = []uint128.Uint128
-
-func FindRuleSets (xrs RuleSet) []RuleSet {
-	rs := make(ruleSet, 0, len(xrs))
-	for _, r := range xrs {
-		bs := r.ToBoolSlice()
-		u := uint128.FromBoolSlice(bs)
-		log.Printf("rule = %v slice = %v", bs, u)
-		rs = append(rs, u)
-	}
-	idxSet, posLoc := findRulesets(rs)
-	log.Printf("Possible locations = %v\n", posLoc)
-	out := make([]RuleSet, 0, len(idxSet))
-	for _, s := range idxSet {
-		ors := make([]Rule, 0, len(s))
-		for _, r := range s {
-		  ors = append(ors, xrs[r])
+// Solve finds every assignment of distinct rules to players such that
+// player p's rule is one of cands[p], the rules together match exactly one
+// hex, and every rule is needed (dropping any one leaves more than one hex).
+func Solve(masks []mask, cands [][]int) []Solution {
+	n := len(cands)
+	canHave := make([][]bool, n)
+	inUnion := make([]bool, len(masks))
+	for p, cs := range cands {
+		canHave[p] = make([]bool, len(masks))
+		for _, r := range cs {
+			canHave[p][r] = true
+			inUnion[r] = true
 		}
-		out = append(out, RuleSet(ors))
+	}
+	allowed := []int{}
+	for r, ok := range inUnion {
+		if ok {
+			allowed = append(allowed, r)
+		}
+	}
+
+	var out []Solution
+	for _, set := range combos(masks, allowed, n) {
+		if !consistent(masks, set) {
+			continue
+		}
+		loc := intersect(masks, set, -1).TrailingZeros()
+		for _, a := range assignments(set, canHave) {
+			out = append(out, Solution{Rules: a, Location: loc})
+		}
 	}
 	return out
 }
 
-func consistent(rs ruleSet, is []int) bool {
-	for i, _ := range is {
-		m := uint128.Ones(9 * 12)
-		for j, r := range is {
-			if i != j {
-				m = m.And(rs[r])
-			}
+func intersect(masks []mask, set []int, skip int) mask {
+	m := uint128.Ones(boardCells)
+	for i, r := range set {
+		if i != skip {
+			m = m.And(masks[r])
 		}
-		if m.OnesCount() == 1 {
+	}
+	return m
+}
+
+// combos returns every n-element subset of allowed (in increasing order)
+// whose masks intersect in exactly one hex. A branch is cut as soon as it
+// reaches one hex early, since any extra rule would then be redundant.
+func combos(masks []mask, allowed []int, n int) [][]int {
+	var out [][]int
+	cur := make([]int, 0, n)
+	var rec func(start int, m mask)
+	rec = func(start int, m mask) {
+		if len(cur) == n {
+			out = append(out, append([]int(nil), cur...))
+			return
+		}
+		for i := start; i < len(allowed); i++ {
+			r := allowed[i]
+			nm := m.And(masks[r])
+			c := nm.OnesCount()
+			if c == 0 || (c == 1) != (len(cur)+1 == n) {
+				continue
+			}
+			cur = append(cur, r)
+			rec(i+1, nm)
+			cur = cur[:len(cur)-1]
+		}
+	}
+	rec(0, uint128.Ones(boardCells))
+	return out
+}
+
+// consistent reports whether every rule in the set is needed, i.e. dropping
+// any single rule leaves more than one possible hex.
+func consistent(masks []mask, set []int) bool {
+	for i := range set {
+		if intersect(masks, set, i).OnesCount() == 1 {
 			return false
 		}
 	}
 	return true
 }
 
-func findRulesets (rs ruleSet) ([][]int, rule) {
-	log.Printf("ruleset = %v", rs)
-	out := [][]int{}
-	cur := []int{}
-	posloc := uint128.Uint128{}
-	mask := uint128.Ones(9 * 12)
-	masks := []rule{}
-	for i := 0; ; {
-		// log.Printf("External loop i=%v cur=%v mask=%v masks=%v", i, cur, mask, masks)
-		for ; i < len(rs); i++ {
-			cur = append(cur, i)
-			masks = append(masks, mask)
-			mask = mask.And(rs[i])
-			// log.Printf("  Inner loop i=%v cur=%v mask=%v masks=%v", i, cur, mask, masks)
-			if (mask.IsZero()) {
-				// Dead end
-				cur = cur[:len(cur) - 1]
-				mask, masks = masks[len(masks) - 1], masks[:len(masks) - 1]
-				// log.Printf("    Zero mask pop!")
-				continue
-			}
-			if (mask.OnesCount() == 1) {
-				// Found possible solution!
-				if consistent(rs, cur) {
-					// log.Printf("    Found solution: %v", cur)
-					posloc = posloc.Or(mask)
-					out = append(out, append([]int(nil), cur...))
-				}
-				cur = cur[:len(cur) - 1]
-				mask, masks = masks[len(masks) - 1], masks[:len(masks) - 1]
-				continue
-			}
-			if len(cur) > 4 {
-				cur = cur[:len(cur) - 1]
-				mask, masks = masks[len(masks) - 1], masks[:len(masks) - 1]
-				continue
-			}
-			// Recurse deeper
+// assignments returns every way to give each player a different rule from
+// set, where player p may only get rules with canHave[p][r].
+func assignments(set []int, canHave [][]bool) [][]int {
+	var out [][]int
+	n := len(canHave)
+	cur := make([]int, n)
+	used := make([]bool, len(set))
+	var rec func(p int)
+	rec = func(p int) {
+		if p == n {
+			out = append(out, append([]int(nil), cur...))
+			return
 		}
-		if len(cur) == 0 {
-			break
+		for i, r := range set {
+			if !used[i] && canHave[p][r] {
+				used[i] = true
+				cur[p] = r
+				rec(p + 1)
+				used[i] = false
+			}
 		}
-		i, cur = cur[len(cur) - 1] + 1, cur[:len(cur) - 1] 
-		mask, masks = masks[len(masks) - 1], masks[:len(masks) - 1]
 	}
-	return out, posloc
+	rec(0)
+	return out
 }

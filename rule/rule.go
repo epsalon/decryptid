@@ -116,3 +116,7 @@ func Apply(br BoardRule, b *board.Board, p int) {
 func (b BoardRule) ToBoolSlice() []bool {
 	return b.arr
 }
+// Negated reports whether this is a "Not ..." rule (advanced mode only).
+func (r RuleSpec) Negated() bool {
+	return r.neg
+}

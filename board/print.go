@@ -1,5 +1,6 @@
 package board
 
+import "fmt"
 import "strings"
 import "github.com/fatih/color"
 
@@ -74,7 +75,15 @@ func playerStr(playerSet PlayerSet) (string, int) {
 	return sb.String(), ln
 }
 
+var highlightColor = color.New(color.BgHiRed, color.FgHiWhite, color.Bold)
+
+// FillStr renders the hex as 5 lines. The bottom border shows the hex's
+// X,Y coordinates, highlighted when h.Highlighted is set.
 func (h Hex) FillStr() []string {
+	return h.fillStr(-1, -1)
+}
+
+func (h Hex) fillStr(x, y int) []string {
 	l := landInfo[h.L]
 	t := terrInfo[h.T]
 	lc := color.New(l.Color, color.FgBlack)
@@ -90,8 +99,22 @@ func (h Hex) FillStr() []string {
 		"/" + ccenter(t.Name, tc, l.Char, lc, 5) + "\\",
 		"/" + ccenter(bldgIcon[h.B], bc, l.Char, lc, 7) + "\\",
 		"\\" + center(ps, psl, lc.SprintfFunc()(l.Char), 7) + "/",
-		"\\_____/",
+		"\\" + coordStr(x, y, h.Highlighted) + "/",
 	}
+}
+
+func coordStr(x, y int, hl bool) string {
+	txt := ""
+	if x >= 0 {
+		txt = fmt.Sprintf("%d,%d", x, y)
+	}
+	if hl {
+		if txt == "" {
+			txt = "!!!"
+		}
+		return center(highlightColor.Sprint(txt), len(txt), "_", 5)
+	}
+	return center(txt, len(txt), "_", 5)
 }
 
 func (h Hex) String() string {
@@ -122,7 +145,7 @@ func (b Board) String() string {
 	for i, br := range b {
 		fillStrs[i] = make ([][]string, len(br))
 		for j, hex := range br {
-			fillStrs[i][j] = hex.FillStr()
+			fillStrs[i][j] = hex.fillStr(j, i)
 		}
 	}
 	ncols := len(b[0])

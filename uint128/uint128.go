@@ -85,3 +85,28 @@ func (u Uint128) ToBoolSlice(l int) []bool {
 func (u Uint128) String() string {
 	return fmt.Sprintf("%016x%016x", u.Hi, u.Lo)
 }
+// Bit reports whether bit i is set.
+func (u Uint128) Bit(i int) bool {
+	if i < 64 {
+		return u.Lo&(uint64(1)<<i) != 0
+	}
+	return u.Hi&(uint64(1)<<(i-64)) != 0
+}
+
+// SetBit returns u with bit i set.
+func (u Uint128) SetBit(i int) Uint128 {
+	if i < 64 {
+		u.Lo |= uint64(1) << i
+	} else {
+		u.Hi |= uint64(1) << (i - 64)
+	}
+	return u
+}
+
+// TrailingZeros returns the index of the lowest set bit, or 128 if u is zero.
+func (u Uint128) TrailingZeros() int {
+	if u.Lo != 0 {
+		return bits.TrailingZeros64(u.Lo)
+	}
+	return 64 + bits.TrailingZeros64(u.Hi)
+}
