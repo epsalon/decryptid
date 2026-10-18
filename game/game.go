@@ -144,7 +144,7 @@ func (g *Game) prepare(useKnown bool) (*prepared, error) {
 		dm, cm := uint128.FromBoolSlice(discs), uint128.FromBoolSlice(cubes)
 		var ok []int
 		for _, i := range cands {
-			if dm.AndNot(res.masks[i]).IsZero() && cm.And(res.masks[i]).IsZero() {
+			if res.masks[i].Contains(dm) && !res.masks[i].Intersects(cm) {
 				ok = append(ok, i)
 			}
 		}

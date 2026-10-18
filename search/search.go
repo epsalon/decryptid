@@ -64,8 +64,10 @@ func EachSampled(masks []mask, cands [][]int, minimal bool, keep func(set []int)
 	}
 }
 
+var allHexes = uint128.Ones(boardCells)
+
 func intersect(masks []mask, set []int, skip int) mask {
-	m := uint128.Ones(boardCells)
+	m := allHexes
 	for i, r := range set {
 		if i != skip {
 			m = m.And(masks[r])
@@ -100,7 +102,7 @@ func combos(masks []mask, allowed []int, n int, minimal bool) [][]int {
 			cur = cur[:len(cur)-1]
 		}
 	}
-	rec(0, uint128.Ones(boardCells))
+	rec(0, allHexes)
 	return out
 }
 
