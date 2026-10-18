@@ -58,7 +58,8 @@ export class Board {
   // hexes get a halo whose thickness shows weight (0-1, likelihood), and if
   // any hex is viable all others are hatched as ruled out; kind adds an
   // inner ring of that style, and label a badge. opts.coords shows x,y;
-  // opts.tiles (the setup's tile slots) labels each slot with its tile number.
+  // opts.tiles (the setup's tile slots) labels each slot with its tile number
+  // and outlines the tiles.
   render(hexes, markers = [], overlay = new Map(), opts = {}) {
     this.svg.replaceChildren();
     const defs = el('defs', {}, this.svg);
@@ -80,6 +81,7 @@ export class Board {
       else byHex.get(k).discs.push(m.player);
     }
     const hasViable = Array.from(overlay.values()).some((o) => o.viable);
+    const labels = opts.tiles ? tileLabels(opts.tiles) : null;
     for (const h of hexes) {
       const center = grid.getHex({ col: h.x, row: h.y });
       const key = `${h.x},${h.y}`;
@@ -99,6 +101,13 @@ export class Board {
       }
       el('text', { x: -S * 0.52, y: -S * 0.6, class: 'glyph' }, g).textContent = t.glyph;
       if (h.animal) el('polygon', { points: points(TERRITORY), class: `territory ${h.animal}` }, g);
+      const tile = labels?.get(key);
+      if (tile) {
+        // Drawn before the structure, so it never hides one; with a
+        // structure here, it moves aside towards the slot's outer corner.
+        const dx = h.structure ? (tile.flipped ? 1 : -1) * S * 0.55 : 0;
+        el('text', { x: dx, class: `tile-label${h.structure ? ' beside' : ''}` }, g).textContent = tile.id;
+      }
       if (h.structure) drawStructure(g, h.structure, h.color);
       const pieces = byHex.get(key);
       if (pieces) drawPieces(g, pieces);
@@ -111,7 +120,7 @@ export class Board {
         }
       }
     }
-    if (opts.tiles) drawTileLabels(root, opts.tiles);
+    if (opts.tiles) drawTileBorders(root);
   }
 }
 
@@ -136,15 +145,35 @@ function drawPieces(g, { discs, cube }) {
   }
 }
 
-// drawTileLabels writes each tile's number on its corner hex, where the
-// number is printed on the physical tile: top-left, or bottom-right when the
-// tile is rotated 180°. Slots are 6 columns by 3 rows.
-function drawTileLabels(root, tiles) {
-  const layer = el('g', { class: 'tile-labels' }, root);
+// tileLabels maps each slot's corner hex ("x,y") to its tile: the number
+// sits where it is printed on the physical tile, top-left, or bottom-right
+// when the tile is rotated 180°. Slots are 6 columns by 3 rows.
+function tileLabels(tiles) {
+  const out = new Map();
   tiles.forEach((row, r) => row.forEach((t, c) => {
-    const col = t.flipped ? 6 * c + 5 : 6 * c;
-    const hexRow = t.flipped ? 3 * r + 2 : 3 * r;
-    const h = grid.getHex({ col, row: hexRow });
-    el('text', { x: h.x, y: h.y, class: 'tile-label' }, layer).textContent = t.id;
+    const x = t.flipped ? 6 * c + 5 : 6 * c;
+    const y = t.flipped ? 3 * r + 2 : 3 * r;
+    out.set(`${x},${y}`, t);
   }));
+  return out;
+}
+
+// drawTileBorders outlines the six map tiles: a thick line on every hex
+// edge between two hexes in different tile slots (6 columns by 3 rows).
+function drawTileBorders(root) {
+  const slot = (x, y) => `${Math.floor(x / 6)},${Math.floor(y / 3)}`;
+  const layer = el('g', { class: 'tile-borders' }, root);
+  for (const hex of grid) {
+    const { col: x, row: y } = hex;
+    // Odd-q neighbours to the right and below (each edge once).
+    const below = [[x, y + 1], ...(x % 2 ? [[x + 1, y], [x + 1, y + 1]] : [[x + 1, y - 1], [x + 1, y]])];
+    for (const [nx, ny] of below) {
+      if (nx > 11 || ny < 0 || ny > 8 || slot(x, y) === slot(nx, ny)) continue;
+      const n = grid.getHex({ col: nx, row: ny });
+      // The shared edge joins this hex's two corners nearest the neighbour.
+      const [a, b] = [...hex.corners]
+        .sort((p, q) => Math.hypot(p.x - n.x, p.y - n.y) - Math.hypot(q.x - n.x, q.y - n.y));
+      el('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'tile-border' }, layer);
+    }
+  }
 }

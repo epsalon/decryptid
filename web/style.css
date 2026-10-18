@@ -191,3 +191,5 @@ footer a { color: inherit; }
   paint-order: stroke; stroke-linejoin: round; text-anchor: middle; dominant-baseline: central;
   pointer-events: none;
 }
+.tile-label.beside { font-size: 30px; }
+.tile-border { stroke: #000; stroke-width: 4; stroke-linecap: round; pointer-events: none; }

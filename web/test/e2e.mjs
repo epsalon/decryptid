@@ -72,13 +72,23 @@ try {
 
   // Tile numbers sit on the slot's corner hex: top-left, or bottom-right when flipped.
   check(await count('#board .tile-label', 6), 'setup shows the six tile numbers');
-  const labelAt = () => page.$eval('#board .tile-label', (t) => `${t.getAttribute('x')},${t.getAttribute('y')}`);
-  const hexAt = (x, y) => page.$eval(`#board [data-x="${x}"][data-y="${y}"]`, (g) => g.getAttribute('transform').match(/translate\(([^,]+),([^)]+)\)/).slice(1).join(','));
+  check((await page.locator('#board .tile-border').count()) > 0, 'setup outlines the tiles');
+  // The first label in document order belongs to slot 0,0 unless that tile is flipped, so find it by its hex.
+  const labelAt = () => page.$$eval('#board .tile-label', (ts) => ts.map((t) => t.closest('[data-x]')).map((g) => `${g.dataset.x},${g.dataset.y}`));
+  const hexAt = (x, y) => `${x},${y}`;
   const flipped0 = await page.$eval('[data-flip="0,0"]', (b) => b.classList.contains('on'));
-  check((await labelAt()) === (await hexAt(flipped0 ? 5 : 0, flipped0 ? 2 : 0)), 'tile number is on the right corner');
+  check((await labelAt()).includes(hexAt(flipped0 ? 5 : 0, flipped0 ? 2 : 0)), 'tile number is on the right corner');
   await page.click('[data-flip="0,0"]');
-  check((await labelAt()) === (await hexAt(flipped0 ? 0 : 5, flipped0 ? 0 : 2)), 'flipping a tile moves its number to the opposite corner');
-  check((await page.textContent('#board .tile-label')) === (await page.inputValue('[data-slot="0,0"]')), 'the label shows the slot\'s tile number');
+  const now = await labelAt();
+  check(now.includes(hexAt(flipped0 ? 0 : 5, flipped0 ? 0 : 2)) && !now.includes(hexAt(flipped0 ? 5 : 0, flipped0 ? 2 : 0)), 'flipping a tile moves its number to the opposite corner');
+  const corner = flipped0 ? '0,0' : '5,2';
+  check((await page.textContent(`#board [data-x="${corner.split(',')[0]}"][data-y="${corner.split(',')[1]}"] .tile-label`)) === (await page.inputValue('[data-slot="0,0"]')), 'the label shows the slot\'s tile number');
+  // A structure on a corner hex stays visible: the number is drawn under it and moved aside.
+  const covered = await page.$$eval('#board .tile-label', (ts) => ts.filter((t) => {
+    const g = t.closest('.hex'); const s = g.querySelector('.structure');
+    return s && t.compareDocumentPosition(s) & Node.DOCUMENT_POSITION_PRECEDING;
+  }).length);
+  check(covered === 0, 'tile numbers are never drawn over a structure');
   await page.click('[data-flip="0,0"]');
 
   // Advanced mode adds black structures; state survives a reload.
@@ -101,7 +111,7 @@ try {
   await page.click('dialog button:has-text("Load")');
   await page.click('[data-tab="play"]');
   await page.waitForSelector('.status:has-text("Found it")');
-  check(await count('#board .tile-label', 0), 'tile numbers are hidden outside setup');
+  check(await count('#board .tile-label', 0) && await count('#board .tile-border', 0), 'tile numbers and outlines are hidden outside setup');
   check(await count('#board .ring.viable', 1), 'example game: one viable hex, like the CLI');
   check(await count('#board [data-x="3"][data-y="3"] .ring.viable', 1), 'example game: the cryptid is at 3,3');
 
