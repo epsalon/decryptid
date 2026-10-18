@@ -2,7 +2,7 @@
 WEB := web
 NODE ?= node
 
-.PHONY: web serve test smoke clean
+.PHONY: web serve test smoke e2e clean
 
 web:
 	GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o $(WEB)/decryptid.wasm ./wasm
@@ -19,3 +19,8 @@ smoke: web
 
 clean:
 	rm -f $(WEB)/decryptid.wasm $(WEB)/wasm_exec.js
+
+# Browser tests: needs node, plus `npm install` and `npx playwright install
+# chromium` in web/test once.
+e2e: web
+	cd $(WEB)/test && $(NODE) e2e.mjs

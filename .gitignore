@@ -14,4 +14,5 @@
 # Web build outputs (make web)
 web/decryptid.wasm
 web/wasm_exec.js
-node_modules/
+node_modules
+web/test/out/

@@ -2,8 +2,8 @@
 //
 // Each hex is drawn as five lines (see fillStr):
 //
-//	 _____       top border (shared with the hex above)
-//	/Bear#\      animal territory, on the terrain's fill character
+//	  _____      top border (shared with the hex above)
+//	 /Bear#\     animal territory, on the terrain's fill character
 //	/#Shed##\    structure, in the structure's colour
 //	\#●●x###/    discs (●) and cube (x), in player colours
 //	 \_3,4_/     bottom border with X,Y coordinates

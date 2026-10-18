@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Decryptid</title>
+  <meta name="description" content="A table-side solver and AI advisor for the board game Cryptid. Runs entirely in your browser.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Decryptid</h1>
+    <span id="engine-status" class="muted">Loading engine…</span>
+  </header>
+  <main>
+    <section id="board-pane">
+      <svg id="board" role="img" aria-label="Game board"></svg>
+      <div class="board-tools">
+        <label><input type="checkbox" id="coords"> Coordinates</label>
+      </div>
+    </section>
+    <section id="panel">
+      <nav id="tabs" role="tablist"></nav>
+      <div id="tab-body"></div>
+    </section>
+  </main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <noscript>Decryptid needs JavaScript.</noscript>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+// App state: the game (same JSON shape as Go's game.Game) plus UI state.
+// Saved to localStorage on every change.
+
+const KEY = 'decryptid.v1';
+
+// Player colours of the physical set, in seat order (game.PlayerColors).
+export const PLAYERS = [
+  { name: 'yellow', color: '#f2c12e' },
+  { name: 'red', color: '#d63a2f' },
+  { name: 'green', color: '#34a853' },
+  { name: 'cyan', color: '#22b8cf' },
+  { name: 'purple', color: '#8e4ec6' },
+];
+
+export const STRUCTURE_COLORS = ['white', 'blue', 'green', 'black'];
+export const STRUCTURE_TYPES = ['stone', 'shed'];
+
+export function defaultGame() {
+  return {
+    spec: {
+      tiles: [[{ id: 1 }, { id: 2 }], [{ id: 3 }, { id: 4 }], [{ id: 5 }, { id: 6 }]],
+      buildings: [],
+    },
+    players: 4,
+    advanced: false,
+    markers: [],
+    known: {},
+  };
+}
+
+// structuresFor lists the structures a game needs, as {type, color}.
+export function structuresFor(game) {
+  const colors = game.advanced ? STRUCTURE_COLORS : STRUCTURE_COLORS.slice(0, 3);
+  return colors.flatMap((color) => STRUCTURE_TYPES.map((type) => ({ type, color })));
+}
+
+// setupProblems returns what's missing before the game can be analysed.
+export function setupProblems(game) {
+  const problems = [];
+  const ids = game.spec.tiles.flat().map((t) => t.id);
+  if (new Set(ids).size !== 6) problems.push('Each of the 6 map tiles must be used once.');
+  const missing = structuresFor(game).filter(
+    (s) => !game.spec.buildings.some((b) => b.type === s.type && b.color === s.color),
+  );
+  if (missing.length) {
+    problems.push(`Place ${missing.length} more structure${missing.length > 1 ? 's' : ''}.`);
+  }
+  return problems;
+}
+
+export class Store {
+  constructor() {
+    this.state = load() ?? { game: defaultGame(), me: 1, ui: { tab: 'setup', coords: false } };
+    this.listeners = [];
+  }
+  subscribe(fn) {
+    this.listeners.push(fn);
+  }
+  // update applies fn to the state, saves, and notifies listeners.
+  update(fn) {
+    fn(this.state);
+    save(this.state);
+    for (const l of this.listeners) l(this.state);
+  }
+}
+
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    return s && s.game && s.game.spec ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+function save(state) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch {
+    // Storage may be unavailable (private mode); the app still works.
+  }
+}
