@@ -2,6 +2,8 @@
 
 A solver for the board game [Cryptid](https://boardgamegeek.com/boardgame/246784/cryptid).
 
+**Web UI:** Play online at **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** (runs entirely in your browser using WebAssembly).
+
 In Cryptid, each player holds one secret clue, and the cryptid lives on the
 only hex that satisfies every clue. As players ask questions, the board fills
 with discs ("my clue allows this hex") and cubes ("it doesn't").
@@ -9,6 +11,16 @@ decryptid takes the board setup and those markers, optionally plus your own
 clue, and lists every hex where the cryptid can still be.
 
 ## Usage
+
+### Web UI
+
+Visit **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** or run it locally:
+
+```sh
+make serve    # builds web/decryptid.wasm and serves at http://localhost:8347
+```
+
+### CLI
 
 Requires Go 1.25+.
 

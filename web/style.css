@@ -29,11 +29,28 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); }
-header { display: flex; align-items: baseline; gap: 12px; padding: 10px 16px; }
+header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
 h1 { font-size: 1.2rem; margin: 0; letter-spacing: 0.04em; }
 h3 { font-size: 0.95rem; margin: 18px 0 4px; }
 .muted, .hint { color: var(--muted); }
 .hint { font-size: 0.85rem; margin: 0 0 8px; }
+.github-link {
+  margin-left: auto;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background-color 0.15s;
+}
+.github-link:hover {
+  color: var(--text);
+  background-color: var(--line);
+}
+
 
 main { display: grid; gap: 12px; padding: 0 16px 24px; }
 @media (min-width: 960px) {

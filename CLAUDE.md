@@ -1,8 +1,8 @@
 # CLAUDE.md
 
 Solver for the board game Cryptid. It is a Go module (`github.com/epsalon/decryptid`)
-with one external dependency (`fatih/color`). See README.md for user-facing usage
-and the game-file format.
+with one external dependency (`fatih/color`). Hosted web UI: https://decryptid.8ln.org/.
+See README.md for user-facing usage and the game-file format.
 
 ## Commands
 
