@@ -85,7 +85,7 @@ export class Board {
     for (const h of hexes) {
       const center = grid.getHex({ col: h.x, row: h.y });
       const key = `${h.x},${h.y}`;
-      const g = el('g', { 'data-x': h.x, 'data-y': h.y, transform: `translate(${center.x},${center.y})`, class: 'hex' }, root);
+      const g = el('g', { 'data-x': h.x, 'data-y': h.y, transform: `translate(${center.x},${center.y})`, class: h.structure ? 'hex has-structure' : 'hex' }, root);
       const t = TERRAIN[h.terrain];
       el('polygon', { points: points(), fill: t.fill, class: 'hex-bg' }, g);
       const o = overlay.get(key);

@@ -12,6 +12,121 @@ export class SetupPanel {
     this.engine = engine;
     this.toast = toast;
     this.placing = null; // structure {type, color} waiting for a hex tap
+    this.drag = null; // structure being dragged, see installDrag
+    this.installDrag();
+  }
+
+  locked() {
+    const m = this.store.state.match;
+    return this.store.state.ui.tab !== 'setup' || (m && m.phase !== 'over');
+  }
+
+  // installDrag lets structures be dragged from their chips or from the
+  // board onto a hex. Pointer events cover mouse, touch and pen; a press
+  // that moves less than a few pixels stays a tap, so tap-to-place works.
+  installDrag() {
+    const hexUnder = (e) => document.elementFromPoint(e.clientX, e.clientY)?.closest('#board [data-x]');
+    let target = null;
+    const setTarget = (g) => {
+      if (g === target) return;
+      target?.classList.remove('drop-target');
+      target = g;
+      target?.classList.add('drop-target');
+    };
+    // Auto-scroll while the pointer is near the top or bottom of the window,
+    // so a structure can be carried from the list below the board (on a
+    // phone they're never on screen together) up to the board.
+    let scroller = 0;
+    let last = null;
+    const EDGE = 70;
+    const scroll = () => {
+      scroller = 0;
+      if (!this.drag?.ghost || !last) return;
+      const v = last.clientY < EDGE ? -1 : last.clientY > innerHeight - EDGE ? 1 : 0;
+      if (!v) return;
+      scrollBy(0, v * 12);
+      setTarget(hexUnder(last));
+      scroller = requestAnimationFrame(scroll);
+    };
+    const end = () => {
+      cancelAnimationFrame(scroller);
+      scroller = 0;
+      this.drag?.ghost?.remove();
+      setTarget(null);
+      this.drag = null;
+    };
+    document.addEventListener('pointerdown', (e) => {
+      if (this.locked() || e.button > 0) return;
+      const chip = e.target.closest('[data-struct]');
+      const hex = e.target.closest('#board [data-x]');
+      let s;
+      if (chip) {
+        const [type, color] = chip.dataset.struct.split(',');
+        s = { type, color };
+      } else if (hex) {
+        const b = this.store.state.game.spec.buildings.find((b) => b.x === +hex.dataset.x && b.y === +hex.dataset.y);
+        if (!b) return;
+        s = { type: b.type, color: b.color };
+      } else return;
+      this.drag = { s, x0: e.clientX, y0: e.clientY, ghost: null };
+    });
+    document.addEventListener('pointermove', (e) => {
+      const d = this.drag;
+      if (!d) return;
+      if (!d.ghost) {
+        if (Math.hypot(e.clientX - d.x0, e.clientY - d.y0) < 6) return;
+        d.ghost = document.createElement('div');
+        d.ghost.className = 'drag-ghost';
+        d.ghost.innerHTML = `<span class="icon ${d.s.type} ${d.s.color}"></span>`;
+        document.body.appendChild(d.ghost);
+      }
+      e.preventDefault();
+      d.ghost.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+      setTarget(hexUnder(e));
+      last = { clientX: e.clientX, clientY: e.clientY };
+      if (!scroller) scroller = requestAnimationFrame(scroll);
+    });
+    document.addEventListener('pointerup', (e) => {
+      const d = this.drag;
+      if (!d) return;
+      const g = d.ghost && hexUnder(e);
+      const dragged = !!d.ghost;
+      end();
+      if (!dragged) return; // a tap: the click handlers take it from here
+      // The click that follows a drag must not also count as a tap.
+      const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener('click', swallow, { capture: true, once: true });
+      setTimeout(() => document.removeEventListener('click', swallow, { capture: true }), 0);
+      if (g) this.drop(d.s, +g.dataset.x, +g.dataset.y);
+    });
+    document.addEventListener('pointercancel', end);
+  }
+
+  // drop puts structure s on hex (x, y). If another structure is there, the
+  // two swap places when s was already on the board; otherwise it's refused.
+  drop(s, x, y) {
+    const bs = this.store.state.game.spec.buildings;
+    const here = bs.find((b) => b.x === x && b.y === y);
+    const from = bs.find((b) => same(b, s));
+    if (here && same(here, s)) return;
+    if (here && !from) {
+      this.toast(`${label(here)} is already there.`);
+      return;
+    }
+    this.store.update((st) => {
+      const list = st.game.spec.buildings.filter((b) => !same(b, s));
+      if (here) {
+        const other = list.find((b) => same(b, here));
+        Object.assign(other, { x: from.x, y: from.y }); // swap places
+      }
+      list.push({ x, y, type: s.type, color: s.color });
+      st.game.spec.buildings = list;
+    });
+    if (this.placing && same(this.placing, s)) {
+      const placed = this.store.state.game.spec.buildings;
+      this.placing = structuresFor(this.store.state.game).find((n) => !placed.some((b) => same(b, n))) ?? null;
+    }
+    this.render();
   }
 
   // overlay marks the hex of the structure being placed.
@@ -77,7 +192,7 @@ export class SetupPanel {
           </div>`)).join('')}
       </div>
       <h3>Structures</h3>
-      <p class="hint">Tap a structure, then its hex on the board.</p>
+      <p class="hint">Drag a structure onto its hex, or tap it and then the hex. Drag on the board to move one.</p>
       <div class="structs">
         ${structuresFor(game).map((s) => {
           const b = game.spec.buildings.find((b) => same(b, s));

@@ -61,9 +61,58 @@ try {
   await page.screenshot({ path: out + 'phone-random.png', fullPage: true });
 
   // Place a structure by tapping its chip, then a hex.
+  // (5,4) is where the rest of the test expects the blue stone; clear it first
+  // if the random board put something else there.
+  const occupant = await page.$$eval('[data-struct]', (cs) => cs.find((c) => c.querySelector('.where').textContent === '5,4')?.dataset.struct);
+  if (occupant && occupant !== 'stone,blue') {
+    await page.click(`[data-struct="${occupant}"]`);
+    await page.click('#board [data-x="11"][data-y="8"]', { force: true });
+  }
   await page.click('[data-struct="stone,blue"]');
   await page.click('#board [data-x="5"][data-y="4"]', { force: true });
   check((await page.locator('[data-struct="stone,blue"] .where').textContent()) === '5,4', 'placing a structure on a tapped hex');
+
+  // Drag and drop: from a chip onto the board, within the board, and swapping.
+  async function drag(from, to) {
+    const a = await page.locator(from).boundingBox();
+    const b = await page.locator(to).boundingBox();
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+    await page.mouse.up();
+  }
+  const where = (s) => page.textContent(`[data-struct="${s}"] .where`);
+  const free = async () => {
+    // A hex with no structure, away from blue stone's.
+    for (const [x, y] of [[1, 7], [2, 7], [8, 1], [9, 1], [10, 6]]) {
+      if (!(await page.locator(`#board [data-x="${x}"][data-y="${y}"] .structure`).count())) return [x, y];
+    }
+  };
+  await page.setViewportSize({ width: 1280, height: 800 }); // board and list side by side
+  let [fx, fy] = await free();
+  await drag('[data-struct="shed,green"]', `#board [data-x="${fx}"][data-y="${fy}"]`);
+  check((await where('shed,green')) === `${fx},${fy}`, `drag a structure from its chip onto the board (${fx},${fy})`);
+  await drag(`#board [data-x="${fx}"][data-y="${fy}"]`, '#board [data-x="0"][data-y="8"]');
+  check((await where('shed,green')) === '0,8', 'drag a structure to another hex on the board');
+  await drag('#board [data-x="0"][data-y="8"]', '#board [data-x="5"][data-y="4"]');
+  check((await where('shed,green')) === '5,4' && (await where('stone,blue')) === '0,8', 'dropping on another structure swaps the two');
+  await page.click('[data-struct="stone,green"]');
+  check((await page.locator('[data-struct="stone,green"].on').count()) === 1, 'a tap on a chip still selects it');
+  await page.click('[data-struct="stone,green"]');
+  await drag('#board [data-x="0"][data-y="8"]', '#board [data-x="5"][data-y="4"]'); // swap back: blue stone to 5,4
+  // On a phone the list is below the board: dragging near the top edge scrolls up to it.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('[data-struct="shed,white"]').scrollIntoViewIfNeeded();
+  const chipBox = await page.locator('[data-struct="shed,white"]').boundingBox();
+  await page.mouse.move(chipBox.x + chipBox.width / 2, chipBox.y + chipBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(195, 20, { steps: 10 }); // hold near the top edge
+  await page.waitForFunction(() => scrollY === 0, null, { timeout: 10000 });
+  const target = await page.locator('#board [data-x="2"][data-y="7"]').boundingBox();
+  await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 5 });
+  await page.mouse.up();
+  const shedAt = await where('shed,white');
+  check(shedAt === '2,7', `phone: auto-scroll carries a structure from the list to the board (${shedAt})`);
 
   // Choosing a tile already in another slot swaps the two.
   await page.selectOption('[data-slot="0,0"]', '6');

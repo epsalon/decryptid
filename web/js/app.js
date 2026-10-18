@@ -120,6 +120,8 @@ async function renderBoard() {
 }
 
 function render() {
+  // Lets structures on the board grab touches for dragging, only in setup.
+  document.body.classList.toggle('setup-mode', app.store.state.ui.tab === 'setup' && !matchActive(app.store.state));
   analyze();
   renderTabs();
   current().panel.render();
