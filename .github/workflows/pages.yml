@@ -29,8 +29,11 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
+      - name: Test
+        run: go vet ./... && go test ./...
+
       - name: Build WebAssembly
-        run: make web
+        run: make web && rm -rf web/test
 
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3

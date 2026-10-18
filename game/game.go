@@ -32,7 +32,8 @@ type Marker struct {
 	Cube   bool `json:"cube,omitempty"`
 }
 
-// Rules returns the rules that can be in play for this game's mode.
+// Rules returns the rules that can be in play for this game's mode. The
+// slice is shared (see rule.AllRules): don't modify or append to it.
 func (g *Game) Rules() []rule.RuleSpec {
 	if g.Advanced {
 		return rule.AllRules()

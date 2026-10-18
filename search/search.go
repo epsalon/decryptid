@@ -156,27 +156,6 @@ func consistent(masks []mask, set []int) bool {
 	return true
 }
 
-// assign calls fn with every way to give each player a different rule from
-// set, where player p may only get rules with canHave[p][r].
-func assign(set []int, canHave [][]bool, fn func([]int)) {
-	n := len(canHave)
-	cur := make([]int, n)
-	var rec func(p int, used uint32)
-	rec = func(p int, used uint32) {
-		if p == n {
-			fn(cur)
-			return
-		}
-		for i, r := range set {
-			if used&(1<<i) == 0 && canHave[p][r] {
-				cur[p] = r
-				rec(p+1, used|(1<<i))
-			}
-		}
-	}
-	rec(0, 0)
-}
-
 // CountSets returns how many rule sets Each would visit (each set yields
 // one or more assignments).
 func CountSets(masks []mask, cands [][]int, minimal bool) int {

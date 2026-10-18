@@ -75,12 +75,14 @@ func init() {
 }
 
 // AllRules lists every rule, each followed by its "Not ..." version.
-// Basic games use the subset where Advanced() is false.
+// Basic games use the subset where Advanced() is false. The slice is shared
+// and cached: callers must not modify or append to it.
 func AllRules() []RuleSpec {
 	return allRules
 }
 
-// BasicRules returns all rules where Advanced() is false.
+// BasicRules returns all rules where Advanced() is false. Like AllRules,
+// the slice is shared: don't modify or append to it.
 func BasicRules() []RuleSpec {
 	return basicRules
 }
