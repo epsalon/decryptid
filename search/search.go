@@ -20,8 +20,20 @@ type Solution struct {
 // one leaves more than one hex.
 func Solve(masks []mask, cands [][]int, minimal bool) []Solution {
 	var out []Solution
+	chunk := 64
+	var ruleBuf []int
 	Each(masks, cands, minimal, func(rules []int, loc int) {
-		out = append(out, Solution{Rules: append([]int(nil), rules...), Location: loc})
+		n := len(rules)
+		if len(ruleBuf) < n {
+			ruleBuf = make([]int, n*chunk)
+			if chunk < 2048 {
+				chunk *= 4
+			}
+		}
+		r := ruleBuf[:n:n]
+		copy(r, rules)
+		ruleBuf = ruleBuf[n:]
+		out = append(out, Solution{Rules: r, Location: loc})
 	})
 	return out
 }
@@ -36,57 +48,73 @@ func Each(masks []mask, cands [][]int, minimal bool, fn func(rules []int, loc in
 // every rule set for which keep returns false. A nil keep keeps all sets.
 func EachSampled(masks []mask, cands [][]int, minimal bool, keep func(set []int) bool, fn func(rules []int, loc int)) {
 	n := len(cands)
-	canHave := make([][]bool, n)
-	inUnion := make([]bool, len(masks))
+	canHave := make([]uint128.Uint128, n)
+	var union uint128.Uint128
 	for p, cs := range cands {
-		canHave[p] = make([]bool, len(masks))
 		for _, r := range cs {
-			canHave[p][r] = true
-			inUnion[r] = true
+			canHave[p] = canHave[p].SetBit(r)
+			union = union.SetBit(r)
 		}
 	}
-	allowed := []int{}
-	for r, ok := range inUnion {
-		if ok {
-			allowed = append(allowed, r)
+	allowed := make([]int, 0, union.OnesCount())
+	union.ForEachBit(func(r int) {
+		allowed = append(allowed, r)
+	})
+
+	curAssign := make([]int, n)
+	var recAssign func(p int, used uint32, set []int, loc int)
+	recAssign = func(p int, used uint32, set []int, loc int) {
+		if p == n {
+			fn(curAssign, loc)
+			return
+		}
+		ch := canHave[p]
+		for i, r := range set {
+			if used&(1<<i) == 0 && ch.Bit(r) {
+				curAssign[p] = r
+				recAssign(p+1, used|(1<<i), set, loc)
+			}
 		}
 	}
 
-	for _, set := range combos(masks, allowed, n, minimal) {
+	eachCombo(masks, allowed, n, minimal, func(set []int, loc int) {
 		if minimal && !consistent(masks, set) {
-			continue
+			return
 		}
 		if keep != nil && !keep(set) {
-			continue
+			return
 		}
-		loc := intersect(masks, set, -1).TrailingZeros()
-		assign(set, canHave, func(a []int) { fn(a, loc) })
-	}
+		recAssign(0, 0, set, loc)
+	})
 }
 
 var allHexes = uint128.Ones(boardCells)
 
 func intersect(masks []mask, set []int, skip int) mask {
-	m := allHexes
+	var m mask
+	first := true
 	for i, r := range set {
 		if i != skip {
-			m = m.And(masks[r])
+			if first {
+				m = masks[r]
+				first = false
+			} else {
+				m = m.And(masks[r])
+			}
 		}
+	}
+	if first {
+		return allHexes
 	}
 	return m
 }
 
-// combos returns every n-element subset of allowed (in increasing order)
-// whose masks intersect in exactly one hex. With minimal set, a branch is
-// cut as soon as it reaches one hex early, since any extra rule would then
-// be redundant.
-func combos(masks []mask, allowed []int, n int, minimal bool) [][]int {
-	var out [][]int
+func eachCombo(masks []mask, allowed []int, n int, minimal bool, fn func(set []int, loc int)) {
 	cur := make([]int, 0, n)
 	var rec func(start int, m mask)
 	rec = func(start int, m mask) {
 		if len(cur) == n {
-			out = append(out, append([]int(nil), cur...))
+			fn(cur, m.TrailingZeros())
 			return
 		}
 		for i := start; i < len(allowed); i++ {
@@ -103,6 +131,17 @@ func combos(masks []mask, allowed []int, n int, minimal bool) [][]int {
 		}
 	}
 	rec(0, allHexes)
+}
+
+// combos returns every n-element subset of allowed (in increasing order)
+// whose masks intersect in exactly one hex. With minimal set, a branch is
+// cut as soon as it reaches one hex early, since any extra rule would then
+// be redundant.
+func combos(masks []mask, allowed []int, n int, minimal bool) [][]int {
+	var out [][]int
+	eachCombo(masks, allowed, n, minimal, func(set []int, _ int) {
+		out = append(out, append([]int(nil), set...))
+	})
 	return out
 }
 
@@ -122,23 +161,20 @@ func consistent(masks []mask, set []int) bool {
 func assign(set []int, canHave [][]bool, fn func([]int)) {
 	n := len(canHave)
 	cur := make([]int, n)
-	used := make([]bool, len(set))
-	var rec func(p int)
-	rec = func(p int) {
+	var rec func(p int, used uint32)
+	rec = func(p int, used uint32) {
 		if p == n {
 			fn(cur)
 			return
 		}
 		for i, r := range set {
-			if !used[i] && canHave[p][r] {
-				used[i] = true
+			if used&(1<<i) == 0 && canHave[p][r] {
 				cur[p] = r
-				rec(p + 1)
-				used[i] = false
+				rec(p+1, used|(1<<i))
 			}
 		}
 	}
-	rec(0)
+	rec(0, 0)
 }
 
 // CountSets returns how many rule sets Each would visit (each set yields

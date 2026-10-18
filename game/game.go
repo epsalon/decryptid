@@ -34,13 +34,10 @@ type Marker struct {
 
 // Rules returns the rules that can be in play for this game's mode.
 func (g *Game) Rules() []rule.RuleSpec {
-	var out []rule.RuleSpec
-	for _, r := range rule.AllRules() {
-		if g.Advanced || !r.Advanced() {
-			out = append(out, r)
-		}
+	if g.Advanced {
+		return rule.AllRules()
 	}
-	return out
+	return rule.BasicRules()
 }
 
 // Board builds the board with all markers placed on it.
@@ -107,6 +104,19 @@ type prepared struct {
 	known []int             // per player (0-based), known rule index or -1
 }
 
+var (
+	allRuleIndex   = makeRuleIndex(rule.AllRules())
+	basicRuleIndex = makeRuleIndex(rule.BasicRules())
+)
+
+func makeRuleIndex(rules []rule.RuleSpec) map[string]int {
+	m := make(map[string]int, len(rules))
+	for i, r := range rules {
+		m[r.Name] = i
+	}
+	return m
+}
+
 // prepare builds the board and per-player candidate rules. With useKnown
 // false, known rules are looked up (in p.known) but don't restrict p.cands.
 func (g *Game) prepare(useKnown bool) (*prepared, error) {
@@ -117,15 +127,30 @@ func (g *Game) prepare(useKnown bool) (*prepared, error) {
 	res := &prepared{board: b, rules: g.Rules()}
 
 	res.masks = make([]uint128.Uint128, len(res.rules))
-	byName := map[string]int{}
 	for i, r := range res.rules {
-		res.masks[i] = uint128.FromBoolSlice(r.OnBoard(&b).ToBoolSlice())
-		byName[r.Name] = i
+		res.masks[i] = r.OnBoard(&b).Mask()
 	}
 
+	byName := basicRuleIndex
+	if g.Advanced {
+		byName = allRuleIndex
+	}
+
+	discsMask := make([]uint128.Uint128, g.Players)
+	cubesMask := make([]uint128.Uint128, g.Players)
+	for _, m := range g.Markers {
+		idx := m.Y*board.Width + m.X
+		if m.Cube {
+			cubesMask[m.Player-1] = cubesMask[m.Player-1].SetBit(idx)
+		} else {
+			discsMask[m.Player-1] = discsMask[m.Player-1].SetBit(idx)
+		}
+	}
+
+	res.known = make([]int, g.Players)
+	res.cands = make([][]int, g.Players)
 	for p := 1; p <= g.Players; p++ {
-		res.known = append(res.known, -1)
-		var cands []int
+		res.known[p-1] = -1
 		if name, ok := g.Known[p]; ok {
 			i, ok := byName[name]
 			if !ok {
@@ -133,19 +158,18 @@ func (g *Game) prepare(useKnown bool) (*prepared, error) {
 			}
 			res.known[p-1] = i
 		}
-		if res.known[p-1] >= 0 && useKnown {
-			cands = []int{res.known[p-1]}
-		} else {
-			for i := range res.rules {
-				cands = append(cands, i)
-			}
-		}
-		discs, cubes := b.Markers(p)
-		dm, cm := uint128.FromBoolSlice(discs), uint128.FromBoolSlice(cubes)
+		dm, cm := discsMask[p-1], cubesMask[p-1]
 		var ok []int
-		for _, i := range cands {
-			if res.masks[i].Contains(dm) && !res.masks[i].Intersects(cm) {
-				ok = append(ok, i)
+		if res.known[p-1] >= 0 && useKnown {
+			k := res.known[p-1]
+			if res.masks[k].Contains(dm) && !res.masks[k].Intersects(cm) {
+				ok = []int{k}
+			}
+		} else {
+			for i, m := range res.masks {
+				if m.Contains(dm) && !m.Intersects(cm) {
+					ok = append(ok, i)
+				}
 			}
 		}
 		if len(ok) == 0 {
@@ -154,7 +178,7 @@ func (g *Game) prepare(useKnown bool) (*prepared, error) {
 			}
 			return nil, fmt.Errorf("player %d: no rule matches their markers", p)
 		}
-		res.cands = append(res.cands, ok)
+		res.cands[p-1] = ok
 	}
 	return res, nil
 }

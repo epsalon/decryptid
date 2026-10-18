@@ -5,7 +5,10 @@
 // negated: "Not ...", meaning the habitat is anywhere else.
 package rule
 
-import "github.com/epsalon/decryptid/board"
+import (
+	"github.com/epsalon/decryptid/board"
+	"github.com/epsalon/decryptid/uint128"
+)
 
 // RuleSpec is one clue.
 type RuleSpec struct {
@@ -31,33 +34,50 @@ func (r RuleSpec) Advanced() bool {
 // BoardRule is a rule evaluated on a particular board.
 type BoardRule struct {
 	RuleSpec
-	allowed []bool // per hex, indexed y*board.Width + x
+	mask uint128.Uint128
+}
+
+// Mask returns the rule's matching hexes as a 128-bit mask.
+func (b BoardRule) Mask() uint128.Uint128 {
+	return b.mask
 }
 
 // ToBoolSlice returns, per hex (indexed y*board.Width + x), whether the
 // rule allows the habitat there.
 func (b BoardRule) ToBoolSlice() []bool {
-	return b.allowed
+	return b.mask.ToBoolSlice(board.Width * board.Height)
+}
+
+var distMask [4][board.Width * board.Height]uint128.Uint128
+
+func init() {
+	for d := 0; d <= 3; d++ {
+		for y := 0; y < board.Height; y++ {
+			for x := 0; x < board.Width; x++ {
+				var m uint128.Uint128
+				for _, c := range withinDistance(x, y, d) {
+					m = m.SetBit(c.y*board.Width + c.x)
+				}
+				distMask[d][y*board.Width+x] = m
+			}
+		}
+	}
 }
 
 // OnBoard evaluates the rule on every hex of b.
 func (r RuleSpec) OnBoard(b *board.Board) BoardRule {
-	allowed := make([]bool, board.Width*board.Height)
+	var m uint128.Uint128
 	for y, row := range b {
 		for x, h := range row {
 			if r.match(h) {
-				for _, c := range withinDistance(x, y, r.dist) {
-					allowed[c.y*board.Width+c.x] = true
-				}
+				m = m.Or(distMask[r.dist][y*board.Width+x])
 			}
 		}
 	}
 	if r.neg {
-		for i := range allowed {
-			allowed[i] = !allowed[i]
-		}
+		m = m.Not().And(uint128.Ones108)
 	}
-	return BoardRule{RuleSpec: r, allowed: allowed}
+	return BoardRule{RuleSpec: r, mask: m}
 }
 
 type coord struct{ x, y int }

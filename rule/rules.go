@@ -60,9 +60,32 @@ func D3Color(c board.BuildingColor) RuleSpec {
 	}
 }
 
+var (
+	allRules   []RuleSpec
+	basicRules []RuleSpec
+)
+
+func init() {
+	allRules = buildAllRules()
+	for _, r := range allRules {
+		if !r.Advanced() {
+			basicRules = append(basicRules, r)
+		}
+	}
+}
+
 // AllRules lists every rule, each followed by its "Not ..." version.
 // Basic games use the subset where Advanced() is false.
 func AllRules() []RuleSpec {
+	return allRules
+}
+
+// BasicRules returns all rules where Advanced() is false.
+func BasicRules() []RuleSpec {
+	return basicRules
+}
+
+func buildAllRules() []RuleSpec {
 	var out []RuleSpec
 	addWithNeg := func(r RuleSpec) {
 		out = append(out, r)
