@@ -8,6 +8,12 @@ const S = 30; // hex radius in SVG units
 const HexShape = defineHex({ dimensions: S, orientation: Orientation.FLAT, offset: -1, origin: 'topLeft' });
 const grid = new Grid(HexShape, rectangle({ width: 12, height: 9 }));
 const PAD = 4;
+// Insets as a fraction of the hex radius. The likelihood halo occupies the
+// band from the edge inwards by up to HALO_MAX units; the territory outline
+// sits further in, so even the thickest halo leaves a gap before it.
+const HALO_MIN = 1.5;
+const HALO_MAX = 4.5;
+const TERRITORY = 0.76;
 
 const TERRAIN = {
   forest: { fill: '#4f8a3c', glyph: '♣' },
@@ -83,18 +89,20 @@ export class Board {
       if (hasViable && !o?.viable) {
         el('polygon', { points: points(), class: 'ruled-out' }, g);
       }
+      if (o?.viable) {
+        // Thicker halo = likelier. It hugs the hex edge and stays outside the
+        // territory outline (drawn after it, further in), so the two never
+        // overlap. Inline style, so it beats the stylesheet.
+        const w = HALO_MIN + (HALO_MAX - HALO_MIN) * (o.weight ?? 1);
+        el('polygon', { points: points(1 - w / (2 * S)), class: 'ring viable', style: `stroke-width:${w.toFixed(1)}` }, g);
+      }
       el('text', { x: -S * 0.52, y: -S * 0.6, class: 'glyph' }, g).textContent = t.glyph;
-      if (h.animal) el('polygon', { points: points(0.84), class: `territory ${h.animal}` }, g);
+      if (h.animal) el('polygon', { points: points(TERRITORY), class: `territory ${h.animal}` }, g);
       if (h.structure) drawStructure(g, h.structure, h.color);
       const pieces = byHex.get(key);
       if (pieces) drawPieces(g, pieces);
       if (opts.coords) el('text', { y: S * 0.74, class: 'coord' }, g).textContent = key;
-      if (o?.viable) {
-        // Thicker halo = likelier. Inline style, so it beats the stylesheet.
-        const w = 1.5 + 4.5 * (o.weight ?? 1);
-        el('polygon', { points: points(1 - w / (2 * S)), class: 'ring viable', style: `stroke-width:${w.toFixed(1)}` }, g);
-      }
-      if (o?.kind) el('polygon', { points: points(o.viable ? 0.74 : 0.92), class: `ring ${o.kind}` }, g);
+      if (o?.kind) el('polygon', { points: points(o.viable ? 0.6 : 0.92), class: `ring ${o.kind}` }, g);
       if (o) {
         if (o.label != null) {
           el('circle', { cx: S * 0.45, cy: -S * 0.45, r: S * 0.34, class: `badge ${o.kind}` }, g);
