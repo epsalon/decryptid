@@ -8,19 +8,25 @@ import (
 	"testing"
 
 	"github.com/epsalon/decryptid/board"
+	"github.com/epsalon/decryptid/search"
 )
 
-func loadSetup(t *testing.T) *Game {
-	f, err := os.Open("../examples/setup.txt")
+func loadGame(tb testing.TB, path string) *Game {
+	tb.Helper()
+	f, err := os.Open(path)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	defer f.Close()
 	g, err := Parse(f)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return g
+}
+
+func loadSetup(tb testing.TB) *Game {
+	return loadGame(tb, "../examples/setup.txt")
 }
 
 // TestMarkersNarrowDown plays out random games: pick a real solution, have
@@ -159,4 +165,86 @@ func hexDist(x1, y1, x2, y2 int) int {
 		return v
 	}
 	return max(abs(a1-a2), abs(b1-b2), abs(c1-c2))
+}
+
+// BenchmarkSolve measures the end-to-end solving and search process across
+// multiple representative game configurations (in-progress game, empty setups
+// with 3 to 5 players, and advanced rules).
+func BenchmarkSolve(b *testing.B) {
+	b.Run("GameInProgress", func(b *testing.B) {
+		g := loadGame(b, "../examples/game.txt")
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if _, err := g.Solve(); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("Setup3P", func(b *testing.B) {
+		g := loadGame(b, "../examples/setup.txt")
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if _, err := g.Solve(); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("Setup4P", func(b *testing.B) {
+		g := loadGame(b, "../examples/setup.txt")
+		g.Players = 4
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if _, err := g.Solve(); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("Setup5P", func(b *testing.B) {
+		g := loadGame(b, "../examples/setup.txt")
+		g.Players = 5
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if _, err := g.Solve(); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	b.Run("Advanced4P", func(b *testing.B) {
+		g := loadGame(b, "../examples/advanced.txt")
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if _, err := g.Solve(); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+}
+
+// BenchmarkSolveStages breaks down the solving process into individual stages:
+// board/candidate preparation, combinatorial search, and the full Solve.
+func BenchmarkSolveStages(b *testing.B) {
+	g := loadGame(b, "../examples/game.txt")
+	b.Run("Prepare", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			if _, err := g.prepare(true); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	p, err := g.prepare(true)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.Run("Search", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = search.Solve(p.masks, p.cands, !g.AnyClues)
+		}
+	})
+	b.Run("FullSolve", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			if _, err := g.Solve(); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
 }

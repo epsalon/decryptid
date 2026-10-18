@@ -84,3 +84,24 @@ func TestSolveNonMinimal(t *testing.T) {
 		t.Error("non-minimal search missed {1, 2, 4}")
 	}
 }
+
+// BenchmarkSolve measures the core assignment search on candidate rule sets.
+func BenchmarkSolve(b *testing.B) {
+	us := getRuleSet()
+	all := []int{0, 1, 2, 3, 4}
+	cands := [][]int{{1}, {0, 1, 3, 4}, all}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = Solve(us, cands, true)
+	}
+}
+
+// BenchmarkCombos measures intersecting rule combo generation.
+func BenchmarkCombos(b *testing.B) {
+	us := getRuleSet()
+	all := []int{0, 1, 2, 3, 4}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = combos(us, all, 3, true)
+	}
+}
