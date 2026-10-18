@@ -1,6 +1,7 @@
 # Web build: the Go engine as WebAssembly plus Go's JS glue, into web/.
 WEB := web
 NODE ?= node
+PORT ?= 8347
 
 .PHONY: web serve test smoke e2e clean
 
@@ -9,7 +10,7 @@ web:
 	cp "$$(go env GOROOT)/lib/wasm/wasm_exec.js" $(WEB)/wasm_exec.js
 
 serve: web
-	python3 -m http.server -d $(WEB) 8000
+	python3 -m http.server --bind 127.0.0.1 -d $(WEB) $(PORT)
 
 test:
 	go test ./...
