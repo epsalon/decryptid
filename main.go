@@ -17,8 +17,10 @@ func main() {
 	verbose := flag.Bool("v", false, "list the rule assignments behind each location and each player's possible rules")
 	listRules := flag.Bool("rules", false, "list rule names and numbers (for 'rule' lines) and exit")
 	basic := flag.Bool("basic", false, "with -rules, list only basic-mode rules")
+	cube := flag.String("cube", "", "rank hexes where `PLAYER` (whose rule must be known) can place a cube, least informative to others first")
+	top := flag.Int("n", 10, "with -cube, how many options to show")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [-v] GAMEFILE|-\n       %s -rules [-basic]\n", os.Args[0], os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [-v] GAMEFILE|-\n       %s -cube PLAYER [-n N] GAMEFILE|-\n       %s -rules [-basic]\n", os.Args[0], os.Args[0], os.Args[0])
 		flag.PrintDefaults()
 	}
 	flag.Parse()
@@ -34,13 +36,13 @@ func main() {
 		flag.Usage()
 		os.Exit(2)
 	}
-	if err := run(flag.Arg(0), *verbose); err != nil {
+	if err := run(flag.Arg(0), *verbose, *cube, *top); err != nil {
 		fmt.Fprintln(os.Stderr, "decryptid:", err)
 		os.Exit(1)
 	}
 }
 
-func run(path string, verbose bool) error {
+func run(path string, verbose bool, cube string, top int) error {
 	var in io.Reader = os.Stdin
 	if path != "-" {
 		f, err := os.Open(path)
@@ -53,6 +55,9 @@ func run(path string, verbose bool) error {
 	g, err := game.Parse(in)
 	if err != nil {
 		return err
+	}
+	if cube != "" {
+		return adviseCube(g, cube, top)
 	}
 	res, err := g.Solve()
 	if err != nil {
@@ -112,4 +117,52 @@ func describe(h board.Hex) string {
 		parts = append(parts, h.C.String()+" "+h.B.String())
 	}
 	return strings.Join(parts, ", ")
+}
+
+func adviseCube(g *game.Game, who string, top int) error {
+	me, err := game.ParsePlayer(who)
+	if err != nil {
+		return err
+	}
+	opts, err := g.AdviseCube(me)
+	if err != nil {
+		return err
+	}
+	b, err := g.Board()
+	if err != nil {
+		return err
+	}
+	if top <= 0 || top > len(opts) {
+		top = len(opts)
+	}
+	for _, o := range opts[:top] {
+		b[o.Y][o.X].Highlighted = true
+	}
+	fmt.Print(b)
+
+	fmt.Printf("\n%d hexes where %s (%s) can place a cube; best %d, least informative first.\n",
+		len(opts), game.PlayerColors[me-1], g.Known[me], top)
+	fmt.Println("Bits = what the cube tells the others (summed, expected over their possible rules);")
+	fmt.Println("Loc = drop in their uncertainty about the location (can be negative).")
+	fmt.Printf("\n  %-7s %-38s %6s %6s", "hex", "", "bits", "loc")
+	for p := 1; p <= g.Players; p++ {
+		if p != me {
+			fmt.Printf(" %8s", game.PlayerColors[p-1])
+		}
+	}
+	fmt.Println()
+	for _, o := range opts[:top] {
+		fmt.Printf("  %-7s %-38s %6.3f %6.3f", fmt.Sprintf("(%d,%d)", o.X, o.Y), describe(b[o.Y][o.X]), o.Bits, o.LocBits)
+		for p := 1; p <= g.Players; p++ {
+			if p != me {
+				fmt.Printf(" %8.3f", o.PerPlayer[p-1])
+			}
+		}
+		fmt.Println()
+	}
+	if top < len(opts) {
+		w := opts[len(opts)-1]
+		fmt.Printf("  ...\n  worst: (%d,%d) at %.3f bits\n", w.X, w.Y, w.Bits)
+	}
+	return nil
 }

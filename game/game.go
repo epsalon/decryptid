@@ -81,29 +81,59 @@ type Result struct {
 // Solve finds every way to give players rules that fits their markers and
 // pins the cryptid to one hex.
 func (g *Game) Solve() (*Result, error) {
+	p, err := g.prepare(true)
+	if err != nil {
+		return nil, err
+	}
+	res := &Result{Rules: p.rules, Candidates: p.cands}
+	res.Solutions = search.Solve(p.masks, p.cands)
+	b := p.board
+	for _, s := range res.Solutions {
+		b[s.Location/board.Width][s.Location%board.Width].Highlighted = true
+	}
+	res.Board = b
+	return res, nil
+}
+
+// prepared is everything needed to run a search for a game.
+type prepared struct {
+	board board.Board
+	rules []rule.RuleSpec
+	masks []uint128.Uint128 // per rule, the hexes it allows
+	cands [][]int           // per player (0-based), rules matching their markers
+	known []int             // per player (0-based), known rule index or -1
+}
+
+// prepare builds the board and per-player candidate rules. With useKnown
+// false, known rules are looked up (in p.known) but don't restrict p.cands.
+func (g *Game) prepare(useKnown bool) (*prepared, error) {
 	b, err := g.Board()
 	if err != nil {
 		return nil, err
 	}
-	res := &Result{Rules: g.Rules()}
+	res := &prepared{board: b, rules: g.Rules()}
 
-	masks := make([]uint128.Uint128, len(res.Rules))
+	res.masks = make([]uint128.Uint128, len(res.rules))
 	byName := map[string]int{}
-	for i, r := range res.Rules {
-		masks[i] = uint128.FromBoolSlice(r.OnBoard(&b).ToBoolSlice())
+	for i, r := range res.rules {
+		res.masks[i] = uint128.FromBoolSlice(r.OnBoard(&b).ToBoolSlice())
 		byName[r.Name] = i
 	}
 
 	for p := 1; p <= g.Players; p++ {
+		res.known = append(res.known, -1)
 		var cands []int
 		if name, ok := g.Known[p]; ok {
 			i, ok := byName[name]
 			if !ok {
 				return nil, fmt.Errorf("player %d: rule %q is not in play", p, name)
 			}
-			cands = []int{i}
+			res.known[p-1] = i
+		}
+		if res.known[p-1] >= 0 && useKnown {
+			cands = []int{res.known[p-1]}
 		} else {
-			for i := range res.Rules {
+			for i := range res.rules {
 				cands = append(cands, i)
 			}
 		}
@@ -111,7 +141,7 @@ func (g *Game) Solve() (*Result, error) {
 		dm, cm := uint128.FromBoolSlice(discs), uint128.FromBoolSlice(cubes)
 		var ok []int
 		for _, i := range cands {
-			if dm.AndNot(masks[i]).IsZero() && cm.And(masks[i]).IsZero() {
+			if dm.AndNot(res.masks[i]).IsZero() && cm.And(res.masks[i]).IsZero() {
 				ok = append(ok, i)
 			}
 		}
@@ -121,14 +151,8 @@ func (g *Game) Solve() (*Result, error) {
 			}
 			return nil, fmt.Errorf("player %d: no rule matches their markers", p)
 		}
-		res.Candidates = append(res.Candidates, ok)
+		res.cands = append(res.cands, ok)
 	}
-
-	res.Solutions = search.Solve(masks, res.Candidates)
-	for _, s := range res.Solutions {
-		b[s.Location/board.Width][s.Location%board.Width].Highlighted = true
-	}
-	res.Board = b
 	return res, nil
 }
 

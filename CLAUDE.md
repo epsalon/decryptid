@@ -37,7 +37,14 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
 - **`game`**: `Game`/`Marker`, the parser (format documented on `Parse`), and
   `Solve`. A player's candidate rules are those whose mask contains all of that
   player's discs and none of their cubes, narrowed to one rule if it is known.
-- **`main.go`**: the CLI.
+- **`game/advise.go`**: `AdviseCube` ranks legal cube hexes by the information
+  they give opponents. It streams solutions through `search.Each`, which never
+  materialises them, and counts worlds by (opponent j, j's rule, placer's rule,
+  location). Each candidate hex is then scored with array sums over the placer
+  rules that rule the hex out. `advise_test.go` checks the result against
+  re-solving the game with the cube actually placed. Keep that test passing
+  when you change the model.
+- **`main.go`**: the CLI (`-v`, `-cube PLAYER`, `-rules`).
 
 ## Invariants and gotchas
 
@@ -67,7 +74,8 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
 
 ## Roadmap
 
-1. Suggest the next question or cube placement: pick the move that splits the
-   remaining solutions best (expected information gain).
+1. Suggest the next question to ask: pick the (hex, player) whose answer splits
+   our remaining worlds best, while revealing little to others. `AdviseCube`'s
+   counting approach should carry over.
 2. Support interactive or incremental input instead of re-running on a whole file.
 3. Verify the tile data.

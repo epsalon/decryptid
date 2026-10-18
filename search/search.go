@@ -18,6 +18,16 @@ type Solution struct {
 // player p's rule is one of cands[p], the rules together match exactly one
 // hex, and every rule is needed (dropping any one leaves more than one hex).
 func Solve(masks []mask, cands [][]int) []Solution {
+	var out []Solution
+	Each(masks, cands, func(rules []int, loc int) {
+		out = append(out, Solution{Rules: append([]int(nil), rules...), Location: loc})
+	})
+	return out
+}
+
+// Each calls fn for every solution Solve would return, without storing them.
+// The rules slice is reused between calls, so fn must copy it to keep it.
+func Each(masks []mask, cands [][]int, fn func(rules []int, loc int)) {
 	n := len(cands)
 	canHave := make([][]bool, n)
 	inUnion := make([]bool, len(masks))
@@ -35,17 +45,13 @@ func Solve(masks []mask, cands [][]int) []Solution {
 		}
 	}
 
-	var out []Solution
 	for _, set := range combos(masks, allowed, n) {
 		if !consistent(masks, set) {
 			continue
 		}
 		loc := intersect(masks, set, -1).TrailingZeros()
-		for _, a := range assignments(set, canHave) {
-			out = append(out, Solution{Rules: a, Location: loc})
-		}
+		assign(set, canHave, func(a []int) { fn(a, loc) })
 	}
-	return out
 }
 
 func intersect(masks []mask, set []int, skip int) mask {
@@ -97,17 +103,16 @@ func consistent(masks []mask, set []int) bool {
 	return true
 }
 
-// assignments returns every way to give each player a different rule from
+// assign calls fn with every way to give each player a different rule from
 // set, where player p may only get rules with canHave[p][r].
-func assignments(set []int, canHave [][]bool) [][]int {
-	var out [][]int
+func assign(set []int, canHave [][]bool, fn func([]int)) {
 	n := len(canHave)
 	cur := make([]int, n)
 	used := make([]bool, len(set))
 	var rec func(p int)
 	rec = func(p int) {
 		if p == n {
-			out = append(out, append([]int(nil), cur...))
+			fn(cur)
 			return
 		}
 		for i, r := range set {
@@ -120,5 +125,4 @@ func assignments(set []int, canHave [][]bool) [][]int {
 		}
 	}
 	rec(0)
-	return out
 }

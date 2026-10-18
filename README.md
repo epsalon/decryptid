@@ -18,6 +18,7 @@ go run . -v examples/game.txt     # also: which clue assignments lead to each he
                                   #       and which clues each player may hold
 go run . -rules                   # clue names and numbers (add -basic for basic mode)
 go run . -                        # read the game from stdin
+go run . -cube yellow examples/game.txt   # where should yellow put a cube?
 ```
 
 Example output (abridged):
@@ -63,6 +64,29 @@ A hex is **viable** if the players can be given distinct clues such that:
 The count next to each location is how many such assignments lead there.
 This is a rough sense of likelihood, not a probability.
 
+## Cube advice: give away as little as possible
+
+At setup, and after a question gets a "no", you place a cube anywhere your clue
+rules out. `-cube PLAYER` ranks those hexes, least revealing first.
+That player's clue must be given with a `rule` line.
+
+It reasons from each opponent's point of view. An opponent knows only their own
+clue, so they consider every world (clue assignment) that fits the markers and
+their clue. Your cube removes the worlds where your clue would allow that hex.
+Because you don't know their clue, the score is averaged over the clues they
+could hold, given what you know.
+
+- **bits:** how much the cube tells the opponents, summed over them.
+  For each opponent it's -log2 of the share of their possible worlds that
+  survive, so it is never negative. The ranking uses this.
+- **loc:** the drop in their uncertainty (entropy) about the location.
+  It can be negative: removing the likeliest hexes can leave the rest
+  more evenly spread.
+
+The model assumes every valid world is equally likely. It also assumes
+opponents don't reason about *why* you chose a hex: a predictable strategy
+leaks information of its own.
+
 ## Development
 
 ```sh
@@ -81,5 +105,6 @@ go test ./...
 
 - [x] Viable locations from discs, cubes, and known clues
 - [x] Basic and advanced modes, including black buildings
-- [ ] Suggest the most informative question or cube placement
+- [x] Least-revealing cube placement (`-cube`)
+- [ ] Suggest the most informative question to ask
 - [ ] Verify the hard-coded map tiles against the physical game

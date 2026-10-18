@@ -174,6 +174,11 @@ func parseLine(g *Game, f []string, known map[int]string, sawTiles *bool) error 
 	return nil
 }
 
+// ParsePlayer parses a player number (from 1) or color name.
+func ParsePlayer(s string) (int, error) {
+	return player(strings.ToLower(s))
+}
+
 func player(s string) (int, error) {
 	for i, c := range PlayerColors {
 		if s == c {
