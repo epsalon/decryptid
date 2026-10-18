@@ -10,8 +10,8 @@ import (
 	"github.com/epsalon/decryptid/board"
 )
 
-// PlayerColors are the names accepted for players 1-5, matching the colors
-// the board printer uses for their discs and cubes.
+// PlayerColors are the colours of the physical set, in the order the board
+// printer uses for them. A game's seats may use any of them (Game.Colors).
 var PlayerColors = []string{"yellow", "red", "green", "cyan", "purple"}
 
 // Parse reads a game description. Blank lines and text after '#' are
@@ -24,12 +24,15 @@ var PlayerColors = []string{"yellow", "red", "green", "cyan", "purple"}
 //	clues minimal|any         minimal: every clue is needed to pin the cryptid (default)
 //	disc PLAYER X Y           PLAYER's rule allows the cryptid at (X, Y)
 //	cube PLAYER X Y           PLAYER's rule rules out (X, Y)
+//	colors C1 C2 ...          the colours playing, in turn order (default: the first
+//	                          'players' of PlayerColors); also sets the player count
 //	rule PLAYER NAME...       PLAYER's rule is known (name or number from -rules)
 //
-// PLAYER is a number from 1 or a color from PlayerColors.
+// PLAYER is a seat number from 1 (turn order) or a colour playing.
 func Parse(r io.Reader) (*Game, error) {
 	g := &Game{Players: 3, Advanced: true, Known: map[int]string{}}
-	known := map[int]string{}
+	known := map[string]string{} // player token -> rule, resolved at the end
+	var markers []pendingMarker
 	sawTiles := false
 	sc := bufio.NewScanner(r)
 	for ln := 1; sc.Scan(); ln++ {
@@ -41,7 +44,7 @@ func Parse(r io.Reader) (*Game, error) {
 		if len(f) == 0 {
 			continue
 		}
-		if err := parseLine(g, f, known, &sawTiles); err != nil {
+		if err := parseLine(g, f, known, &markers, &sawTiles); err != nil {
 			return nil, fmt.Errorf("line %d: %v", ln, err)
 		}
 	}
@@ -58,8 +61,23 @@ func Parse(r io.Reader) (*Game, error) {
 			}
 		}
 	}
+	if err := g.checkColors(); err != nil {
+		return nil, err
+	}
+	for _, pm := range markers {
+		p, err := g.Player(pm.player)
+		if err != nil {
+			return nil, err
+		}
+		pm.m.Player = p
+		g.Markers = append(g.Markers, pm.m)
+	}
 	rules := g.Rules()
-	for p, name := range known {
+	for tok, name := range known {
+		p, err := g.Player(tok)
+		if err != nil {
+			return nil, err
+		}
 		if p > g.Players {
 			return nil, fmt.Errorf("rule given for player %d but there are only %d players", p, g.Players)
 		}
@@ -83,7 +101,13 @@ func Parse(r io.Reader) (*Game, error) {
 	return g, nil
 }
 
-func parseLine(g *Game, f []string, known map[int]string, sawTiles *bool) error {
+// pendingMarker is a marker whose player is resolved once the colours are known.
+type pendingMarker struct {
+	player string
+	m      Marker
+}
+
+func parseLine(g *Game, f []string, known map[string]string, markers *[]pendingMarker, sawTiles *bool) error {
 	args := f[1:]
 	need := func(n int) error {
 		if len(args) != n {
@@ -163,46 +187,59 @@ func parseLine(g *Game, f []string, known map[int]string, sawTiles *bool) error 
 		if err := need(3); err != nil {
 			return err
 		}
-		p, err := player(args[0])
-		if err != nil {
+		if _, err := g.Player(args[0]); err != nil && !isColor(args[0]) {
 			return err
 		}
 		x, y, err := xy(args[1], args[2])
 		if err != nil {
 			return err
 		}
-		g.Markers = append(g.Markers, Marker{Player: p, X: x, Y: y, Cube: f[0] == "cube"})
+		*markers = append(*markers, pendingMarker{player: args[0], m: Marker{X: x, Y: y, Cube: f[0] == "cube"}})
 	case "rule":
 		if len(args) < 2 {
 			return fmt.Errorf("rule takes a player and a rule name")
 		}
-		p, err := player(args[0])
-		if err != nil {
+		if _, err := g.Player(args[0]); err != nil && !isColor(args[0]) {
 			return err
 		}
-		known[p] = strings.Join(args[1:], " ")
+		known[args[0]] = strings.Join(args[1:], " ")
+	case "colors", "colours":
+		if len(args) < 1 || len(args) > len(PlayerColors) {
+			return fmt.Errorf("colors takes 1-%d colours", len(PlayerColors))
+		}
+		g.Colors = append([]string(nil), args...)
+		g.Players = len(args)
 	default:
 		return fmt.Errorf("unknown command %q", f[0])
 	}
 	return nil
 }
 
-// ParsePlayer parses a player number (from 1) or color name.
-func ParsePlayer(s string) (int, error) {
-	return player(strings.ToLower(s))
-}
-
-func player(s string) (int, error) {
-	for i, c := range PlayerColors {
-		if s == c {
-			return i + 1, nil
+// Player parses a seat number (from 1) or the colour of a seat.
+func (g *Game) Player(s string) (int, error) {
+	s = strings.ToLower(s)
+	for p := 1; p <= g.Players; p++ {
+		if g.ColorName(p) == s {
+			return p, nil
 		}
 	}
 	n, err := strconv.Atoi(s)
 	if err != nil || n < 1 || n > len(PlayerColors) {
+		if isColor(s) {
+			return 0, fmt.Errorf("%s is not playing", s)
+		}
 		return 0, fmt.Errorf("bad player %q", s)
 	}
 	return n, nil
+}
+
+func isColor(s string) bool {
+	for _, c := range PlayerColors {
+		if c == s {
+			return true
+		}
+	}
+	return false
 }
 
 func xy(xs, ys string) (int, int, error) {

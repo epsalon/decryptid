@@ -2,7 +2,6 @@
 // with odd columns shifted down ("odd-q", offset -1), matching the engine.
 
 import { defineHex, Grid, Orientation, rectangle } from '../vendor/honeycomb-grid.mjs';
-import { PLAYERS } from './state.js';
 
 const S = 30; // hex radius in SVG units
 const HexShape = defineHex({ dimensions: S, orientation: Orientation.FLAT, offset: -1, origin: 'topLeft' });
@@ -130,7 +129,7 @@ export class Board {
       }
       if (h.structure) drawStructure(g, h.structure, h.color);
       const pieces = byHex.get(key);
-      if (pieces) drawPieces(g, pieces);
+      if (pieces) drawPieces(g, pieces, opts.seats);
       if (opts.coords) el('text', { y: S * 0.74, class: 'coord' }, g).textContent = key;
       if (o?.kind) el('polygon', { points: points(o.viable ? 0.6 : 0.92), class: `ring ${o.kind}` }, g);
       if (o) {
@@ -163,18 +162,18 @@ export function structureIcon(type, color, size = 16) {
     <polygon points="${STRUCTURE_POINTS[type]}" fill="${STRUCTURE_FILL[color]}" class="structure ${color}"/></svg>`;
 }
 
-// drawPieces puts each player's disc in a fixed spot around the hex
-// (pentagon corners, player 1 at the bottom), so pieces are recognisable
-// by position as well as colour. The cube goes in the middle, over any
-// structure.
-function drawPieces(g, { discs, cube }) {
+// drawPieces puts each colour's disc in a fixed spot around the hex
+// (pentagon corners, yellow at the bottom), so pieces are recognisable by
+// position as well as colour. The cube goes in the middle, over any
+// structure. seats[p-1] is seat p's {color, slot}.
+function drawPieces(g, { discs, cube }, seats) {
   for (const p of discs) {
-    const a = Math.PI / 2 + ((p - 1) * 2 * Math.PI) / 5;
-    el('circle', { cx: S * 0.52 * Math.cos(a), cy: S * 0.52 * Math.sin(a), r: S * 0.27, fill: PLAYERS[p - 1].color, class: 'disc' }, g);
+    const a = Math.PI / 2 + (seats[p - 1].slot * 2 * Math.PI) / 5;
+    el('circle', { cx: S * 0.52 * Math.cos(a), cy: S * 0.52 * Math.sin(a), r: S * 0.27, fill: seats[p - 1].color, class: 'disc' }, g);
   }
   if (cube) {
     const s = S * 0.5;
-    el('rect', { x: -s / 2, y: -s / 2, width: s, height: s, rx: 2, fill: PLAYERS[cube - 1].color, class: 'cube' }, g);
+    el('rect', { x: -s / 2, y: -s / 2, width: s, height: s, rx: 2, fill: seats[cube - 1].color, class: 'cube' }, g);
   }
 }
 

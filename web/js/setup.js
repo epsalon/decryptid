@@ -1,6 +1,6 @@
 // Setup panel: players, mode, map tiles, structures, import/export.
 
-import { structuresFor, setupProblems, defaultGame } from './state.js';
+import { structuresFor, setupProblems, defaultGame, PLAYERS, seatColors } from './state.js';
 import { structureIcon } from './board.js';
 import { hexRef } from './hexref.js';
 
@@ -173,9 +173,13 @@ export class SetupPanel {
     }
     const problems = setupProblems(game);
     this.root.innerHTML = `
-      <div class="field"><span>Players</span>
-        <div class="seg">${[3, 4, 5].map((n) => `<button data-players="${n}" class="${game.players === n ? 'on' : ''}">${n}</button>`).join('')}</div>
-      </div>
+      <h3>Players</h3>
+      <p class="hint">Tap the colours that are playing, clockwise from the first player.</p>
+      <div class="chips">${PLAYERS.map((c) => {
+        const i = seatColors(game).indexOf(c.name);
+        return `<button data-color="${c.name}" class="chip ${i >= 0 ? 'on' : ''}" aria-pressed="${i >= 0}">
+          <span class="dot" style="background:${c.color}"></span>${c.name}${i >= 0 ? ` <b class="seat-no">${i + 1}</b>` : ''}</button>`;
+      }).join('')}</div>
       <div class="field"><span>Mode</span>
         <div class="seg">
           <button data-mode="basic" class="${game.advanced ? '' : 'on'}">Basic</button>
@@ -216,11 +220,7 @@ export class SetupPanel {
 
   bind() {
     const q = (sel) => this.root.querySelectorAll(sel);
-    q('[data-players]').forEach((b) => (b.onclick = () => this.store.update((s) => {
-      s.game.players = +b.dataset.players;
-      s.game.markers = s.game.markers.filter((m) => m.player <= s.game.players);
-      if (s.me > s.game.players) s.me = 1;
-    })));
+    q('[data-color]').forEach((b) => (b.onclick = () => this.toggleColor(b.dataset.color)));
     q('[data-mode]').forEach((b) => (b.onclick = () => this.store.update((s) => {
       s.game.advanced = b.dataset.mode === 'advanced';
       if (!s.game.advanced) s.game.spec.buildings = s.game.spec.buildings.filter((x) => x.color !== 'black');
@@ -247,12 +247,36 @@ export class SetupPanel {
     q('[data-act]').forEach((b) => (b.onclick = () => this[b.dataset.act]()));
   }
 
+  // toggleColor adds a colour as the last seat, or removes it along with its
+  // markers and known clue (later seats move up one).
+  toggleColor(name) {
+    const colors = seatColors(this.store.state.game);
+    const i = colors.indexOf(name);
+    if (i < 0 && colors.length >= 5) return this.toast('Cryptid has at most 5 players.');
+    if (i >= 0 && colors.length <= 3) return this.toast('Cryptid needs at least 3 players.');
+    this.store.update((s) => {
+      const g = s.game;
+      if (i < 0) {
+        g.colors = [...colors, name];
+      } else {
+        const q = i + 1; // the seat that leaves
+        g.colors = colors.filter((c) => c !== name);
+        g.markers = g.markers.filter((m) => m.player !== q).map((m) => (m.player > q ? { ...m, player: m.player - 1 } : m));
+        g.known = Object.fromEntries(Object.entries(g.known).filter(([p]) => +p !== q).map(([p, r]) => [+p > q ? +p - 1 : +p, r]));
+        if (s.me === q) s.me = 0;
+        else if (s.me > q) s.me--;
+        s.history = { past: [], future: [] }; // undo steps refer to the old seats
+      }
+      g.players = g.colors.length;
+    });
+  }
+
   async random() {
     const { game } = this.store.state;
     const g = await this.engine.call('randomSetup', { players: game.players, advanced: game.advanced, seed: Date.now() % 1e9 });
     this.placing = null;
     this.store.update((s) => {
-      s.game = { ...g, markers: [], known: {} };
+      s.game = { ...g, colors: seatColors(s.game), markers: [], known: {} };
     });
   }
 
@@ -263,6 +287,7 @@ export class SetupPanel {
       const keep = s.game;
       s.game = defaultGame();
       s.game.players = keep.players;
+      s.game.colors = seatColors(keep);
       s.game.advanced = keep.advanced;
     });
   }
@@ -282,8 +307,10 @@ export class SetupPanel {
         this.placing = null;
         this.store.update((s) => {
           s.game = { markers: [], known: {}, ...g };
+          s.game.colors = seatColors(s.game);
           const known = Object.keys(s.game.known);
           if (known.length === 1) s.me = +known[0];
+          else if (s.me > s.game.players) s.me = 0;
         });
         this.toast('Game loaded.');
       }],

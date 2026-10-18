@@ -84,6 +84,9 @@ func (g *Game) Format() string {
 		fmt.Fprintf(&sb, "%-5s %2d %d %s\n", b.B.Key(), b.X, b.Y, b.C.Key())
 	}
 	fmt.Fprintf(&sb, "players %d\n", g.Players)
+	if len(g.Colors) > 0 {
+		fmt.Fprintf(&sb, "colors %s\n", strings.Join(g.Colors, " "))
+	}
 	if g.Advanced {
 		sb.WriteString("mode advanced\n")
 	} else {
@@ -97,7 +100,7 @@ func (g *Game) Format() string {
 		if m.Cube {
 			kind = "cube"
 		}
-		fmt.Fprintf(&sb, "%s %-6s %2d %d\n", kind, PlayerColors[m.Player-1], m.X, m.Y)
+		fmt.Fprintf(&sb, "%s %-6s %2d %d\n", kind, g.ColorName(m.Player), m.X, m.Y)
 	}
 	var ps []int
 	for p := range g.Known {
@@ -105,7 +108,7 @@ func (g *Game) Format() string {
 	}
 	sort.Ints(ps)
 	for _, p := range ps {
-		fmt.Fprintf(&sb, "rule %s %s\n", PlayerColors[p-1], g.Known[p])
+		fmt.Fprintf(&sb, "rule %s %s\n", g.ColorName(p), g.Known[p])
 	}
 	return sb.String()
 }

@@ -95,8 +95,14 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   the standard error of a win rate is about 0.03 at 200 games.
 - **"Distance N" in rule names means "within N"**, distance 0 included.
   Rule names are user input (`rule PLAYER NAME`), so renaming a rule breaks game files.
-- **Player colours are display-only.** `game.PlayerColors` must stay in the
-  same order as `playerColor` in `board/print.go`.
+- **Seats are turn order; colours are labels.** Markers, `Known` and every
+  advisor use seat numbers. `Game.Colors` (JS `game.colors`) gives each
+  seat's colour. Default: the first `Players` of `PlayerColors`. The terminal
+  board shows pieces via `Game.DisplayBoard`, and the web board puts each
+  colour's disc in a fixed spot (`seat().slot`). `game.PlayerColors` must stay
+  in the same order as `playerColor` in `board/print.go` and `PLAYERS` in
+  `web/js/state.js`.
+- **`me = 0` means spectator** in the web UI: no known clue, and no advice.
 - **The tile data in `board.Tiles` matches the physical game.** It was
   checked hex by hex against an independent transcription and confirmed by
   the user. Flipped tiles are rotated 180°.

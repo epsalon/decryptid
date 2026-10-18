@@ -144,7 +144,7 @@ button:disabled { opacity: 0.45; cursor: default; border-color: var(--line); }
 .locs li { display: grid; grid-template-columns: 3.2em 1fr 3em; gap: 8px; align-items: center; padding: 2px 0; }
 .locs li span:last-child, .clues li span:last-child { text-align: right; color: var(--muted); }
 .bar { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--viable-color, #ff007a); border-radius: 4px; }
+.bar i { display: block; height: 100%; background: #9b8bb8; border-radius: 4px; }
 .clues li { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0 2px 20px; }
 details { margin: 4px 0; }
 details summary { cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 4px 0; }

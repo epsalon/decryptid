@@ -88,7 +88,7 @@ func run(path string, verbose bool, cube, turn string, top int, lambda, searchAt
 		return err
 	}
 
-	fmt.Print(res.Board)
+	fmt.Print(g.DisplayBoard(res.Board))
 	locs := res.Locations()
 	if len(locs) == 0 {
 		fmt.Println("\nNo viable locations: the markers don't fit any valid rule combination.")
@@ -144,7 +144,7 @@ func describe(h board.Hex) string {
 }
 
 func adviseCube(g *game.Game, who string, top int) error {
-	me, err := game.ParsePlayer(who)
+	me, err := g.Player(who)
 	if err != nil {
 		return err
 	}
@@ -162,16 +162,16 @@ func adviseCube(g *game.Game, who string, top int) error {
 	for _, o := range opts[:top] {
 		b[o.Y][o.X].Highlighted = true
 	}
-	fmt.Print(b)
+	fmt.Print(g.DisplayBoard(b))
 
 	fmt.Printf("\n%d hexes where %s (%s) can place a cube; best %d, least informative first.\n",
-		len(opts), game.PlayerColors[me-1], g.Known[me], top)
+		len(opts), g.ColorName(me), g.Known[me], top)
 	fmt.Println("Bits = what the cube tells the others (summed, expected over their possible rules);")
 	fmt.Println("Loc = drop in their uncertainty about the location (can be negative).")
 	fmt.Printf("\n  %-7s %-38s %6s %6s", "hex", "", "bits", "loc")
 	for p := 1; p <= g.Players; p++ {
 		if p != me {
-			fmt.Printf(" %8s", game.PlayerColors[p-1])
+			fmt.Printf(" %8s", g.ColorName(p))
 		}
 	}
 	fmt.Println()

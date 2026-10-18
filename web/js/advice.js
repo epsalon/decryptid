@@ -1,7 +1,7 @@
 // "Advice" panel: the AI's recommendation for my turn, and where to put
 // my cube (at setup, or as a penalty after a "no").
 
-import { PLAYERS, setMarkers } from './state.js';
+import { setMarkers, seatLabel } from './state.js';
 import { matchActive } from './match.js';
 import { hexRef } from './hexref.js';
 
@@ -50,6 +50,7 @@ export class AdvicePanel {
   // blocker explains why advice can't be given yet, or returns null.
   blocker() {
     const { game, me } = this.app.store.state;
+    if (!me) return 'You are a spectator: pick your colour and clue in the <b>Me</b> tab to get advice.';
     if (this.app.analysis.blocked) return this.app.analysis.blocked;
     if (!game.known[me]) return 'Set your clue in the <b>Me</b> tab first: advice depends on what only you know.';
     return null;
@@ -155,7 +156,7 @@ export class AdvicePanel {
   }
 
   turnBody(d) {
-    const name = (p) => `<span class="dot" style="background:${PLAYERS[p - 1].color}"></span>${PLAYERS[p - 1].name}`;
+    const name = (p) => seatLabel(this.app.store.state.game, p);
     let rec;
     if (d.search) {
       rec = `<div class="rec"><div class="rec-action">Search <b>${hexRef(d.search.x, d.search.y)}</b></div>

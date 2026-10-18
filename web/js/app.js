@@ -2,7 +2,7 @@
 // keeps the solver's analysis of the current game up to date.
 
 import { Engine } from './engine.js';
-import { Store, setupProblems } from './state.js';
+import { Store, setupProblems, seat } from './state.js';
 import { Board } from './board.js';
 import { SetupPanel } from './setup.js';
 import { MePanel } from './me.js';
@@ -126,7 +126,8 @@ async function renderBoard() {
     return b ? { ...h, structure: b.type, color: b.color } : h;
   });
   const tiles = ui.tab === 'setup' ? game.spec.tiles : null; // tile numbers only while setting up
-  board.render(hexes, game.markers, current().panel.overlay(), { coords: ui.coords, tiles });
+  const seats = Array.from({ length: game.players }, (_, i) => seat(game, i + 1));
+  board.render(hexes, game.markers, current().panel.overlay(), { coords: ui.coords, tiles, seats });
 }
 
 function render() {

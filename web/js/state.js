@@ -12,6 +12,24 @@ export const PLAYERS = [
   { name: 'purple', color: '#8e4ec6' },
 ];
 
+// Seats are turn order; colours are just who sits there. game.colors lists
+// each seat's colour (same as Go's Game.Colors).
+export const seatColors = (game) => (game.colors?.length ? game.colors : PLAYERS.slice(0, game.players).map((p) => p.name));
+
+// seat describes seat p (1-based): its colour name, hex colour, and slot
+// (index in PLAYERS, which fixes where its discs sit in a hex).
+export function seat(game, p) {
+  const name = seatColors(game)[p - 1];
+  const slot = PLAYERS.findIndex((c) => c.name === name);
+  return { name, color: PLAYERS[slot].color, slot };
+}
+
+// seatLabel is a coloured dot plus the seat's colour name.
+export const seatLabel = (game, p) => {
+  const s = seat(game, p);
+  return `<span class="dot" style="background:${s.color}"></span>${s.name}`;
+};
+
 export const STRUCTURE_COLORS = ['white', 'blue', 'green', 'black'];
 export const STRUCTURE_TYPES = ['stone', 'shed'];
 
@@ -22,6 +40,7 @@ export function defaultGame() {
       buildings: [],
     },
     players: 4,
+    colors: ['yellow', 'red', 'green', 'cyan'],
     advanced: false,
     markers: [],
     known: {},
@@ -93,10 +112,12 @@ export function redo(state) {
 function withDefaults(s) {
   s.game.markers ??= [];
   s.game.known ??= {};
-  s.me ??= 1;
+  s.me ??= 0; // spectator: knows no clue
+  s.game.colors ??= seatColors(s.game);
   s.ui = { tab: 'setup', coords: false, tool: { player: 1, cube: false }, overlay: 'viable', hideClue: false, adviceMode: 'turn', lambda: 0.5, winValue: 16, matchHints: false, ...s.ui };
   s.ui.winValue ??= 16; // (older saved states had a search threshold instead)
-  s.ui.matchOpts ??= { players: 4, advanced: true, difficulty: 'hard', seat: 0 };
+  s.ui.matchOpts ??= { players: 4, advanced: true, difficulty: 'hard', seat: 0, color: 'yellow' };
+  s.ui.matchOpts.color ??= 'yellow';
   s.match ??= null;
   s.history ??= { past: [], future: [] };
   return s;

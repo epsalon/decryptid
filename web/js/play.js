@@ -1,7 +1,7 @@
 // "Play" panel: record discs and cubes as they are placed, and see what
 // the solver makes of them.
 
-import { PLAYERS, setMarkers, undo, redo, ruleLabel } from './state.js';
+import { setMarkers, undo, redo, ruleLabel, seat, seatLabel } from './state.js';
 import { hexRef } from './hexref.js';
 
 export class PlayPanel {
@@ -27,12 +27,12 @@ export class PlayPanel {
     const here = game.markers.filter((m) => m.x === x && m.y === y);
     const mine = here.find((m) => m.player === player);
     const otherCube = here.find((m) => m.cube && m.player !== player);
-    const name = PLAYERS[player - 1].name;
+    const name = seat(game, player).name;
     let markers;
     if (mine && !!mine.cube === cube) {
       markers = game.markers.filter((m) => m !== mine); // tap again to remove
     } else if (otherCube) {
-      this.app.toast(`${PLAYERS[otherCube.player - 1].name} has a cube there; nothing more can go on that hex.`);
+      this.app.toast(`${seat(game, otherCube.player).name} has a cube there; nothing more can go on that hex.`);
       return;
     } else {
       markers = game.markers.filter((m) => m !== mine);
@@ -63,9 +63,9 @@ export class PlayPanel {
     this.root.innerHTML = `
       ${status}
       <h3>Place</h3>
-      <div class="chips">${PLAYERS.slice(0, game.players).map((p, i) => `
+      <div class="chips">${Array.from({ length: game.players }, (_, i) => `
         <button data-tool-player="${i + 1}" class="chip ${tool.player === i + 1 ? 'on' : ''}">
-          <span class="dot" style="background:${p.color}"></span>${p.name}${i + 1 === me ? ' (you)' : ''}</button>`).join('')}
+          ${seatLabel(game, i + 1)}${i + 1 === me ? ' (you)' : ''}</button>`).join('')}
       </div>
       <div class="field">
         <div class="seg">
@@ -85,7 +85,7 @@ export class PlayPanel {
       ${summary.locations.length > top.length ? `<p class="hint">…and ${summary.locations.length - top.length} more.</p>` : ''}
       <h3>Possible clues</h3>
       ${summary.playerRules.map((rs, i) => `
-        <details><summary><span class="dot" style="background:${PLAYERS[i].color}"></span>${PLAYERS[i].name}${i + 1 === me ? ' (you)' : ''}: ${rs.length} clue${rs.length === 1 ? '' : 's'}</summary>
+        <details><summary>${seatLabel(game, i + 1)}${i + 1 === me ? ' (you)' : ''}: ${rs.length} clue${rs.length === 1 ? '' : 's'}</summary>
           <ul class="clues">${rs.slice(0, 12).map((r) => `<li><span>${ruleLabel(r.rule)}</span><span>${pct(r.worlds / total)}</span></li>`).join('')}
           ${rs.length > 12 ? `<li class="muted">…and ${rs.length - 12} more</li>` : ''}</ul></details>`).join('')}` : ''}`;
 

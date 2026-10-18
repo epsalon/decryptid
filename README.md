@@ -61,6 +61,7 @@ tiles 6F 1F 3 5F 4 2F      # six map tiles, left-to-right then top-to-bottom; F 
 stone 0 1 blue             # stone|shed X Y white|blue|green|black
 shed  8 2 blue
 players 3                  # 1-5, default 3
+colors red cyan purple     # optional: the colours playing, clockwise from the first player
 mode basic                 # basic | advanced (default advanced)
 
 disc red 6 2           # disc|cube PLAYER X Y
@@ -70,8 +71,10 @@ rule yellow Distance 1 from Swamp   # optional: a player's known clue (name or n
 
 - **Coordinates:** `X` is the column (0–11) and `Y` is the row (0–8). Every hex on
   the printed board shows its `X,Y`. Odd columns sit half a hex lower.
-- **Players:** a number 1–5 or the colour the printer uses for them:
-  yellow, red, green, cyan, purple (the physical set's colours).
+- **Players:** seats are turn order. A player is a seat number (1 = first
+  player) or the colour sitting there. The colours are those of the physical
+  set: yellow, red, green, cyan, purple. Without a `colors` line, the first
+  `players` of them are playing, in that order.
 - **Advanced mode** adds the "Not …" clues and black buildings.
   Black buildings in a basic game are an error.
 - A hex can hold at most one cube.

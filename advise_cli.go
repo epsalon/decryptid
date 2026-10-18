@@ -10,7 +10,7 @@ import (
 )
 
 func adviseTurn(g *game.Game, who string, top int, lambda, searchAt, winValue float64) error {
-	me, err := game.ParsePlayer(who)
+	me, err := g.Player(who)
 	if err != nil {
 		return err
 	}
@@ -30,14 +30,14 @@ func adviseTurn(g *game.Game, who string, top int, lambda, searchAt, winValue fl
 	case q != nil:
 		b[q.Y][q.X].Highlighted = true
 	}
-	fmt.Print(b)
+	fmt.Print(g.DisplayBoard(b))
 	fmt.Printf("\n%s (%s): cryptid is on one of %d hexes (%.2f bits of uncertainty).\n",
-		game.PlayerColors[me-1], g.Known[me], adv.Locations, adv.Entropy)
+		g.ColorName(me), g.Known[me], adv.Locations, adv.Entropy)
 	switch {
 	case s != nil:
 		fmt.Printf("\n>>> SEARCH (%d,%d) %s: %.0f%% chance it's there.\n", s.X, s.Y, describe(b[s.Y][s.X]), 100*s.P)
 	case q != nil:
-		fmt.Printf("\n>>> ASK %s about (%d,%d) %s.\n", game.PlayerColors[q.Player-1], q.X, q.Y, describe(b[q.Y][q.X]))
+		fmt.Printf("\n>>> ASK %s about (%d,%d) %s.\n", g.ColorName(q.Player), q.X, q.Y, describe(b[q.Y][q.X]))
 	default:
 		fmt.Println("\nNo legal action.")
 		return nil
@@ -52,7 +52,7 @@ func adviseTurn(g *game.Game, who string, top int, lambda, searchAt, winValue fl
 		if i == top {
 			break
 		}
-		fmt.Printf("  %-8s %-7s %-34s %5.0f %6.3f %6.3f %6.3f\n", game.PlayerColors[q.Player-1],
+		fmt.Printf("  %-8s %-7s %-34s %5.0f %6.3f %6.3f %6.3f\n", g.ColorName(q.Player),
 			fmt.Sprintf("(%d,%d)", q.X, q.Y), describe(b[q.Y][q.X]), 100*q.PYes, q.Gain, q.Leak, q.Score)
 	}
 	fmt.Printf("\nBest searches (score = %g x win%% + gain - %.2f x leak):\n", winValue, lambda)

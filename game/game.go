@@ -20,8 +20,11 @@ type Game struct {
 	Players  int             `json:"players"`
 	Advanced bool            `json:"advanced,omitempty"` // whether "Not ..." rules and black buildings are in play
 	AnyClues bool            `json:"anyClues,omitempty"` // allow clue sets where some clue is redundant (default: every clue is needed)
-	Markers  []Marker        `json:"markers,omitempty"`  // discs and cubes on the board
-	Known    map[int]string  `json:"known,omitempty"`    // player -> rule name, for rules we know
+	// Colors is each seat's colour, in turn order (names from PlayerColors).
+	// Empty means the first Players colours of PlayerColors.
+	Colors  []string       `json:"colors,omitempty"`
+	Markers []Marker       `json:"markers,omitempty"` // discs and cubes on the board
+	Known   map[int]string `json:"known,omitempty"`   // player -> rule name, for rules we know
 }
 
 // Marker is a disc or cube placed by a player at board hex (X, Y).
@@ -41,9 +44,72 @@ func (g *Game) Rules() []rule.RuleSpec {
 	return rule.BasicRules()
 }
 
+// ColorName is the colour of seat p (1-based).
+func (g *Game) ColorName(p int) string {
+	return PlayerColors[g.colorIndex(p)]
+}
+
+// colorIndex is seat p's colour as an index into PlayerColors.
+func (g *Game) colorIndex(p int) int {
+	if p-1 < len(g.Colors) {
+		for i, c := range PlayerColors {
+			if c == g.Colors[p-1] {
+				return i
+			}
+		}
+	}
+	return p - 1
+}
+
+// checkColors validates Colors: one distinct, known colour per seat.
+func (g *Game) checkColors() error {
+	if len(g.Colors) == 0 {
+		return nil
+	}
+	if len(g.Colors) != g.Players {
+		return fmt.Errorf("%d colours for %d players", len(g.Colors), g.Players)
+	}
+	seen := map[string]bool{}
+	for _, c := range g.Colors {
+		known := false
+		for _, k := range PlayerColors {
+			known = known || c == k
+		}
+		if !known || seen[c] {
+			return fmt.Errorf("bad or repeated colour %q", c)
+		}
+		seen[c] = true
+	}
+	return nil
+}
+
+// DisplayBoard re-labels a board's pieces (stored by seat) by colour, for
+// printing: the terminal draws each colour in its own ANSI colour.
+func (g *Game) DisplayBoard(b board.Board) board.Board {
+	for y := range b {
+		for x := range b[y] {
+			h := &b[y][x]
+			var d board.PlayerSet
+			for p := 1; p <= g.Players; p++ {
+				if h.Discs&(1<<(p-1)) != 0 {
+					d |= 1 << g.colorIndex(p)
+				}
+			}
+			h.Discs = d
+			if h.Cube != 0 {
+				h.Cube = g.colorIndex(h.Cube) + 1
+			}
+		}
+	}
+	return b
+}
+
 // Board builds the board with all markers placed on it.
 func (g *Game) Board() (board.Board, error) {
 	b := board.MakeBoard(g.Spec)
+	if err := g.checkColors(); err != nil {
+		return b, err
+	}
 	for _, m := range g.Markers {
 		if m.Player < 1 || m.Player > g.Players {
 			return b, fmt.Errorf("player %d out of range 1-%d", m.Player, g.Players)

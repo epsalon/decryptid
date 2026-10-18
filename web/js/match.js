@@ -6,7 +6,7 @@
 // when a search gets a disc from everyone. AI seats decide with the same
 // advisors as the self-play simulator, seeing only their own clue.
 
-import { PLAYERS, ruleLabel } from './state.js';
+import { PLAYERS, ruleLabel, seat as seatOf } from './state.js';
 import { hexRef, linkHexRefs } from './hexref.js';
 
 // Difficulty levels map to the self-play policies (see sim.Policies).
@@ -18,8 +18,11 @@ export const DIFFICULTY = {
 
 const AI_DELAY = 700; // ms between AI moves, so they can be followed
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const name = (p) => PLAYERS[p - 1].name;
-const dot = (p) => `<span class="dot" style="background:${PLAYERS[p - 1].color}"></span>`;
+// Seats are turn order; names and dots come from the current game's colours.
+let currentGame = () => null;
+const name = (p) => seatOf(currentGame(), p).name;
+const dot = (p) => `<span class="dot" style="background:${seatOf(currentGame(), p).color}"></span>`;
+const ordinal = (n) => ['1st', '2nd', '3rd', '4th', '5th'][n - 1];
 
 // matchActive reports whether a match is running (and so editing the
 // game by hand is locked).
@@ -29,6 +32,7 @@ export class MatchPanel {
   constructor(root, app) {
     this.root = root;
     this.app = app;
+    currentGame = () => app.store.state.game;
     this.masks = null; // per seat, which hexes its clue allows
     this.masksFor = null; // match id the masks belong to
     this.busy = false; // an AI move is in progress
@@ -78,9 +82,13 @@ export class MatchPanel {
     const r = await this.app.engine.call('newMatch', { players: opts.players, advanced: opts.advanced, seed: Date.now() % 1e9 });
     const n = opts.players;
     const seat = opts.seat || 1 + Math.floor(Math.random() * n);
+    // My colour at my seat; the AIs get other colours at random.
+    const others = PLAYERS.map((c) => c.name).filter((c) => c !== opts.color).sort(() => Math.random() - 0.5);
+    const colors = others.slice(0, n - 1);
+    colors.splice(seat - 1, 0, opts.color);
     const queue = [...Array(n).keys()].map((i) => i + 1);
     this.app.store.update((s) => {
-      s.game = { ...r.game, markers: [], known: { [seat]: r.rules[seat - 1] } };
+      s.game = { ...r.game, colors, markers: [], known: { [seat]: r.rules[seat - 1] } };
       s.me = seat;
       s.history = { past: [], future: [] };
       s.match = {
@@ -315,16 +323,19 @@ export class MatchPanel {
         <button data-o="advanced" data-v="1" class="${o.advanced ? 'on' : ''}">Advanced</button></div></div>
       <div class="field"><span>AI</span><div class="seg">${Object.entries(DIFFICULTY).map(([k, d]) => `<button data-o="difficulty" data-v="${k}" class="${o.difficulty === k ? 'on' : ''}" title="${d.hint}">${d.label}</button>`).join('')}</div></div>
       <p class="hint">${DIFFICULTY[o.difficulty].label}: ${DIFFICULTY[o.difficulty].hint}.</p>
-      <div class="field"><span>Your seat</span><div class="seg">
+      <h3>Your colour</h3>
+      <div class="chips">${PLAYERS.map((c) => `<button data-o="color" data-v="${c.name}" class="chip ${o.color === c.name ? 'on' : ''}">
+        <span class="dot" style="background:${c.color}"></span>${c.name}</button>`).join('')}</div>
+      <div class="field"><span>You play</span><div class="seg">
         <button data-o="seat" data-v="0" class="${o.seat ? '' : 'on'}">Random</button>
-        ${[...Array(o.players).keys()].map((i) => `<button data-o="seat" data-v="${i + 1}" class="${o.seat === i + 1 ? 'on' : ''}">${dot(i + 1)}</button>`).join('')}</div></div>
-      <p class="hint">Seat 1 (yellow) moves first. ${o.players === 3 && !o.advanced ? 'Three-player basic games are often decided on the first turn.' : ''}</p>
+        ${[...Array(o.players).keys()].map((i) => `<button data-o="seat" data-v="${i + 1}" class="${o.seat === i + 1 ? 'on' : ''}">${ordinal(i + 1)}</button>`).join('')}</div></div>
+      <p class="hint">The AIs get the other colours at random. ${o.players === 3 && !o.advanced ? 'Three-player basic games are often decided on the first turn.' : ''}</p>
       <div class="actions"><button data-act="start" class="primary">Start match</button></div>
       <p class="hint">This replaces the game in the other tabs.</p>`;
     this.root.querySelectorAll('[data-o]').forEach((b) => (b.onclick = () => this.app.store.update((s) => {
       const v = b.dataset.v;
       const k = b.dataset.o;
-      s.ui.matchOpts[k] = k === 'difficulty' ? v : k === 'advanced' ? v === '1' : +v;
+      s.ui.matchOpts[k] = k === 'difficulty' || k === 'color' ? v : k === 'advanced' ? v === '1' : +v;
       if (s.ui.matchOpts.seat > s.ui.matchOpts.players) s.ui.matchOpts.seat = 0;
     })));
     this.root.querySelector('[data-act="start"]').onclick = (e) => {

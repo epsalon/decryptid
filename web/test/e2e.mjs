@@ -54,10 +54,22 @@ try {
   await page.waitForSelector('#board .hex');
   check(await count('#board .hex', 108), 'board draws 108 hexes');
   check(await count('.status.warn', 1), 'a fresh setup asks for structures');
+  await page.click('[data-tab="me"]');
+  check(await count('[data-me="0"].on', 1), 'a fresh app starts as a spectator');
+  await page.click('[data-tab="advice"]');
+  check((await page.textContent('#tab-body')).includes('spectator'), 'advice asks a spectator to pick a colour');
+  await page.click('[data-tab="setup"]');
 
   await page.click('text=Random board');
   await page.waitForSelector('.status.ok');
   check(await count('#board .structure', 6), 'random board has 6 structures');
+  // Colours playing, in seat order: drop cyan, then add purple as seat 4.
+  await page.click('[data-color="cyan"]');
+  check(await count('[data-color].on', 3), 'removing a colour leaves 3 players');
+  await page.click('[data-color="purple"]');
+  check((await page.textContent('[data-color="purple"] .seat-no')) === '4', 'an added colour takes the next seat');
+  await page.click('[data-color="purple"]');
+  await page.click('[data-color="cyan"]');
   await page.screenshot({ path: out + 'phone-random.png', fullPage: true });
 
   // Place a structure by tapping its chip, then a hex.
@@ -253,9 +265,11 @@ try {
   await page.click('[data-o="advanced"][data-v="1"]');
   await page.click('[data-o="difficulty"][data-v="hard"]');
   await page.click('[data-o="seat"][data-v="1"]');
+  await page.click('[data-o="color"][data-v="purple"]');
   await page.click('[data-act="start"]');
   await page.waitForSelector('.rec-action:has-text("setup cube")', { timeout: 30000 });
   check((await matchState()).rules.length === 4, 'a match deals four secret clues');
+  check((await page.textContent('#tab-body')).includes('You are') && (await page.textContent('#tab-body .hint')).includes('purple'), 'in vs AI I play the colour I chose');
   await page.click('[data-tab="advice"]');
   check((await page.textContent('#tab-body')).includes('hints are off'), 'solver hints are off by default in a match');
   await page.click('[data-tab="setup"]');
@@ -276,7 +290,8 @@ try {
   for (let i = 0; i < 108 && (await matchState()).log.length === logLen; i++) {
     await page.click(`#board [data-x="${i % 12}"][data-y="${Math.floor(i / 12)}"]`, { force: true });
   }
-  check(/asks red about/.test((await matchState()).log[0]), 'my question is answered and logged');
+  const seat2 = await page.evaluate(() => JSON.parse(localStorage.getItem('decryptid.v1')).game.colors[1]);
+  check(new RegExp(`asks ${seat2} about`).test((await matchState()).log[0]), `my question to ${seat2} is answered and logged`);
   for (let guard = 0; guard < 20; guard++) {
     await myMove();
     const m = await matchState();
@@ -287,8 +302,8 @@ try {
     await page.click(`#board [data-x="${m.location.x}"][data-y="${m.location.y}"]`, { force: true });
   }
   const end = await matchState();
-  check(end.phase === 'over' && end.winner > 0, `the match ends with a winner (${['', 'yellow', 'red', 'green', 'cyan'][end.winner]})`);
-  check(end.log.some((l) => /^(red|green|cyan) (asks|searches)/.test(l)), 'the AIs took turns');
+  check(end.phase === 'over' && end.winner > 0, `the match ends with a winner (seat ${end.winner})`);
+  check(end.log.some((l) => /^(yellow|red|green|cyan) (asks|searches)/.test(l)), 'the AIs took turns');
   check(await count('.clues li', 4), 'everyone\'s clues are revealed');
   check(await count('#board .badge.best', 1), 'the cryptid\'s hex is starred');
   await page.screenshot({ path: out + 'phone-match.png', fullPage: true });
