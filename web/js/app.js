@@ -115,18 +115,39 @@ function analyze() {
 // fetched from the engine only then. Structures are drawn from the game
 // state directly, so placing or moving one redraws at once, without
 // waiting for the engine; markers and overlays are redrawn on every change.
+//
+// The worker answers one request at a time, so render() asks for terrain
+// before analyze() asks for a summary: otherwise a changed tile would only
+// be redrawn after the summary, which takes a few hundred ms on a fresh
+// 5-player advanced board.
 let terrain = [];
 let terrainFor = '';
-async function renderBoard() {
-  const { game, ui } = app.store.state;
+let terrainReq = { key: '', done: null }; // the request in flight
+function requestTerrain() {
+  const { game } = app.store.state;
   const key = JSON.stringify(game.spec.tiles);
+  if (key === terrainFor || key === terrainReq.key) return;
+  const bare = { ...game, spec: { tiles: game.spec.tiles, buildings: [] }, markers: [] };
+  terrainReq = {
+    key,
+    done: app.engine.latest('board', 'board', { game: bare }).then((h) => {
+      if (h === undefined) return; // superseded by a newer change
+      terrain = h;
+      terrainFor = key;
+    }, (err) => {
+      terrainReq.key = ''; // retry on the next render
+      throw err;
+    }),
+  };
+}
+
+async function renderBoard() {
+  const key = JSON.stringify(app.store.state.game.spec.tiles);
   if (key !== terrainFor) {
-    const bare = { ...game, spec: { tiles: game.spec.tiles, buildings: [] }, markers: [] };
-    const h = await app.engine.latest('board', 'board', { game: bare });
-    if (h === undefined) return; // superseded by a newer change
-    terrain = h;
-    terrainFor = key;
+    await terrainReq.done;
+    if (key !== terrainFor) return; // the tiles changed again; a newer render draws them
   }
+  const { game, ui } = app.store.state;
   const at = new Map(game.spec.buildings.map((b) => [`${b.x},${b.y}`, b]));
   const hexes = terrain.map((h) => {
     const b = at.get(`${h.x},${h.y}`);
@@ -141,6 +162,7 @@ function render() {
   dropStaleMatch(app.store.state);
   // Lets structures on the board grab touches for dragging, only in setup.
   document.body.classList.toggle('setup-mode', app.store.state.ui.tab === 'setup' && !matchActive(app.store.state));
+  requestTerrain(); // before analyze(): see above
   analyze();
   renderTabs();
   current().panel.render();
