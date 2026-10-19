@@ -109,7 +109,6 @@ export class PlayPanel {
         </div>
       </div>
       <p class="hint">${t('play.tapHint', { count: game.markers.length })}</p>
-      <p class="hint keys">${t('play.keys')}</p>
       <label class="check"><input type="checkbox" id="show-viable" ${ui.overlay === 'viable' ? 'checked' : ''}> ${t('play.highlight')}</label>
       ${summary ? `
       <h3>${t('play.likeliest')}</h3>

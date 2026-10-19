@@ -10,8 +10,7 @@
     "spectatorHint": "As a spectator you know no clue: the board shows what can be deduced from the markers alone. Pick your colour to enter your clue and get advice."
   },
   "play": {
-    "analyzing": "Analysing…",
-    "keys": "Keys: <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> pick a colour's cube (with <kbd>Shift</kbd>, its disc) · <kbd>Space</kbd> disc/cube · arrows + <kbd>Enter</kbd> place · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>?</kbd> all keys"
+    "analyzing": "Analysing…"
   },
   "advice": {
     "spectator": "You are a spectator: pick your colour and clue in the <b>Me</b> tab to get advice."

@@ -110,7 +110,6 @@
     "redo": "Redo",
     "tapHint_one": "Tap a hex to place; tap again to remove. {{count}} marker on the board.",
     "tapHint_other": "Tap a hex to place; tap again to remove. {{count}} markers on the board.",
-    "keys": "Keys: <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> pick a color's cube (with <kbd>Shift</kbd>, its disc) · <kbd>Space</kbd> disc/cube · arrows + <kbd>Enter</kbd> place · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>?</kbd> all keys",
     "highlight": "Highlight possible hexes <span class=\"muted\">(thicker outline = likelier)</span>",
     "likeliest": "Likeliest hexes",
     "possibleClues": "Possible clues",
