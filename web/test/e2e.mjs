@@ -413,6 +413,11 @@ try {
   await page.click('dialog button[value="close"]');
   await page.selectOption('#language', 'en');
   check((await page.textContent('#tab-body')).includes('Tap the colors that are playing'), 'switching to English (US) changes it back');
+  await page.selectOption('#language', 'he');
+  check((await page.getAttribute('html', 'dir')) === 'rtl' && (await page.getAttribute('html', 'lang')) === 'he', 'Hebrew: page is right-to-left');
+  check((await page.textContent('#tab-body')).includes('הקישו על הצבעים'), 'Hebrew: the UI is translated');
+  await page.selectOption('#language', 'en');
+  check((await page.getAttribute('html', 'dir')) === 'ltr', 'English: back to left-to-right');
   await uk.close();
 
   // --- On a touch phone, touching a coordinate spotlights it; if the board is

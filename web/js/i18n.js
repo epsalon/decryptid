@@ -11,7 +11,7 @@
 import i18next from '../vendor/i18next.mjs';
 
 // The languages offered in the footer, by BCP 47 code.
-export const LANGUAGES = { en: 'English (US)', 'en-GB': 'English (UK)' };
+export const LANGUAGES = { en: 'English (US)', 'en-GB': 'English (UK)', he: 'עברית' };
 
 // Where each language looks when a key is missing.
 const FALLBACK = {
@@ -58,6 +58,7 @@ export const t = (key, vars) => i18next.t(key, vars);
 // their content, and data-i18n-<attr> their attribute, from the catalog.
 function applyLanguage() {
   document.documentElement.lang = i18next.resolvedLanguage ?? 'en';
+  document.documentElement.dir = i18next.dir();
   for (const el of document.querySelectorAll('[data-i18n]')) el.innerHTML = t(el.dataset.i18n);
   for (const el of document.querySelectorAll('*')) {
     for (const a of el.getAttributeNames()) {
