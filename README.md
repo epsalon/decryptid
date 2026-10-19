@@ -34,7 +34,7 @@ make serve    # builds web/decryptid.wasm and serves at http://localhost:8347
 #### Languages
 
 The UI follows the browser's language, or the one picked in the footer.
-English is available in US and UK spelling. To add a language:
+English (US and UK spelling) and Hebrew are available. To add a language:
 
 1. Copy `web/locales/en.json` to `web/locales/<code>.json` (a BCP 47 code,
    such as `fr`) and translate the values. Keep the `{{placeholders}}`, and
@@ -193,6 +193,10 @@ seats. In those tournaments:
 ```sh
 go test ./...
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, the test commands and
+recipes (adding a clue, an API operation, a tab or a language), and
+[CLAUDE.md](CLAUDE.md) for the architecture.
 
 | Package   | Purpose                                                      |
 |-----------|--------------------------------------------------------------|
