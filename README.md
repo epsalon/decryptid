@@ -31,6 +31,18 @@ Visit **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** or run it loc
 make serve    # builds web/decryptid.wasm and serves at http://localhost:8347
 ```
 
+#### Keyboard shortcuts (Play tab)
+
+| Key | Action |
+|---|---|
+| <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> | Place that colour's **cube** (yellow, red, green, cyan, purple) |
+| <kbd>Shift</kbd> + letter | Place that colour's **disc** |
+| <kbd>Space</kbd> | Switch between disc and cube |
+| <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> | Undo (add <kbd>Shift</kbd> to redo) |
+
+They select what a tap on the board will place. They don't work while typing
+in a field or during a match against the AI.
+
 ### CLI
 
 Requires Go 1.25+.
