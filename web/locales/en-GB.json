@@ -1,0 +1,28 @@
+{
+  "setup": {
+    "playersHint": "Tap the colours that are playing.",
+    "needColors": "Choose at least 3 colours first.",
+    "problem": {
+      "players": "Choose at least 3 colours (Cryptid needs 3–5 players)."
+    }
+  },
+  "me": {
+    "spectatorHint": "As a spectator you know no clue: the board shows what can be deduced from the markers alone. Pick your colour to enter your clue and get advice."
+  },
+  "play": {
+    "analyzing": "Analysing…",
+    "keys": "Keys: <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> pick a colour's cube (with <kbd>Shift</kbd>, its disc) · <kbd>Space</kbd> disc/cube · arrows + <kbd>Enter</kbd> place · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>?</kbd> all keys"
+  },
+  "advice": {
+    "spectator": "You are a spectator: pick your colour and clue in the <b>Me</b> tab to get advice."
+  },
+  "match": {
+    "yourColor": "Your colour",
+    "othersRandom": "The AIs get the other colours at random.",
+    "keys": "Keys: <kbd>A</kbd> ask · <kbd>S</kbd> search · a colour's letter picks whom · arrows + <kbd>Enter</kbd> choose the hex"
+  },
+  "keys": {
+    "cube": "Place that colour's cube",
+    "disc": "Place that colour's disc"
+  }
+}

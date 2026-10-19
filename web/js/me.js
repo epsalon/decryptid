@@ -1,6 +1,7 @@
-// "Me" panel: which colour is mine (or none: a spectator), and my secret clue.
+// "Me" panel: which color is mine (or none: a spectator), and my secret clue.
 
 import { ruleGroups, ruleLabel, seatLabel } from './state.js';
+import { t } from './i18n.js';
 
 export class MePanel {
   constructor(root, app) {
@@ -13,34 +14,33 @@ export class MePanel {
   }
 
   onHex() {
-    this.app.toast('Switch to Play to place discs and cubes.');
+    this.app.toast(t('me.useplay'));
   }
 
   render() {
     const { game, me, ui, match } = this.app.store.state;
     if (match && match.phase !== 'over') {
-      this.root.innerHTML = '<p class="status">In a match against the AI your seat and clue are dealt to you: see the <b>vs AI</b> tab.</p>';
+      this.root.innerHTML = `<p class="status">${t('me.locked')}</p>`;
       return;
     }
     const rules = this.app.rulesFor(game.advanced);
     const clue = game.known[me] ?? '';
     const seats = Array.from({ length: game.players }, (_, i) => i + 1);
     this.root.innerHTML = `
-      <h3>You are</h3>
+      <h3>${t('me.youAre')}</h3>
       <div class="chips">
-        <button data-me="0" class="chip ${me === 0 ? 'on' : ''}">👁 Spectator</button>
+        <button data-me="0" class="chip ${me === 0 ? 'on' : ''}">👁 ${t('me.spectator')}</button>
         ${seats.map((p) => `<button data-me="${p}" class="chip ${me === p ? 'on' : ''}">${seatLabel(game, p)}</button>`).join('')}
       </div>
-      ${me === 0 ? `<p class="hint">As a spectator you know no clue: the board shows what can be deduced from the
-        markers alone. Pick your colour to enter your clue and get advice.</p>` : `
-      <h3>Your clue</h3>
-      <p class="hint">Used only on this device, to work out what you know that others don't.</p>
+      ${me === 0 ? `<p class="hint">${t('me.spectatorHint')}</p>` : `
+      <h3>${t('me.clue')}</h3>
+      <p class="hint">${t('me.clueHint')}</p>
       <select id="clue" class="${ui.hideClue ? 'hidden-clue' : ''}" ${rules ? '' : 'disabled'}>
-        <option value="">— not set —</option>
+        <option value="">${t('me.notSet')}</option>
         ${rules ? [...ruleGroups(rules)].map(([g, rs]) => `<optgroup label="${g}">${rs.map((r) =>
           `<option value="${r.name}" ${r.name === clue ? 'selected' : ''}>${ruleLabel(r.name)}</option>`).join('')}</optgroup>`).join('') : ''}
       </select>
-      <label class="check"><input type="checkbox" id="hide-clue" ${ui.hideClue ? 'checked' : ''}> Hide my clue (blurred until tapped)</label>`}`;
+      <label class="check"><input type="checkbox" id="hide-clue" ${ui.hideClue ? 'checked' : ''}> ${t('me.hideClue')}</label>`}`;
     this.root.querySelectorAll('[data-me]').forEach((b) => (b.onclick = () => this.app.store.update((s) => {
       const clue = s.game.known[s.me];
       s.me = +b.dataset.me;

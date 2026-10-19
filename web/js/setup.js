@@ -1,10 +1,11 @@
 // Setup panel: players, mode, map tiles, structures, import/export.
 
-import { structuresFor, setupProblems, defaultGame, PLAYERS, seatColors } from './state.js';
+import { structuresFor, setupProblems, defaultGame, PLAYERS, seatColors, colorName } from './state.js';
+import { t } from './i18n.js';
 import { structureIcon } from './board.js';
 import { hexRef } from './hexref.js';
 
-const label = (s) => `${s.color[0].toUpperCase()}${s.color.slice(1)} ${s.type}`;
+const label = (s) => t('structure.label', { color: t(`structureColor.${s.color}`), type: t(`structure.${s.type}.short`) });
 const same = (a, b) => a.type === b.type && a.color === b.color;
 
 export class SetupPanel {
@@ -112,7 +113,7 @@ export class SetupPanel {
     const from = bs.find((b) => same(b, s));
     if (here && same(here, s)) return;
     if (here && !from) {
-      this.toast(`${label(here)} is already there.`);
+      this.toast(t('setup.occupied', { structure: label(here) }));
       return;
     }
     this.store.update((st) => {
@@ -150,7 +151,7 @@ export class SetupPanel {
       return;
     }
     if (here && !same(here, this.placing)) {
-      this.toast(`${label(here)} is already there.`);
+      this.toast(t('setup.occupied', { structure: label(here) }));
       return;
     }
     const s = this.placing;
@@ -168,52 +169,52 @@ export class SetupPanel {
   render() {
     const { game } = this.store.state;
     if (this.store.state.match && this.store.state.match.phase !== 'over') {
-      this.root.innerHTML = '<p class="status">A match against the AI is in progress, so the setup is locked. Finish it or give up in the <b>vs AI</b> tab.</p>';
+      this.root.innerHTML = `<p class="status">${t('setup.locked')}</p>`;
       return;
     }
     const problems = setupProblems(game);
     this.root.innerHTML = `
-      <h3>Players</h3>
-      <p class="hint">Tap the colours that are playing.</p>
+      <h3>${t('setup.players')}</h3>
+      <p class="hint">${t('setup.playersHint')}</p>
       <div class="chips">${PLAYERS.map((c) => {
         const i = seatColors(game).indexOf(c.name);
         return `<button data-color="${c.name}" class="chip ${i >= 0 ? 'on' : ''}" aria-pressed="${i >= 0}">
-          <span class="dot" style="background:${c.color}"></span>${c.name}</button>`;
+          <span class="dot" style="background:${c.color}"></span>${colorName(c.name)}</button>`;
       }).join('')}</div>
-      <div class="field"><span>Mode</span>
+      <div class="field"><span>${t('setup.mode')}</span>
         <div class="seg">
-          <button data-mode="basic" class="${game.advanced ? '' : 'on'}">Basic</button>
-          <button data-mode="advanced" class="${game.advanced ? 'on' : ''}">Advanced</button>
+          <button data-mode="basic" class="${game.advanced ? '' : 'on'}">${t('setup.basic')}</button>
+          <button data-mode="advanced" class="${game.advanced ? 'on' : ''}">${t('setup.advanced')}</button>
         </div>
       </div>
-      <h3>Map tiles</h3>
-      <p class="hint">Copy the layout from the official app or setup card. ⟲&nbsp;marks a tile that is upside down.</p>
+      <h3>${t('setup.tiles')}</h3>
+      <p class="hint">${t('setup.tilesHint')}</p>
       <div class="tiles">
-        ${game.spec.tiles.flatMap((row, r) => row.map((t, c) => `
+        ${game.spec.tiles.flatMap((row, r) => row.map((tile, c) => `
           <div class="tile">
-            <select data-slot="${r},${c}" aria-label="Tile in row ${r + 1}, column ${c + 1}">
-              ${[1, 2, 3, 4, 5, 6].map((id) => `<option value="${id}" ${t.id === id ? 'selected' : ''}>Tile ${id}</option>`).join('')}
+            <select data-slot="${r},${c}" aria-label="${t('setup.tileSlot', { row: r + 1, col: c + 1 })}">
+              ${[1, 2, 3, 4, 5, 6].map((id) => `<option value="${id}" ${tile.id === id ? 'selected' : ''}>${t('setup.tile', { id })}</option>`).join('')}
             </select>
-            <button data-flip="${r},${c}" class="flip ${t.flipped ? 'on' : ''}" title="Rotated 180°">⟲</button>
+            <button data-flip="${r},${c}" class="flip ${tile.flipped ? 'on' : ''}" title="${t('setup.rotated')}">⟲</button>
           </div>`)).join('')}
       </div>
-      <h3>Structures</h3>
-      <p class="hint">Drag a structure onto its hex, or tap it and then the hex. Drag on the board to move one.</p>
+      <h3>${t('setup.structures')}</h3>
+      <p class="hint">${t('setup.structuresHint')}</p>
       <div class="structs">
         ${structuresFor(game).map((s) => {
           const b = game.spec.buildings.find((b) => same(b, s));
           const on = this.placing && same(this.placing, s);
           return `<button data-struct="${s.type},${s.color}" class="struct ${on ? 'on' : ''}">
             ${structureIcon(s.type, s.color, 18)}${label(s)}
-            <span class="where">${b ? hexRef(b.x, b.y, false) : on ? 'tap a hex' : '—'}</span></button>`;
+            <span class="where">${b ? hexRef(b.x, b.y, false) : on ? t('setup.tapHex') : '—'}</span></button>`;
         }).join('')}
       </div>
-      <p class="status ${problems.length ? 'warn' : 'ok'}">${problems.length ? problems.join(' ') : '✓ Board ready.'}</p>
+      <p class="status ${problems.length ? 'warn' : 'ok'}">${problems.length ? problems.join(' ') : t('setup.ready')}</p>
       <div class="actions">
-        <button data-act="random">Random board</button>
-        <button data-act="import">Import…</button>
-        <button data-act="export">Export…</button>
-        <button data-act="reset" class="danger">New game</button>
+        <button data-act="random">${t('setup.random')}</button>
+        <button data-act="import">${t('setup.import')}</button>
+        <button data-act="export">${t('setup.export')}</button>
+        <button data-act="reset" class="danger">${t('setup.newGame')}</button>
       </div>`;
     this.bind();
   }
@@ -231,7 +232,7 @@ export class SetupPanel {
       const id = +sel.value;
       const tiles = s.game.spec.tiles;
       // Keep each tile used once: swap with the slot that had it.
-      for (const row of tiles) for (const t of row) if (t.id === id) t.id = tiles[r][c].id;
+      for (const row of tiles) for (const tile of row) if (tile.id === id) tile.id = tiles[r][c].id;
       tiles[r][c].id = id;
     })));
     q('[data-flip]').forEach((b) => (b.onclick = () => this.store.update((s) => {
@@ -247,9 +248,9 @@ export class SetupPanel {
     q('[data-act]').forEach((b) => (b.onclick = () => this[b.dataset.act]()));
   }
 
-  // toggleColor adds or removes a colour. Order doesn't matter at the table,
-  // so seats follow the fixed colour order; markers, known clues and "me"
-  // move with their colour. Fewer than 3 is allowed while choosing; the
+  // toggleColor adds or removes a color. Order doesn't matter at the table,
+  // so seats follow the fixed color order; markers, known clues and "me"
+  // move with their color. Fewer than 3 is allowed while choosing; the
   // setup check then asks for more.
   toggleColor(name) {
     this.store.update((s) => {
@@ -259,7 +260,7 @@ export class SetupPanel {
       if (on.has(name)) on.delete(name);
       else on.add(name);
       const colors = PLAYERS.map((c) => c.name).filter((c) => on.has(c));
-      const moved = (p) => colors.indexOf(old[p - 1]) + 1; // 0 if its colour left
+      const moved = (p) => colors.indexOf(old[p - 1]) + 1; // 0 if its color left
       g.markers = g.markers.map((m) => ({ ...m, player: moved(m.player) })).filter((m) => m.player);
       g.known = Object.fromEntries(Object.entries(g.known).map(([p, r]) => [moved(+p), r]).filter(([p]) => p));
       s.me = s.me ? moved(s.me) : 0;
@@ -272,7 +273,7 @@ export class SetupPanel {
 
   async random() {
     const { game } = this.store.state;
-    if (seatColors(game).length < 3) return this.toast('Choose at least 3 colours first.');
+    if (seatColors(game).length < 3) return this.toast(t('setup.needColors'));
     const g = await this.engine.call('randomSetup', { players: game.players, advanced: game.advanced, seed: Date.now() % 1e9 });
     this.placing = null;
     this.store.update((s) => {
@@ -281,7 +282,7 @@ export class SetupPanel {
   }
 
   reset() {
-    if (!confirm('Start a new game? This clears the board and all markers.')) return;
+    if (!confirm(t('setup.confirmNew'))) return;
     this.placing = null;
     this.store.update((s) => {
       const keep = s.game;
@@ -294,16 +295,16 @@ export class SetupPanel {
 
   async export() {
     const text = await this.engine.call('format', { game: this.store.state.game });
-    textDialog('Export game', 'This is the same format the command-line tool reads.', text, [
-      ['Copy', async (t) => { await navigator.clipboard.writeText(t); this.toast('Copied.'); }],
-      ['Download', (t) => download('cryptid-game.txt', t)],
+    textDialog(t('setup.exportTitle'), t('setup.exportHint'), text, [
+      [t('setup.copy'), async (text) => { await navigator.clipboard.writeText(text); this.toast(t('setup.copied')); }],
+      [t('setup.download'), (text) => download('cryptid-game.txt', text)],
     ]);
   }
 
   import() {
-    textDialog('Import game', 'Paste a game file (as exported, or written for the command-line tool).', '', [
-      ['Load', async (t) => {
-        const g = await this.engine.call('parse', { text: t });
+    textDialog(t('setup.importTitle'), t('setup.importHint'), '', [
+      [t('setup.load'), async (text) => {
+        const g = await this.engine.call('parse', { text });
         this.placing = null;
         this.store.update((s) => {
           s.game = { markers: [], known: {}, ...g };
@@ -312,7 +313,7 @@ export class SetupPanel {
           if (known.length === 1) s.me = +known[0];
           else if (s.me > s.game.players) s.me = 0;
         });
-        this.toast('Game loaded.');
+        this.toast(t('setup.loaded'));
       }],
     ], true);
   }
@@ -326,7 +327,7 @@ function textDialog(title, hint, text, actions, editable = false) {
     <textarea rows="14" spellcheck="false" ${editable ? '' : 'readonly'}></textarea>
     <p class="error"></p>
     <div class="actions">${actions.map((a, i) => `<button type="button" data-i="${i}">${a[0]}</button>`).join('')}
-    <button value="close">Close</button></div></form>`;
+    <button value="close">${t('common.close')}</button></div></form>`;
   d.querySelector('textarea').value = text;
   d.querySelectorAll('[data-i]').forEach((b) => (b.onclick = async () => {
     try {

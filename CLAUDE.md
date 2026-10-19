@@ -76,6 +76,13 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   (`newMatch`) and answers come from rule `masks`; the turn rules mirror
   `sim`, so keep the two in step. Test with `make e2e`, a Playwright script that also cross-checks
   the UI against CLI results.
+- **i18n (`web/js/i18n.js`, i18next):** all UI text comes from `web/locales/*.json`
+  via `t('key', vars)`. `en.json` is the base (US English); other catalogs
+  hold only the keys that differ, with fallbacks such as en-AU → en-GB → en.
+  Clue names and colors are translated from their parts (`ruleLabel`,
+  `colorName`), and the vs AI log stores keys plus values, not text. Never put
+  user-visible English in JS or HTML; add a key and run `make i18n-check`
+  (it also runs in CI).
 - **`main.go`** / **`advise_cli.go`**: the CLI (`-v`, `-cube`, `-turn`, `-sim`, `-rules`).
 
 ## Invariants and gotchas

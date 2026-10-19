@@ -31,7 +31,7 @@ function el(name, attrs = {}, parent) {
   return e;
 }
 
-// Hex corners relative to the hex centre, scaled by f.
+// Hex corners relative to the hex center, scaled by f.
 const first = grid.getHex({ col: 0, row: 0 });
 const corners = first.corners.map((c) => [c.x - first.x, c.y - first.y]);
 const points = (f = 1) => corners.map(([x, y]) => `${(x * f).toFixed(2)},${(y * f).toFixed(2)}`).join(' ');
@@ -180,9 +180,9 @@ export function structureIcon(type, color, size = 16) {
     <polygon points="${STRUCTURE_POINTS[type]}" fill="${STRUCTURE_FILL[color]}" class="structure ${color}"/></svg>`;
 }
 
-// drawPieces puts each colour's disc in a fixed spot around the hex
-// (pentagon corners, yellow at the bottom), so pieces are recognisable by
-// position as well as colour. The cube goes in the middle, over any
+// drawPieces puts each color's disc in a fixed spot around the hex
+// (pentagon corners, yellow at the bottom), so pieces are recognizable by
+// position as well as color. The cube goes in the middle, over any
 // structure. seats[p-1] is seat p's {color, slot}.
 function drawPieces(g, { discs, cube }, seats) {
   for (const p of discs) {
@@ -215,12 +215,12 @@ function drawTileBorders(root) {
   const layer = el('g', { class: 'tile-borders' }, root);
   for (const hex of grid) {
     const { col: x, row: y } = hex;
-    // Odd-q neighbours to the right and below (each edge once).
+    // Odd-q neighbors to the right and below (each edge once).
     const below = [[x, y + 1], ...(x % 2 ? [[x + 1, y], [x + 1, y + 1]] : [[x + 1, y - 1], [x + 1, y]])];
     for (const [nx, ny] of below) {
       if (nx > 11 || ny < 0 || ny > 8 || slot(x, y) === slot(nx, ny)) continue;
       const n = grid.getHex({ col: nx, row: ny });
-      // The shared edge joins this hex's two corners nearest the neighbour.
+      // The shared edge joins this hex's two corners nearest the neighbor.
       const [a, b] = [...hex.corners]
         .sort((p, q) => Math.hypot(p.x - n.x, p.y - n.y) - Math.hypot(q.x - n.x, q.y - n.y));
       el('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: 'tile-border' }, layer);

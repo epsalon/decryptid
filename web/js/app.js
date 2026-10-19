@@ -11,6 +11,7 @@ import { AdvicePanel } from './advice.js';
 import { MatchPanel, matchActive, dropStaleMatch } from './match.js';
 import { installHexRefs, dropStaleHexRef } from './hexref.js';
 import { installKeys } from './keys.js';
+import { initI18n, setLanguage, t, LANGUAGES } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -57,12 +58,16 @@ const app = {
   },
 };
 
+// Translations load before anything is rendered.
+await initI18n(app.store.state.ui.language);
+$('engine-status').textContent = t('app.loading');
+
 const panels = {
-  setup: { title: 'Setup', panel: new SetupPanel($('tab-body'), app.store, app.engine, toast) },
-  me: { title: 'Me', panel: new MePanel($('tab-body'), app) },
-  play: { title: 'Play', panel: new PlayPanel($('tab-body'), app) },
-  advice: { title: 'Advice', panel: new AdvicePanel($('tab-body'), app) },
-  match: { title: 'vs AI', panel: new MatchPanel($('tab-body'), app) },
+  setup: { title: 'tab.setup', panel: new SetupPanel($('tab-body'), app.store, app.engine, toast) },
+  me: { title: 'tab.me', panel: new MePanel($('tab-body'), app) },
+  play: { title: 'tab.play', panel: new PlayPanel($('tab-body'), app) },
+  advice: { title: 'tab.advice', panel: new AdvicePanel($('tab-body'), app) },
+  match: { title: 'tab.match', panel: new MatchPanel($('tab-body'), app) },
 };
 const current = () => panels[app.store.state.ui.tab] ?? panels.setup;
 const board = new Board($('board'), (x, y) => current().panel.onHex(x, y));
@@ -71,7 +76,7 @@ installKeys(app, board, (x, y) => current().panel.onHex(x, y));
 
 function renderTabs() {
   $('tabs').innerHTML = Object.entries(panels)
-    .map(([k, p]) => `<button role="tab" data-tab="${k}" aria-selected="${k === app.store.state.ui.tab}">${p.title}</button>`)
+    .map(([k, p]) => `<button role="tab" data-tab="${k}" aria-selected="${k === app.store.state.ui.tab}">${t(p.title)}</button>`)
     .join('');
   $('tabs').querySelectorAll('[data-tab]').forEach((b) => (b.onclick = () => app.store.update((s) => (s.ui.tab = b.dataset.tab))));
 }
@@ -82,11 +87,11 @@ function analyze() {
   const a = app.analysis;
   const problems = setupProblems(game);
   if (matchActive(app.store.state) && !app.store.state.ui.matchHints) {
-    Object.assign(a, { key: '', summary: null, error: null, pending: false, blocked: 'Solver hints are off during a match. Turn them on in the <b>vs AI</b> tab.' });
+    Object.assign(a, { key: '', summary: null, error: null, pending: false, blocked: t('play.hintsOff') });
     return;
   }
   if (problems.length) {
-    Object.assign(a, { key: '', summary: null, error: null, pending: false, blocked: `Finish the setup first: ${problems.join(' ')}` });
+    Object.assign(a, { key: '', summary: null, error: null, pending: false, blocked: t('play.finishSetup', { problems: problems.join(' ') }) });
     return;
   }
   const key = JSON.stringify(game);
@@ -143,6 +148,15 @@ function render() {
   dropStaleHexRef();
 }
 
+// Language: the browser's by default, or chosen in the footer.
+$('language').innerHTML = [['auto', t('footer.automatic')], ...Object.entries(LANGUAGES)]
+  .map(([code, label]) => `<option value="${code}">${label}</option>`).join('');
+$('language').value = app.store.state.ui.language;
+$('language').onchange = async (e) => {
+  await setLanguage(e.target.value);
+  app.store.update((s) => (s.ui.language = e.target.value));
+};
+
 app.rerender = render;
 app.store.subscribe(render);
 $('coords').checked = !!app.store.state.ui.coords;
@@ -161,4 +175,4 @@ app.engine.ready
     $('engine-status').textContent = '';
     if (matchActive(app.store.state)) panels.match.panel.advance(); // resume after a reload
   })
-  .catch((e) => ($('engine-status').textContent = `Engine failed to load: ${e.message}`));
+  .catch((e) => ($('engine-status').textContent = t('app.engineFailed', { error: e.message })));

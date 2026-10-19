@@ -8,6 +8,8 @@ https://github.com/epsalon/decryptid). The web app also includes:
   wasm_exec.js from the Go distribution. BSD 3-Clause License, below.
 - honeycomb-grid 4.1.5 (vendor/honeycomb-grid.mjs), by Abbe Keultjes.
   MIT License, below and in vendor/honeycomb-grid.LICENSE.
+- i18next 26.4.2 (vendor/i18next.mjs), by the i18next authors.
+  MIT License, below and in vendor/i18next.LICENSE.
 
 
 ------------------------------------------------------------------------
@@ -50,6 +52,33 @@ honeycomb-grid (https://github.com/flauwekeul/honeycomb)
 MIT License
 
 Copyright (c) 2017 Abbe Keultjes
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+------------------------------------------------------------------------
+i18next (https://github.com/i18next/i18next)
+------------------------------------------------------------------------
+
+The MIT License (MIT)
+
+Copyright (c) 2011-present i18next
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

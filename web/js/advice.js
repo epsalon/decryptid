@@ -4,6 +4,7 @@
 import { setMarkers, seatLabel } from './state.js';
 import { matchActive } from './match.js';
 import { hexRef } from './hexref.js';
+import { t } from './i18n.js';
 
 const pct = (p) => (p >= 0.995 ? '100%' : p < 0.01 ? '<1%' : `${Math.round(p * 100)}%`);
 const bits = (b) => b.toFixed(2);
@@ -50,9 +51,9 @@ export class AdvicePanel {
   // blocker explains why advice can't be given yet, or returns null.
   blocker() {
     const { game, me } = this.app.store.state;
-    if (!me) return 'You are a spectator: pick your colour and clue in the <b>Me</b> tab to get advice.';
+    if (!me) return t('advice.spectator');
     if (this.app.analysis.blocked) return this.app.analysis.blocked;
-    if (!game.known[me]) return 'Set your clue in the <b>Me</b> tab first: advice depends on what only you know.';
+    if (!game.known[me]) return t('advice.needClue');
     return null;
   }
 
@@ -77,14 +78,14 @@ export class AdvicePanel {
 
   onHex(x, y) {
     if (matchActive(this.app.store.state)) {
-      this.app.toast('During a match, moves are made in the vs AI tab.');
+      this.app.toast(t('play.inMatch'));
       return;
     }
     const r = this.advice.result;
     if (r?.mode === 'cube' && r.data.some((c) => c.x === x && c.y === y)) {
       this.placeCube(x, y);
     } else {
-      this.app.toast('Use Play to place markers; here you can place your recommended cube.');
+      this.app.toast(t('advice.usePlay'));
     }
   }
 
@@ -100,7 +101,7 @@ export class AdvicePanel {
   placeCube(x, y) {
     const { me } = this.app.store.state;
     this.record({ player: me, x, y, cube: true }, 'turn');
-    this.app.toast(`Placed your cube on ${x},${y}.`);
+    this.app.toast(t('advice.placed', { hex: `${x},${y}` }));
   }
 
   render() {
@@ -114,25 +115,24 @@ export class AdvicePanel {
     let body;
     if (block) body = `<p class="status warn">${block}</p>`;
     else if (a.error) body = `<p class="status warn">⚠ ${a.error}</p>`;
-    else if (!r || r.mode !== mode) body = `<p class="status muted">Thinking…</p>`;
+    else if (!r || r.mode !== mode) body = `<p class="status muted">${t('advice.thinking')}</p>`;
     else body = mode === 'cube' ? this.cubeBody(r.data) : this.turnBody(r.data);
 
     this.root.innerHTML = `
       <div class="field">
         <div class="seg">
-          <button data-mode="turn" class="${mode === 'turn' ? 'on' : ''}">My turn</button>
-          <button data-mode="cube" class="${mode === 'cube' ? 'on' : ''}">Place a cube</button>
+          <button data-mode="turn" class="${mode === 'turn' ? 'on' : ''}">${t('advice.myTurn')}</button>
+          <button data-mode="cube" class="${mode === 'cube' ? 'on' : ''}">${t('advice.placeCube')}</button>
         </div>
-        ${a.pending && r ? '<span class="muted">Updating…</span>' : ''}
+        ${a.pending && r ? `<span class="muted">${t('common.updating')}</span>` : ''}
       </div>
       ${body}
-      <details class="settings"><summary>Settings</summary>
-        <label class="slider">Avoid helping others (λ) <b>${ui.lambda.toFixed(2)}</b>
+      <details class="settings"><summary>${t('advice.settings')}</summary>
+        <label class="slider">${t('advice.lambda')} <b>${ui.lambda.toFixed(2)}</b>
           <input type="range" id="lambda" min="0" max="1.5" step="0.05" value="${ui.lambda}"></label>
-        <label class="slider">Value of a win <b>${ui.winValue} bits</b>
+        <label class="slider">${t('advice.winValue')} <b>${t('advice.bits', { n: ui.winValue })}</b>
           <input type="range" id="win-value" min="1" max="40" step="1" value="${ui.winValue}"></label>
-        <p class="hint">Moves are scored as value × chance of winning + what you learn − λ × what others learn.
-          Defaults (λ 0.5, win 16 bits) won most often in AI-vs-AI self-play.</p>
+        <p class="hint">${t('advice.settingsHint')}</p>
       </details>`;
 
     const q = (sel) => this.root.querySelectorAll(sel);
@@ -141,7 +141,7 @@ export class AdvicePanel {
       const ask = r.data.ask;
       const cube = b.dataset.answer === 'cube';
       this.record({ player: ask.player, x: ask.x, y: ask.y, ...(cube ? { cube: true } : {}) }, cube ? 'cube' : null);
-      if (cube) this.app.toast('A "no" costs you a cube: here is where to put it.');
+      if (cube) this.app.toast(t('advice.penalty'));
     }));
     q('[data-place]').forEach((b) => (b.onclick = () => {
       const [x, y] = b.dataset.place.split(',').map(Number);
@@ -159,39 +159,39 @@ export class AdvicePanel {
     const name = (p) => seatLabel(this.app.store.state.game, p);
     let rec;
     if (d.search) {
-      rec = `<div class="rec"><div class="rec-action">Search <b>${hexRef(d.search.x, d.search.y)}</b></div>
-        <div class="muted">${pct(d.search.p)} chance the cryptid is there; if not, expected to teach you ${bits(d.search.gain)} bits and give others ${bits(d.search.leak)}.
-        Place your disc, then each player answers in turn; record their answers in <b>Play</b>.</div></div>`;
+      rec = `<div class="rec"><div class="rec-action">${t('advice.searchAt', { hex: `<b>${hexRef(d.search.x, d.search.y)}</b>` })}</div>
+        <div class="muted">${t('advice.searchWhy', { p: pct(d.search.p), gain: bits(d.search.gain), leak: bits(d.search.leak) })}</div></div>`;
     } else if (d.ask) {
-      rec = `<div class="rec"><div class="rec-action">Ask ${name(d.ask.player)} about <b>${hexRef(d.ask.x, d.ask.y)}</b></div>
-        <div class="muted">${pct(d.ask.pYes)} chance of a disc. Expected to teach you ${bits(d.ask.gain)} bits and give others ${bits(d.ask.leak)}.</div>
-        ${matchActive(this.app.store.state) ? '' : `<div class="actions answer"><span>They placed:</span>
-          <button data-answer="disc">● Disc</button><button data-answer="cube">■ Cube</button></div>`}</div>`;
+      rec = `<div class="rec"><div class="rec-action">${t('advice.askAbout', { player: name(d.ask.player), hex: `<b>${hexRef(d.ask.x, d.ask.y)}</b>` })}</div>
+        <div class="muted">${t('advice.askWhy', { p: pct(d.ask.pYes), gain: bits(d.ask.gain), leak: bits(d.ask.leak) })}</div>
+        ${matchActive(this.app.store.state) ? '' : `<div class="actions answer"><span>${t('advice.theyPlaced')}</span>
+          <button data-answer="disc">● ${t('common.disc')}</button><button data-answer="cube">■ ${t('common.cube')}</button></div>`}</div>`;
     } else {
-      rec = '<p class="status warn">No legal action.</p>';
+      rec = `<p class="status warn">${t('advice.noAction')}</p>`;
     }
     const ms = moves(d);
     return `
-      <p class="status">Cryptid is on one of <b>${d.locations}</b> hexes from your view (${bits(d.entropy)} bits of uncertainty).</p>
+      <p class="status">${t('advice.status', { count: d.locations, bits: bits(d.entropy) })}</p>
       ${rec}
-      <h3>Best moves</h3>
-      <table class="advice"><thead><tr><th>#</th><th>Move</th><th>Hex</th>
-        <th title="Chance this move wins the game">Win</th><th title="Chance of a disc (questions)">Disc</th>
-        <th title="Bits you learn (if it doesn't win)">Gain</th><th title="Bits others learn">Leak</th><th title="Overall score">Score</th></tr></thead>
+      <h3>${t('advice.bestMoves')}</h3>
+      <table class="advice"><thead><tr><th>#</th><th>${t('advice.col.move')}</th><th>${t('advice.col.hex')}</th>
+        <th title="${t('advice.col.winTip')}">${t('advice.col.win')}</th><th title="${t('advice.col.discTip')}">${t('advice.col.disc')}</th>
+        <th title="${t('advice.col.gainTip')}">${t('advice.col.gain')}</th><th title="${t('advice.col.leakTip')}">${t('advice.col.leak')}</th><th title="${t('advice.col.scoreTip')}">${t('advice.col.score')}</th></tr></thead>
       <tbody>${ms.map((m, i) => `<tr class="${m.kind}"><td>${i + 1}</td>
-        <td>${m.kind === 'search' ? '<b>Search</b>' : `Ask ${name(m.player)}`}</td><td>${hexRef(m.x, m.y)}</td>
+        <td>${m.kind === 'search' ? `<b>${t('advice.search')}</b>` : t('advice.ask', { player: name(m.player) })}</td><td>${hexRef(m.x, m.y)}</td>
         <td>${m.kind === 'search' ? pct(m.p) : '–'}</td><td>${m.kind === 'ask' ? pct(m.pYes) : '–'}</td>
         <td>${bits(m.gain)}</td><td>${bits(m.leak)}</td><td>${m.score.toFixed(2)}</td></tr>`).join('')}</tbody></table>`;
   }
 
   cubeBody(cubes) {
-    if (!cubes.length) return '<p class="status warn">Nowhere legal to place a cube.</p>';
+    if (!cubes.length) return `<p class="status warn">${t('advice.noCube')}</p>`;
     const top = cubes.slice(0, TOP);
+    const worst = cubes.at(-1);
     return `
-      <p class="hint">Hexes your clue rules out, least revealing first. Bits = how much the cube would tell the other players.</p>
-      <table class="advice"><thead><tr><th>#</th><th>Hex</th><th>Bits</th><th></th></tr></thead>
+      <p class="hint">${t('advice.cubeHint')}</p>
+      <table class="advice"><thead><tr><th>#</th><th>${t('advice.col.hex')}</th><th>${t('advice.col.bits')}</th><th></th></tr></thead>
       <tbody>${top.map((c, i) => `<tr><td>${i + 1}</td><td>${hexRef(c.x, c.y)}</td><td>${bits(c.bits)}</td>
-        <td>${matchActive(this.app.store.state) ? '' : `<button data-place="${c.x},${c.y}">Place</button>`}</td></tr>`).join('')}</tbody></table>
-      <p class="hint">Worst option: ${hexRef(cubes.at(-1).x, cubes.at(-1).y)} at ${bits(cubes.at(-1).bits)} bits. Tap a numbered hex to place there.</p>`;
+        <td>${matchActive(this.app.store.state) ? '' : `<button data-place="${c.x},${c.y}">${t('advice.place')}</button>`}</td></tr>`).join('')}</tbody></table>
+      <p class="hint">${t('advice.worst', { hex: hexRef(worst.x, worst.y), bits: bits(worst.bits) })}</p>`;
   }
 }

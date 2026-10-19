@@ -6,24 +6,30 @@
 // when a search gets a disc from everyone. AI seats decide with the same
 // advisors as the self-play simulator, seeing only their own clue.
 
-import { PLAYERS, ruleLabel, seat as seatOf, boardKey } from './state.js';
+import { PLAYERS, ruleLabel, seat as seatOf, boardKey, colorName } from './state.js';
+import { t } from './i18n.js';
 import { hexRef, linkHexRefs } from './hexref.js';
 import { typing } from './keys.js';
 
 // Difficulty levels map to the self-play policies (see sim.Policies).
 export const DIFFICULTY = {
-  easy: { label: 'Easy', lambda: 0.5, searchAt: 1, winValue: 0, random: true, hint: 'asks random questions' },
-  normal: { label: 'Normal', lambda: 0.5, searchAt: 1, winValue: 0, hint: 'asks good questions, searches only when certain' },
-  hard: { label: 'Hard', lambda: 0.5, winValue: 16, hint: 'the strongest policy found in self-play' },
+  easy: { lambda: 0.5, searchAt: 1, winValue: 0, random: true },
+  normal: { lambda: 0.5, searchAt: 1, winValue: 0 },
+  hard: { lambda: 0.5, winValue: 16 },
 };
 
 const AI_DELAY = 700; // ms between AI moves, so they can be followed
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-// Seats are turn order; names and dots come from the current game's colours.
+// Seats are turn order; names and dots come from the current game's colors.
 let currentGame = () => null;
-const name = (p) => seatOf(currentGame(), p).name;
+const name = (p) => colorName(seatOf(currentGame(), p).name);
 const dot = (p) => `<span class="dot" style="background:${seatOf(currentGame(), p).color}"></span>`;
-const ordinal = (n) => ['1st', '2nd', '3rd', '4th', '5th'][n - 1];
+const ordinal = (n) => t('match.position', { count: n, ordinal: true });
+
+// The log stores message keys and values, not text, so it shows in the
+// current language: {k: 'ask', p, j, hex, yes}, etc. (Old logs were text.)
+const logLine = (e) =>
+  typeof e === 'string' ? e : t(`match.log.${e.k}`, { ...e, p: e.p && name(e.p), j: e.j && name(e.j), mode: e.mode && t(`setup.${e.mode}`).toLowerCase() });
 
 // matchActive reports whether a match is running (and so editing the
 // game by hand is locked).
@@ -82,8 +88,8 @@ export class MatchPanel {
     this.app.store.update((s) => fn(s.match, s.game));
   }
 
-  log(text) {
-    this.update((m) => m.log.unshift(text));
+  log(entry) {
+    this.update((m) => m.log.unshift(entry));
   }
 
   piecesAt(x, y) {
@@ -94,7 +100,7 @@ export class MatchPanel {
     const r = await this.app.engine.call('newMatch', { players: opts.players, advanced: opts.advanced, seed: Date.now() % 1e9 });
     const n = opts.players;
     const seat = opts.seat || 1 + Math.floor(Math.random() * n);
-    // My colour at my seat; the AIs get other colours at random.
+    // My color at my seat; the AIs get other colors at random.
     const others = PLAYERS.map((c) => c.name).filter((c) => c !== opts.color).sort(() => Math.random() - 0.5);
     const colors = others.slice(0, n - 1);
     colors.splice(seat - 1, 0, opts.color);
@@ -114,7 +120,7 @@ export class MatchPanel {
         current: 1,
         penaltyFor: 0,
         turn: 1,
-        log: [`New ${n}-player ${r.game.advanced ? 'advanced' : 'basic'} game. You are ${name(seat)}.`],
+        log: [{ k: 'start', n, mode: r.game.advanced ? 'advanced' : 'basic', p: seat }],
         winner: 0,
         last: null,
         board: null, // set below, once the game is in place
@@ -144,7 +150,7 @@ export class MatchPanel {
         else await this.aiTurn(n.who);
       }
     } catch (e) {
-      this.app.toast(`AI error: ${e.message}`);
+      this.app.toast(t('match.aiError', { error: e.message }));
     } finally {
       this.busy = false;
       this.thinking = 0;
@@ -171,7 +177,7 @@ export class MatchPanel {
     let q = r.ask;
     if (q && d.random) q = r.questions[Math.floor(Math.random() * r.questions.length)];
     if (q) return this.ask(p, q.player, q.x, q.y);
-    this.log(`${name(p)} passes.`);
+    this.log({ k: 'pass', p });
     this.endTurn();
   }
 
@@ -179,7 +185,7 @@ export class MatchPanel {
     this.update((m, g) => {
       g.markers.push({ player: p, x, y, cube: true });
       m.last = { x, y };
-      m.log.unshift(`${name(p)} places a ${m.phase === 'setup' ? 'setup' : 'penalty'} cube on ${x},${y}.`);
+      m.log.unshift({ k: m.phase === 'setup' ? 'setupCube' : 'penaltyCube', p, hex: `${x},${y}` });
       if (m.phase === 'setup') {
         m.setupQueue.shift();
         if (!m.setupQueue.length) m.phase = 'turn';
@@ -201,7 +207,7 @@ export class MatchPanel {
     const yes = this.answer(j, x, y);
     this.update((m) => {
       m.last = { x, y };
-      m.log.unshift(`${name(p)} asks ${name(j)} about ${x},${y}: ${yes ? 'disc' : 'cube'}.`);
+      m.log.unshift({ k: yes ? 'askDisc' : 'askCube', p, j, hex: `${x},${y}` });
     });
     this.afterAction(p, yes);
   }
@@ -212,21 +218,21 @@ export class MatchPanel {
     }
     this.update((m) => {
       m.last = { x, y };
-      m.log.unshift(`${name(p)} searches ${x},${y}.`);
+      m.log.unshift({ k: 'search', p, hex: `${x},${y}` });
     });
     const n = this.app.store.state.game.players;
     for (let i = 1; i < n; i++) {
       const k = ((p - 1 + i) % n) + 1;
       if (this.piecesAt(x, y).some((m) => m.player === k && !m.cube)) continue;
       if (!this.answer(k, x, y)) {
-        this.log(`${name(k)} places a cube: the search fails.`);
+        this.log({ k: 'searchFails', p: k });
         return this.afterAction(p, false);
       }
     }
     this.update((m) => {
       m.phase = 'over';
       m.winner = p;
-      m.log.unshift(`${name(p)} found the cryptid on ${x},${y} and wins!`);
+      m.log.unshift({ k: 'win', p, hex: `${x},${y}` });
     });
   }
 
@@ -244,14 +250,14 @@ export class MatchPanel {
   }
 
   giveUp() {
-    if (!confirm('Give up and reveal everyone\'s clue?')) return;
+    if (!confirm(t('match.confirmGiveUp'))) return;
     this.update((m) => {
       m.phase = 'over';
-      m.log.unshift('You gave up.');
+      m.log.unshift({ k: 'gaveUp' });
     });
   }
 
-  // onKey: on my turn, A asks and S searches; a colour's letter picks whom
+  // onKey: on my turn, A asks and S searches; a color's letter picks whom
   // to ask. The hex comes from a tap or the board cursor (arrows + Enter).
   onKey(e) {
     const m = this.match;
@@ -262,8 +268,8 @@ export class MatchPanel {
     if (k === 'a' || k === 's') {
       this.action = k === 'a' ? 'ask' : 'search';
     } else {
-      const colour = { y: 'yellow', r: 'red', g: 'green', c: 'cyan', p: 'purple' }[k];
-      const p = colour && Array.from({ length: this.app.store.state.game.players }, (_, i) => i + 1).find((q) => name(q) === colour);
+      const color = { y: 'yellow', r: 'red', g: 'green', c: 'cyan', p: 'purple' }[k];
+      const p = color && Array.from({ length: this.app.store.state.game.players }, (_, i) => i + 1).find((q) => name(q) === color);
       if (!p || p === m.seat) return;
       this.action = 'ask';
       this.target = p;
@@ -277,20 +283,20 @@ export class MatchPanel {
   onHex(x, y) {
     const m = this.match;
     const n = this.need();
-    if (!m || !n) return this.app.toast(m ? 'The game is over.' : 'Start a match first.');
-    if (n.who !== m.seat || this.busy) return this.app.toast(`Wait for ${name(n.who)}.`);
+    if (!m || !n) return this.app.toast(t(m ? 'match.over' : 'match.startFirst'));
+    if (n.who !== m.seat || this.busy) return this.app.toast(t('match.waitFor', { player: name(n.who) }));
     const here = this.piecesAt(x, y);
-    if (here.some((p) => p.cube)) return this.app.toast('That hex has a cube: no one may use it.');
+    if (here.some((p) => p.cube)) return this.app.toast(t('match.cubed'));
     const me = m.seat;
     if (n.what === 'cube') {
-      if (this.allows(me, x, y)) return this.app.toast('Your clue allows that hex. Cubes go where your clue rules the cryptid out.');
+      if (this.allows(me, x, y)) return this.app.toast(t('match.cubeAllowed'));
       this.placeCube(me, x, y);
     } else if (this.action === 'search') {
-      if (!this.allows(me, x, y)) return this.app.toast('You can only search a hex your clue allows.');
+      if (!this.allows(me, x, y)) return this.app.toast(t('match.searchNotAllowed'));
       this.search(me, x, y);
     } else {
-      if (!this.target) return this.app.toast('First choose whom to ask.');
-      if (here.some((p) => p.player === this.target)) return this.app.toast(`${name(this.target)} already has a piece there.`);
+      if (!this.target) return this.app.toast(t('match.chooseWhom'));
+      if (here.some((p) => p.player === this.target)) return this.app.toast(t('match.hasPiece', { player: name(this.target) }));
       this.ask(me, this.target, x, y);
     }
     this.advance();
@@ -316,32 +322,32 @@ export class MatchPanel {
     const mine = n && n.who === m.seat;
     let status;
     if (m.phase === 'over') {
-      status = `<div class="rec"><div class="rec-action">${m.winner ? `${dot(m.winner)} ${m.winner === m.seat ? 'You win!' : `${name(m.winner)} wins.`}` : 'Game over.'}</div>
-        <div class="muted">The cryptid was on ${hexRef(m.location.x, m.location.y)} (★).</div></div>
-        <h3>Everyone's clues</h3><ul class="clues">${m.rules.map((r, i) => `<li><span>${dot(i + 1)} ${name(i + 1)}${i + 1 === m.seat ? ' (you)' : ''}</span><span>${ruleLabel(r)}</span></li>`).join('')}</ul>`;
+      const result = m.winner ? `${dot(m.winner)} ${m.winner === m.seat ? t('match.youWin') : t('match.wins', { player: name(m.winner) })}` : t('match.gameOver');
+      status = `<div class="rec"><div class="rec-action">${result}</div>
+        <div class="muted">${t('match.wasOn', { hex: hexRef(m.location.x, m.location.y) })}</div></div>
+        <h3>${t('match.everyonesClues')}</h3><ul class="clues">${m.rules.map((r, i) => `<li><span>${dot(i + 1)} ${name(i + 1)}${i + 1 === m.seat ? ` ${t('common.you')}` : ''}</span><span>${ruleLabel(r)}</span></li>`).join('')}</ul>`;
     } else if (!mine) {
-      status = `<p class="status">${dot(n.who)} ${name(n.who)} is ${n.what === 'cube' ? 'placing a cube' : 'taking a turn'}…</p>`;
+      status = `<p class="status">${dot(n.who)} ${t(n.what === 'cube' ? 'match.placingCube' : 'match.takingTurn', { player: name(n.who) })}</p>`;
     } else if (n.what === 'cube') {
-      status = `<div class="rec"><div class="rec-action">Place a ${m.phase === 'setup' ? 'setup' : 'penalty'} cube</div>
-        <div class="muted">Tap a hex your clue rules out. The Advice tab can suggest the least revealing spot.</div></div>`;
+      status = `<div class="rec"><div class="rec-action">${t(m.phase === 'setup' ? 'match.placeSetupCube' : 'match.placePenaltyCube')}</div>
+        <div class="muted">${t('match.cubeHint')}</div></div>`;
     } else {
       const others = [...Array(game.players).keys()].map((i) => i + 1).filter((p) => p !== m.seat);
-      status = `<div class="rec"><div class="rec-action">Your turn</div>
-        <div class="seg"><button data-action="ask" class="${this.action === 'ask' ? 'on' : ''}">Ask</button><button data-action="search" class="${this.action === 'search' ? 'on' : ''}">Search</button></div>
-        <p class="hint keys">Keys: <kbd>A</kbd> ask · <kbd>S</kbd> search · a colour's letter picks whom ·
-          arrows + <kbd>Enter</kbd> choose the hex</p>
+      status = `<div class="rec"><div class="rec-action">${t('match.yourTurn')}</div>
+        <div class="seg"><button data-action="ask" class="${this.action === 'ask' ? 'on' : ''}">${t('advice.askShort')}</button><button data-action="search" class="${this.action === 'search' ? 'on' : ''}">${t('advice.search')}</button></div>
+        <p class="hint keys">${t('match.keys')}</p>
         ${this.action === 'ask'
-          ? `<p class="hint">Ask whom? Then tap a hex.</p><div class="chips">${others.map((p) => `<button data-target="${p}" class="chip ${this.target === p ? 'on' : ''}">${dot(p)}${name(p)}</button>`).join('')}</div>`
-          : '<p class="hint">Tap a hex your clue allows. If everyone else places a disc, you win.</p>'}</div>`;
+          ? `<p class="hint">${t('match.askWhom')}</p><div class="chips">${others.map((p) => `<button data-target="${p}" class="chip ${this.target === p ? 'on' : ''}">${dot(p)}${name(p)}</button>`).join('')}</div>`
+          : `<p class="hint">${t('match.searchHint')}</p>`}</div>`;
     }
     this.root.innerHTML = `
-      <p class="hint">You are ${dot(m.seat)} <b>${name(m.seat)}</b> · ${DIFFICULTY[m.difficulty].label} AI ·
-        clue: <span class="${ui.hideClue ? 'hidden-clue' : ''}" tabindex="0">${ruleLabel(m.rules[m.seat - 1])}</span></p>
+      <p class="hint">${t('match.youAre', { dot: dot(m.seat), player: name(m.seat), level: t(`match.level.${m.difficulty}`) })}
+        <span class="${ui.hideClue ? 'hidden-clue' : ''}" tabindex="0">${ruleLabel(m.rules[m.seat - 1])}</span></p>
       ${status}
-      <label class="check"><input type="checkbox" id="hints" ${ui.matchHints ? 'checked' : ''}> Solver hints (highlighting and the Advice tab)</label>
-      <h3>Log <span class="muted">(newest first)</span></h3>
-      <ul class="log">${m.log.slice(0, 12).map((l) => `<li>${linkHexRefs(l)}</li>`).join('')}</ul>
-      <div class="actions">${m.phase === 'over' ? '<button data-act="new">New match</button>' : '<button data-act="giveup" class="danger">Give up</button>'}</div>`;
+      <label class="check"><input type="checkbox" id="hints" ${ui.matchHints ? 'checked' : ''}> ${t('match.hints')}</label>
+      <h3>${t('match.log.title')}</h3>
+      <ul class="log">${m.log.slice(0, 12).map((e) => `<li>${linkHexRefs(logLine(e))}</li>`).join('')}</ul>
+      <div class="actions">${m.phase === 'over' ? `<button data-act="new">${t('match.newMatch')}</button>` : `<button data-act="giveup" class="danger">${t('match.giveUp')}</button>`}</div>`;
     const q = (s) => this.root.querySelectorAll(s);
     q('[data-action]').forEach((b) => (b.onclick = () => { this.action = b.dataset.action; this.render(); }));
     q('[data-target]').forEach((b) => (b.onclick = () => { this.target = +b.dataset.target; this.render(); }));
@@ -353,22 +359,22 @@ export class MatchPanel {
   renderStart() {
     const o = this.app.store.state.ui.matchOpts;
     this.root.innerHTML = `
-      <p>Play a full game against AI opponents on a random board. Your clue is dealt to you; the AIs see only their own.</p>
-      <div class="field"><span>Players</span><div class="seg">${[3, 4, 5].map((n) => `<button data-o="players" data-v="${n}" class="${o.players === n ? 'on' : ''}">${n}</button>`).join('')}</div></div>
-      <div class="field"><span>Mode</span><div class="seg">
-        <button data-o="advanced" data-v="0" class="${o.advanced ? '' : 'on'}">Basic</button>
-        <button data-o="advanced" data-v="1" class="${o.advanced ? 'on' : ''}">Advanced</button></div></div>
-      <div class="field"><span>AI</span><div class="seg">${Object.entries(DIFFICULTY).map(([k, d]) => `<button data-o="difficulty" data-v="${k}" class="${o.difficulty === k ? 'on' : ''}" title="${d.hint}">${d.label}</button>`).join('')}</div></div>
-      <p class="hint">${DIFFICULTY[o.difficulty].label}: ${DIFFICULTY[o.difficulty].hint}.</p>
-      <h3>Your colour</h3>
+      <p>${t('match.intro')}</p>
+      <div class="field"><span>${t('match.players')}</span><div class="seg">${[3, 4, 5].map((n) => `<button data-o="players" data-v="${n}" class="${o.players === n ? 'on' : ''}">${n}</button>`).join('')}</div></div>
+      <div class="field"><span>${t('setup.mode')}</span><div class="seg">
+        <button data-o="advanced" data-v="0" class="${o.advanced ? '' : 'on'}">${t('setup.basic')}</button>
+        <button data-o="advanced" data-v="1" class="${o.advanced ? 'on' : ''}">${t('setup.advanced')}</button></div></div>
+      <div class="field"><span>${t('match.ai')}</span><div class="seg">${Object.keys(DIFFICULTY).map((k) => `<button data-o="difficulty" data-v="${k}" class="${o.difficulty === k ? 'on' : ''}" title="${t(`match.levelHint.${k}`)}">${t(`match.level.${k}`)}</button>`).join('')}</div></div>
+      <p class="hint">${t(`match.level.${o.difficulty}`)}: ${t(`match.levelHint.${o.difficulty}`)}.</p>
+      <h3>${t('match.yourColor')}</h3>
       <div class="chips">${PLAYERS.map((c) => `<button data-o="color" data-v="${c.name}" class="chip ${o.color === c.name ? 'on' : ''}">
-        <span class="dot" style="background:${c.color}"></span>${c.name}</button>`).join('')}</div>
-      <div class="field"><span>You play</span><div class="seg">
-        <button data-o="seat" data-v="0" class="${o.seat ? '' : 'on'}">Random</button>
+        <span class="dot" style="background:${c.color}"></span>${colorName(c.name)}</button>`).join('')}</div>
+      <div class="field"><span>${t('match.youPlay')}</span><div class="seg">
+        <button data-o="seat" data-v="0" class="${o.seat ? '' : 'on'}">${t('match.random')}</button>
         ${[...Array(o.players).keys()].map((i) => `<button data-o="seat" data-v="${i + 1}" class="${o.seat === i + 1 ? 'on' : ''}">${ordinal(i + 1)}</button>`).join('')}</div></div>
-      <p class="hint">The AIs get the other colours at random. ${o.players === 3 && !o.advanced ? 'Three-player basic games are often decided on the first turn.' : ''}</p>
-      <div class="actions"><button data-act="start" class="primary">Start match</button></div>
-      <p class="hint">This replaces the game in the other tabs.</p>`;
+      <p class="hint">${t('match.othersRandom')} ${o.players === 3 && !o.advanced ? t('match.threeBasic') : ''}</p>
+      <div class="actions"><button data-act="start" class="primary">${t('match.start')}</button></div>
+      <p class="hint">${t('match.replaces')}</p>`;
     this.root.querySelectorAll('[data-o]').forEach((b) => (b.onclick = () => this.app.store.update((s) => {
       const v = b.dataset.v;
       const k = b.dataset.o;
@@ -377,7 +383,7 @@ export class MatchPanel {
     })));
     this.root.querySelector('[data-act="start"]').onclick = (e) => {
       e.target.disabled = true;
-      e.target.textContent = 'Dealing…';
+      e.target.textContent = t('match.dealing');
       this.start(o).catch((err) => this.app.toast(err.message));
     };
   }

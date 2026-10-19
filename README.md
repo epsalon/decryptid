@@ -31,6 +31,20 @@ Visit **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** or run it loc
 make serve    # builds web/decryptid.wasm and serves at http://localhost:8347
 ```
 
+#### Languages
+
+The UI follows the browser's language, or the one picked in the footer.
+English is available in US and UK spelling. To add a language:
+
+1. Copy `web/locales/en.json` to `web/locales/<code>.json` (a BCP 47 code,
+   such as `fr`) and translate the values. Keep the `{{placeholders}}`, and
+   the plural suffixes (`_one`, `_other`, ...) that your language needs.
+   A regional variant (like `en-GB`) only needs the keys that differ.
+2. Add the code and its name to `LANGUAGES` in `web/js/i18n.js`.
+3. Run `make i18n-check`.
+
+Messages from the solver engine itself (rare errors) are still English.
+
 #### Keyboard shortcuts
 
 The whole game can be played from the keyboard. Press <kbd>?</kbd> in the app
@@ -203,6 +217,7 @@ go test ./...
 ## License
 
 MIT, see [LICENSE](LICENSE). The MIT license covers this project's own code
-only; it grants no rights in Cryptid itself, its name, or its components. The web app bundles the Go runtime (BSD 3-Clause)
-and [honeycomb-grid](https://github.com/flauwekeul/honeycomb) (MIT); their
+only; it grants no rights in Cryptid itself, its name, or its components. The web app bundles the Go runtime (BSD 3-Clause),
+[honeycomb-grid](https://github.com/flauwekeul/honeycomb) (MIT) and
+[i18next](https://github.com/i18next/i18next) (MIT); their
 notices are in [web/THIRD_PARTY_NOTICES.txt](web/THIRD_PARTY_NOTICES.txt).

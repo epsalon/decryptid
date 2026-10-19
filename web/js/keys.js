@@ -5,9 +5,11 @@
 //   Esc          hide the cursor (or close this help)
 //   ?            show all shortcuts
 //
-// Tabs add their own keys (Play: colours and pieces; vs AI: ask/search).
+// Tabs add their own keys (Play: colors and pieces; vs AI: ask/search).
 // Buttons, selects and chips are reachable with Tab as usual. Keys never
 // fire while typing in a field or while a dialog is open.
+
+import { t } from './i18n.js';
 
 const TABS = ['setup', 'me', 'play', 'advice', 'match'];
 
@@ -62,26 +64,29 @@ function toggleHelp() {
   if (help?.open) return help.close();
   help = document.createElement('dialog');
   help.className = 'help';
-  help.innerHTML = `<form method="dialog"><h3>Keyboard shortcuts</h3>
+  const row = (keys, text) => `<tr><td>${keys}</td><td>${t(text)}</td></tr>`;
+  const head = (text) => `<tr><th colspan="2">${t(text)}</th></tr>`;
+  const letters = '<kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd>';
+  help.innerHTML = `<form method="dialog"><h3>${t('keys.title')}</h3>
     <table>
-      <tr><th colspan="2">Anywhere</th></tr>
-      <tr><td><kbd>1</kbd>–<kbd>5</kbd></td><td>Setup, Me, Play, Advice, vs AI</td></tr>
-      <tr><td><kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd></td><td>Move the board cursor</td></tr>
-      <tr><td><kbd>Enter</kbd></td><td>Act on the cursor's hex (like tapping it)</td></tr>
-      <tr><td><kbd>Esc</kbd></td><td>Hide the cursor</td></tr>
-      <tr><td><kbd>Tab</kbd></td><td>Move between buttons and fields</td></tr>
-      <tr><td><kbd>?</kbd></td><td>This help</td></tr>
-      <tr><th colspan="2">Play</th></tr>
-      <tr><td><kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd></td><td>Place that colour's cube</td></tr>
-      <tr><td><kbd>Shift</kbd> + letter</td><td>Place that colour's disc</td></tr>
-      <tr><td><kbd>Space</kbd></td><td>Switch disc / cube</td></tr>
-      <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>Undo (<kbd>Shift</kbd> to redo)</td></tr>
-      <tr><th colspan="2">vs AI, on your turn</th></tr>
-      <tr><td><kbd>A</kbd> / <kbd>S</kbd></td><td>Ask / Search</td></tr>
-      <tr><td><kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd></td><td>Whom to ask</td></tr>
-      <tr><td><kbd>Enter</kbd></td><td>Ask about, search, or cube the cursor's hex</td></tr>
+      ${head('keys.anywhere')}
+      ${row('<kbd>1</kbd>–<kbd>5</kbd>', 'keys.tabs')}
+      ${row('<kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd>', 'keys.cursor')}
+      ${row('<kbd>Enter</kbd>', 'keys.enter')}
+      ${row('<kbd>Esc</kbd>', 'keys.escape')}
+      ${row('<kbd>Tab</kbd>', 'keys.tab')}
+      ${row('<kbd>?</kbd>', 'keys.help')}
+      ${head('keys.play')}
+      ${row(letters, 'keys.cube')}
+      ${row(`<kbd>Shift</kbd> + ${t('keys.letter')}`, 'keys.disc')}
+      ${row('<kbd>Space</kbd>', 'keys.toggle')}
+      ${row('<kbd>Ctrl</kbd>+<kbd>Z</kbd>', 'keys.undo')}
+      ${head('keys.match')}
+      ${row('<kbd>A</kbd> / <kbd>S</kbd>', 'keys.askSearch')}
+      ${row(letters, 'keys.whom')}
+      ${row('<kbd>Enter</kbd>', 'keys.matchEnter')}
     </table>
-    <div class="actions"><button value="close">Close</button></div></form>`;
+    <div class="actions"><button value="close">${t('common.close')}</button></div></form>`;
   help.addEventListener('close', () => help.remove());
   document.body.appendChild(help);
   help.showModal();

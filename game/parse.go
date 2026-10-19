@@ -10,7 +10,7 @@ import (
 	"github.com/epsalon/decryptid/board"
 )
 
-// PlayerColors are the colours of the physical set, in the order the board
+// PlayerColors are the colors of the physical set, in the order the board
 // printer uses for them. A game's seats may use any of them (Game.Colors).
 var PlayerColors = []string{"yellow", "red", "green", "cyan", "purple"}
 
@@ -24,11 +24,11 @@ var PlayerColors = []string{"yellow", "red", "green", "cyan", "purple"}
 //	clues minimal|any         minimal: every clue is needed to pin the cryptid (default)
 //	disc PLAYER X Y           PLAYER's rule allows the cryptid at (X, Y)
 //	cube PLAYER X Y           PLAYER's rule rules out (X, Y)
-//	colors C1 C2 ...          the colours playing, in turn order (default: the first
+//	colors C1 C2 ...          the colors playing, in turn order (default: the first
 //	                          'players' of PlayerColors); also sets the player count
 //	rule PLAYER NAME...       PLAYER's rule is known (name or number from -rules)
 //
-// PLAYER is a seat number from 1 (turn order) or a colour playing.
+// PLAYER is a seat number from 1 (turn order) or a color playing.
 func Parse(r io.Reader) (*Game, error) {
 	g := &Game{Players: 3, Advanced: true, Known: map[int]string{}}
 	known := map[string]string{} // player token -> rule, resolved at the end
@@ -101,7 +101,7 @@ func Parse(r io.Reader) (*Game, error) {
 	return g, nil
 }
 
-// pendingMarker is a marker whose player is resolved once the colours are known.
+// pendingMarker is a marker whose player is resolved once the colors are known.
 type pendingMarker struct {
 	player string
 	m      Marker
@@ -205,7 +205,7 @@ func parseLine(g *Game, f []string, known map[string]string, markers *[]pendingM
 		known[args[0]] = strings.Join(args[1:], " ")
 	case "colors", "colours":
 		if len(args) < 1 || len(args) > len(PlayerColors) {
-			return fmt.Errorf("colors takes 1-%d colours", len(PlayerColors))
+			return fmt.Errorf("colors takes 1-%d colors", len(PlayerColors))
 		}
 		g.Colors = append([]string(nil), args...)
 		g.Players = len(args)
@@ -215,7 +215,7 @@ func parseLine(g *Game, f []string, known map[string]string, markers *[]pendingM
 	return nil
 }
 
-// Player parses a seat number (from 1) or the colour of a seat.
+// Player parses a seat number (from 1) or the color of a seat.
 func (g *Game) Player(s string) (int, error) {
 	s = strings.ToLower(s)
 	for p := 1; p <= g.Players; p++ {

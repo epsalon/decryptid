@@ -3,7 +3,7 @@ WEB := web
 NODE ?= node
 PORT ?= 8347
 
-.PHONY: web serve test smoke e2e clean check-wasm-deps
+.PHONY: web serve test smoke e2e clean check-wasm-deps i18n-check
 
 web:
 	GOOS=js GOARCH=wasm go build -trimpath -ldflags="-s -w" -o $(WEB)/decryptid.wasm ./wasm
@@ -32,3 +32,7 @@ check-wasm-deps:
 	@deps=$$(GOOS=js GOARCH=wasm go list -deps -f '{{if .Module}}{{.Module.Path}}{{end}}' ./wasm | sort -u | grep -v '^github.com/epsalon/decryptid$$'); \
 	if [ -n "$$deps" ]; then echo "wasm build links third-party modules (update THIRD_PARTY_NOTICES.txt):"; echo "$$deps"; exit 1; fi; \
 	echo "wasm build links only the Go standard library"
+
+# Message catalogs: every key used exists, translations keep their placeholders.
+i18n-check:
+	$(NODE) $(WEB)/test/i18n-check.mjs

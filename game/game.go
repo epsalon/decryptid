@@ -20,8 +20,8 @@ type Game struct {
 	Players  int             `json:"players"`
 	Advanced bool            `json:"advanced,omitempty"` // whether "Not ..." rules and black buildings are in play
 	AnyClues bool            `json:"anyClues,omitempty"` // allow clue sets where some clue is redundant (default: every clue is needed)
-	// Colors is each seat's colour, in turn order (names from PlayerColors).
-	// Empty means the first Players colours of PlayerColors.
+	// Colors is each seat's color, in turn order (names from PlayerColors).
+	// Empty means the first Players colors of PlayerColors.
 	Colors  []string       `json:"colors,omitempty"`
 	Markers []Marker       `json:"markers,omitempty"` // discs and cubes on the board
 	Known   map[int]string `json:"known,omitempty"`   // player -> rule name, for rules we know
@@ -44,12 +44,12 @@ func (g *Game) Rules() []rule.RuleSpec {
 	return rule.BasicRules()
 }
 
-// ColorName is the colour of seat p (1-based).
+// ColorName is the color of seat p (1-based).
 func (g *Game) ColorName(p int) string {
 	return PlayerColors[g.colorIndex(p)]
 }
 
-// colorIndex is seat p's colour as an index into PlayerColors.
+// colorIndex is seat p's color as an index into PlayerColors.
 func (g *Game) colorIndex(p int) int {
 	if p-1 < len(g.Colors) {
 		for i, c := range PlayerColors {
@@ -61,13 +61,13 @@ func (g *Game) colorIndex(p int) int {
 	return p - 1
 }
 
-// checkColors validates Colors: one distinct, known colour per seat.
+// checkColors validates Colors: one distinct, known color per seat.
 func (g *Game) checkColors() error {
 	if len(g.Colors) == 0 {
 		return nil
 	}
 	if len(g.Colors) != g.Players {
-		return fmt.Errorf("%d colours for %d players", len(g.Colors), g.Players)
+		return fmt.Errorf("%d colors for %d players", len(g.Colors), g.Players)
 	}
 	seen := map[string]bool{}
 	for _, c := range g.Colors {
@@ -76,15 +76,15 @@ func (g *Game) checkColors() error {
 			known = known || c == k
 		}
 		if !known || seen[c] {
-			return fmt.Errorf("bad or repeated colour %q", c)
+			return fmt.Errorf("bad or repeated color %q", c)
 		}
 		seen[c] = true
 	}
 	return nil
 }
 
-// DisplayBoard re-labels a board's pieces (stored by seat) by colour, for
-// printing: the terminal draws each colour in its own ANSI colour.
+// DisplayBoard re-labels a board's pieces (stored by seat) by color, for
+// printing: the terminal draws each color in its own ANSI color.
 func (g *Game) DisplayBoard(b board.Board) board.Board {
 	for y := range b {
 		for x := range b[y] {

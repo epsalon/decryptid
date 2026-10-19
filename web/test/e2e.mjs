@@ -334,7 +334,8 @@ try {
     await page.click(`#board [data-x="${i % 12}"][data-y="${Math.floor(i / 12)}"]`, { force: true });
   }
   const seat2 = await page.evaluate(() => JSON.parse(localStorage.getItem('decryptid.v1')).game.colors[1]);
-  check(new RegExp(`asks ${seat2} about`).test((await matchState()).log[0]), `my question to ${seat2} is answered and logged`);
+  const first = (await matchState()).log[0];
+  check(/^ask(Disc|Cube)$/.test(first.k) && first.j === 2, `my question to ${seat2} is answered and logged`);
   for (let guard = 0; guard < 20; guard++) {
     await myMove();
     const m = await matchState();
@@ -347,7 +348,7 @@ try {
   }
   const end = await matchState();
   check(end.phase === 'over' && end.winner > 0, `the match ends with a winner (seat ${end.winner})`);
-  check(end.log.some((l) => /^(yellow|red|green|cyan) (asks|searches)/.test(l)), 'the AIs took turns');
+  check(end.log.some((e) => /^(askDisc|askCube|search)$/.test(e.k) && e.p !== end.seat), 'the AIs took turns');
   check(await count('.clues li', 4), 'everyone\'s clues are revealed');
   check(await count('#board .badge.best', 1), 'the cryptid\'s hex is starred');
   await page.screenshot({ path: out + 'phone-match.png', fullPage: true });
@@ -396,6 +397,23 @@ try {
   }
 
   check(errors.length === 0, `no console errors${errors.length ? ': ' + errors.join('; ') : ''}`);
+
+  // --- Language: en-GB browsers get British spelling, switchable in the footer;
+  // game-file text keeps the "colors" keyword. ---
+  const uk = await browser.newContext({ locale: 'en-GB', viewport: { width: 1280, height: 900 } });
+  page = await uk.newPage();
+  await page.goto(url);
+  await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  check((await page.textContent('#tab-body')).includes('Tap the colours that are playing'), 'en-GB browser: "colours" in the UI');
+  check((await page.getAttribute('html', 'lang')) === 'en-GB', 'en-GB browser: page language is en-GB');
+  await page.click('text=Random board');
+  await page.waitForSelector('.status.ok');
+  await page.click('text=Export…');
+  check((await page.locator('dialog textarea').inputValue()).includes('\ncolors '), 'export keeps the "colors" keyword in any spelling');
+  await page.click('dialog button[value="close"]');
+  await page.selectOption('#language', 'en');
+  check((await page.textContent('#tab-body')).includes('Tap the colors that are playing'), 'switching to English (US) changes it back');
+  await uk.close();
 
   // --- On a touch phone, touching a coordinate spotlights it; if the board is
   // scrolled away, a floating copy of it appears. ---
