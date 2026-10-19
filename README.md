@@ -31,17 +31,27 @@ Visit **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** or run it loc
 make serve    # builds web/decryptid.wasm and serves at http://localhost:8347
 ```
 
-#### Keyboard shortcuts (Play tab)
+#### Keyboard shortcuts
+
+The whole game can be played from the keyboard. Press <kbd>?</kbd> in the app
+for this list.
 
 | Key | Action |
 |---|---|
-| <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> | Place that colour's **cube** (yellow, red, green, cyan, purple) |
-| <kbd>Shift</kbd> + letter | Place that colour's **disc** |
-| <kbd>Space</kbd> | Switch between disc and cube |
-| <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> | Undo (add <kbd>Shift</kbd> to redo) |
+| <kbd>1</kbd>–<kbd>5</kbd> | Switch tab: Setup, Me, Play, Advice, vs AI |
+| <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> | Move the board cursor |
+| <kbd>Enter</kbd> | Act on the cursor's hex, like tapping it |
+| <kbd>Esc</kbd> | Hide the cursor |
+| <kbd>Tab</kbd> | Move between buttons and fields |
+| **Play:** <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> | Place that colour's **cube** (yellow, red, green, cyan, purple) |
+| **Play:** <kbd>Shift</kbd> + letter | Place that colour's **disc** |
+| **Play:** <kbd>Space</kbd> | Switch between disc and cube |
+| **Play:** <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> | Undo (add <kbd>Shift</kbd> to redo) |
+| **vs AI:** <kbd>A</kbd> / <kbd>S</kbd> | Ask / Search (on your turn) |
+| **vs AI:** <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> | Choose whom to ask |
 
-They select what a tap on the board will place. They don't work while typing
-in a field or during a match against the AI.
+Shortcuts don't fire while you're typing in a field. On phones and tablets,
+keyboard hints appear only once a key has been pressed.
 
 ### CLI
 

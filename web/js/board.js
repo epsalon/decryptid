@@ -72,6 +72,23 @@ export class Board {
     el('polygon', { points: points(1.08), class: 'spot-inner' }, ring);
   }
 
+  // setCursor shows the keyboard cursor on hex (x, y), or hides it (null).
+  // Like the spotlight, it survives re-renders.
+  setCursor(x, y = 0) {
+    this.cursor = x == null ? null : { x, y };
+    this.applyCursor();
+  }
+
+  applyCursor() {
+    this.svg.querySelector('.cursor-ring')?.remove();
+    if (!this.cursor) return;
+    const g = this.svg.querySelector(`[data-x="${this.cursor.x}"][data-y="${this.cursor.y}"]`);
+    if (!g) return;
+    const ring = el('g', { class: 'cursor-ring', transform: g.getAttribute('transform') }, this.svg.lastElementChild);
+    el('polygon', { points: points(0.96), class: 'cursor-outer' }, ring);
+    el('polygon', { points: points(0.96), class: 'cursor-inner' }, ring);
+  }
+
   // render draws hexes (from the engine's 'board' op) with the game's
   // markers. overlay maps "x,y" to {viable, kind, label, weight}: viable
   // hexes get a halo whose thickness shows weight (0-1, likelihood), and if
@@ -141,6 +158,7 @@ export class Board {
     }
     if (opts.tiles) drawTileBorders(root);
     this.applySpotlight();
+    this.applyCursor();
   }
 }
 

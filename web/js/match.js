@@ -8,6 +8,7 @@
 
 import { PLAYERS, ruleLabel, seat as seatOf, boardKey } from './state.js';
 import { hexRef, linkHexRefs } from './hexref.js';
+import { typing } from './keys.js';
 
 // Difficulty levels map to the self-play policies (see sim.Policies).
 export const DIFFICULTY = {
@@ -43,6 +44,7 @@ export class MatchPanel {
     this.root = root;
     this.app = app;
     currentGame = () => app.store.state.game;
+    document.addEventListener('keydown', (e) => this.onKey(e));
     this.masks = null; // per seat, which hexes its clue allows
     this.masksFor = null; // match id the masks belong to
     this.busy = false; // an AI move is in progress
@@ -249,6 +251,27 @@ export class MatchPanel {
     });
   }
 
+  // onKey: on my turn, A asks and S searches; a colour's letter picks whom
+  // to ask. The hex comes from a tap or the board cursor (arrows + Enter).
+  onKey(e) {
+    const m = this.match;
+    const n = this.need();
+    if (this.app.store.state.ui.tab !== 'match' || !n || n.who !== m.seat || n.what !== 'turn') return;
+    if (typing(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (k === 'a' || k === 's') {
+      this.action = k === 'a' ? 'ask' : 'search';
+    } else {
+      const colour = { y: 'yellow', r: 'red', g: 'green', c: 'cyan', p: 'purple' }[k];
+      const p = colour && Array.from({ length: this.app.store.state.game.players }, (_, i) => i + 1).find((q) => name(q) === colour);
+      if (!p || p === m.seat) return;
+      this.action = 'ask';
+      this.target = p;
+    }
+    e.preventDefault();
+    this.render();
+  }
+
   // onHex handles the human's taps: their setup or penalty cube, or the
   // hex for their question or search.
   onHex(x, y) {
@@ -305,6 +328,8 @@ export class MatchPanel {
       const others = [...Array(game.players).keys()].map((i) => i + 1).filter((p) => p !== m.seat);
       status = `<div class="rec"><div class="rec-action">Your turn</div>
         <div class="seg"><button data-action="ask" class="${this.action === 'ask' ? 'on' : ''}">Ask</button><button data-action="search" class="${this.action === 'search' ? 'on' : ''}">Search</button></div>
+        <p class="hint keys">Keys: <kbd>A</kbd> ask · <kbd>S</kbd> search · a colour's letter picks whom ·
+          arrows + <kbd>Enter</kbd> choose the hex</p>
         ${this.action === 'ask'
           ? `<p class="hint">Ask whom? Then tap a hex.</p><div class="chips">${others.map((p) => `<button data-target="${p}" class="chip ${this.target === p ? 'on' : ''}">${dot(p)}${name(p)}</button>`).join('')}</div>`
           : '<p class="hint">Tap a hex your clue allows. If everyone else places a disc, you win.</p>'}</div>`;

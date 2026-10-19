@@ -205,7 +205,7 @@ export class SetupPanel {
           const on = this.placing && same(this.placing, s);
           return `<button data-struct="${s.type},${s.color}" class="struct ${on ? 'on' : ''}">
             ${structureIcon(s.type, s.color, 18)}${label(s)}
-            <span class="where">${b ? hexRef(b.x, b.y) : on ? 'tap a hex' : '—'}</span></button>`;
+            <span class="where">${b ? hexRef(b.x, b.y, false) : on ? 'tap a hex' : '—'}</span></button>`;
         }).join('')}
       </div>
       <p class="status ${problems.length ? 'warn' : 'ok'}">${problems.length ? problems.join(' ') : '✓ Board ready.'}</p>

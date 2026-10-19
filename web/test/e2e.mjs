@@ -35,6 +35,14 @@ const browser = await chromium.launch();
 // count waits (up to 5 s) until selector matches n elements, so checks
 // don't race the asynchronous engine and redraws.
 let page;
+// cursorTo moves the keyboard cursor to hex (x, y): Escape hides it, the
+// first arrow press shows it at (5,4), then arrows step one hex.
+async function cursorTo(x, y) {
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('ArrowUp');
+  for (let i = 0; i < Math.abs(x - 5); i++) await page.keyboard.press(x < 5 ? 'ArrowLeft' : 'ArrowRight');
+  for (let i = 0; i < Math.abs(y - 4); i++) await page.keyboard.press(y < 4 ? 'ArrowUp' : 'ArrowDown');
+}
 async function count(sel, n) {
   try {
     await page.waitForFunction(([s, n]) => document.querySelectorAll(s).length === n, [sel, n], { timeout: 5000 });
@@ -207,6 +215,22 @@ try {
   await page.keyboard.press('p');
   check((await page.textContent('#toast')).includes("purple isn't playing") && await count('[data-tool-player="2"].on', 1), 'a colour that is not playing is ignored, with a note');
 
+  // Keyboard play: digits switch tabs, arrows + Enter place on the cursor's hex.
+  await page.keyboard.press('1');
+  check(await count('[data-tab="setup"][aria-selected="true"]', 1), 'key 1 switches to Setup');
+  await page.keyboard.press('3');
+  await page.keyboard.press('Shift+R');
+  await cursorTo(0, 8);
+  check(await count('#board [data-x="0"][data-y="8"] ~ .cursor-ring, #board .cursor-ring', 1), 'arrows show the board cursor');
+  await page.keyboard.press('Enter');
+  check(await count('#board [data-x="0"][data-y="8"] .disc', 1), 'Enter places a red disc on the cursor hex');
+  await page.keyboard.press('Control+z');
+  check(await count('#board [data-x="0"][data-y="8"] .disc', 0), 'Ctrl+Z undoes it');
+  await page.keyboard.press('?');
+  check(await count('dialog.help[open]', 1), '? opens the shortcut help');
+  await page.keyboard.press('Escape');
+  check(await count('dialog.help', 0), 'Escape closes it');
+
   // (3,5) has yellow's cube: nobody may add a piece there.
   await page.click('#board [data-x="3"][data-y="5"]', { force: true });
   await page.waitForSelector('#toast.show');
@@ -316,9 +340,10 @@ try {
     const m = await matchState();
     if (m.phase === 'over') break;
     if (m.phase === 'penalty') { await placeMyCube(); continue; }
-    // My turn again: search where the cryptid is (as if I'd deduced it).
-    await page.click('[data-action="search"]');
-    await page.click(`#board [data-x="${m.location.x}"][data-y="${m.location.y}"]`, { force: true });
+    // My turn again: search where the cryptid is (as if I'd deduced it), by keyboard.
+    await page.keyboard.press('s');
+    await cursorTo(m.location.x, m.location.y);
+    await page.keyboard.press('Enter');
   }
   const end = await matchState();
   check(end.phase === 'over' && end.winner > 0, `the match ends with a winner (seat ${end.winner})`);
@@ -351,6 +376,21 @@ try {
       `hovering coordinate ${hex} spotlights that hex`);
     await page.mouse.move(5, 5);
     check(await count('#board.spotlit', 0), 'moving away clears the spotlight');
+    // Not sticky: a key press clears a hover spotlight, and shows the cursor instead.
+    await ref.hover();
+    await page.keyboard.press('ArrowUp');
+    check(await count('#board.spotlit', 0) && await count('#board .cursor-ring', 1), 'a key press clears a hover spotlight');
+    const box = await page.locator('#board').boundingBox();
+    await page.mouse.move(box.x + 40, box.y + 40);
+    await page.mouse.move(box.x + 60, box.y + 60);
+    check(await count('#board .cursor-ring', 0), 'moving the mouse over the board hides the keyboard cursor');
+    // Setup's coordinates are not in the Tab order (they sit inside the chips).
+    check(await count('#tab-body .hexref[tabindex]', 0), 'setup coordinates are not keyboard-focusable');
+    await page.mouse.move(5, 5);
+    // A redraw under the mouse doesn't leave it stuck.
+    await page.locator('#tab-body .hexref').first().hover();
+    await page.click('[data-mode="basic"].on').catch(() => page.click('[data-mode="advanced"].on'));
+    check(await count('#board.spotlit', 0), 'a redraw under the mouse clears the spotlight');
   } else {
     check(false, 'setup lists coordinates as hex references');
   }
@@ -363,6 +403,11 @@ try {
   page = await phone.newPage();
   await page.goto(url);
   await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  check(!(await page.isVisible('.board-tools .hint.keys')), 'phone: keyboard hints hidden until a key is pressed');
+  await page.keyboard.press('Shift');
+  check(!(await page.isVisible('.board-tools .hint.keys')), 'phone: a modifier alone does not count');
+  await page.keyboard.press('ArrowDown');
+  check(await page.isVisible('.board-tools .hint.keys'), 'phone: hints appear once a key is used');
   await page.tap('text=Random board');
   await page.waitForSelector('.status.ok');
   const shedRef = page.locator('[data-struct="shed,green"] .hexref');

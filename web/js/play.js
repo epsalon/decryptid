@@ -3,6 +3,7 @@
 
 import { setMarkers, undo, redo, ruleLabel, seat, seatLabel, seatColors } from './state.js';
 import { hexRef } from './hexref.js';
+import { typing } from './keys.js';
 
 export class PlayPanel {
   constructor(root, app) {
@@ -17,7 +18,7 @@ export class PlayPanel {
   onKey(e) {
     const { ui, game, match } = this.app.store.state;
     if (ui.tab !== 'play' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-    if (e.target.closest?.('input, select, textarea, [contenteditable]')) return;
+    if (typing(e)) return;
     if (match && match.phase !== 'over') return;
     if (e.key === ' ') {
       e.preventDefault(); // don't scroll the page
@@ -107,7 +108,8 @@ export class PlayPanel {
       </div>
       <p class="hint">Tap a hex to place; tap again to remove. ${game.markers.length} marker${game.markers.length === 1 ? '' : 's'} on the board.</p>
       <p class="hint keys">Keys: <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> pick a colour's cube
-        (with <kbd>Shift</kbd>, its disc) · <kbd>Space</kbd> disc/cube · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</p>
+        (with <kbd>Shift</kbd>, its disc) · <kbd>Space</kbd> disc/cube · arrows + <kbd>Enter</kbd> place ·
+        <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>?</kbd> all keys</p>
       <label class="check"><input type="checkbox" id="show-viable" ${ui.overlay === 'viable' ? 'checked' : ''}> Highlight possible hexes <span class="muted">(thicker outline = likelier)</span></label>
       ${summary ? `
       <h3>Likeliest hexes</h3>

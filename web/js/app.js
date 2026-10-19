@@ -9,7 +9,8 @@ import { MePanel } from './me.js';
 import { PlayPanel } from './play.js';
 import { AdvicePanel } from './advice.js';
 import { MatchPanel, matchActive, dropStaleMatch } from './match.js';
-import { installHexRefs } from './hexref.js';
+import { installHexRefs, dropStaleHexRef } from './hexref.js';
+import { installKeys } from './keys.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -66,6 +67,7 @@ const panels = {
 const current = () => panels[app.store.state.ui.tab] ?? panels.setup;
 const board = new Board($('board'), (x, y) => current().panel.onHex(x, y));
 installHexRefs(board);
+installKeys(app, board, (x, y) => current().panel.onHex(x, y));
 
 function renderTabs() {
   $('tabs').innerHTML = Object.entries(panels)
@@ -138,6 +140,7 @@ function render() {
   renderTabs();
   current().panel.render();
   renderBoard().catch((e) => toast(e.message));
+  dropStaleHexRef();
 }
 
 app.rerender = render;
