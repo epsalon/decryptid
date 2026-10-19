@@ -196,6 +196,17 @@ try {
   check(await count('#board [data-x="0"][data-y="8"] .disc', 1), 'undo brings it back');
   await page.click('[data-act="redo"]');
   check(await count('#board .disc, #board .cube', before), 'redo removes it again');
+  // Keyboard shortcuts: a colour's letter picks its cube, Shift for its disc, Space toggles.
+  await page.keyboard.press('g');
+  check(await count('[data-tool-player="3"].on', 1) && await count('[data-cube="1"].on', 1), 'key G picks a green cube');
+  await page.keyboard.press('Shift+R');
+  check(await count('[data-tool-player="2"].on', 1) && await count('[data-cube="0"].on', 1), 'Shift+R picks a red disc');
+  await page.keyboard.press(' ');
+  check(await count('[data-cube="1"].on', 1), 'Space switches to a cube');
+  await page.keyboard.press(' ');
+  await page.keyboard.press('p');
+  check((await page.textContent('#toast')).includes("purple isn't playing") && await count('[data-tool-player="2"].on', 1), 'a colour that is not playing is ignored, with a note');
+
   // (3,5) has yellow's cube: nobody may add a piece there.
   await page.click('#board [data-x="3"][data-y="5"]', { force: true });
   await page.waitForSelector('#toast.show');

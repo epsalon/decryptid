@@ -1,13 +1,41 @@
 // "Play" panel: record discs and cubes as they are placed, and see what
 // the solver makes of them.
 
-import { setMarkers, undo, redo, ruleLabel, seat, seatLabel } from './state.js';
+import { setMarkers, undo, redo, ruleLabel, seat, seatLabel, seatColors } from './state.js';
 import { hexRef } from './hexref.js';
 
 export class PlayPanel {
   constructor(root, app) {
     this.root = root;
     this.app = app;
+    document.addEventListener('keydown', (e) => this.onKey(e));
+  }
+
+  // onKey handles the Play tab's keyboard shortcuts: a colour's first letter
+  // selects its cube (with Shift, its disc), and Space
+  // switches between disc and cube. Undo/redo is handled in app.js.
+  onKey(e) {
+    const { ui, game, match } = this.app.store.state;
+    if (ui.tab !== 'play' || e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+    if (e.target.closest?.('input, select, textarea, [contenteditable]')) return;
+    if (match && match.phase !== 'over') return;
+    if (e.key === ' ') {
+      e.preventDefault(); // don't scroll the page
+      this.app.store.update((s) => (s.ui.tool.cube = !s.ui.tool.cube));
+      return;
+    }
+    const colour = KEYS[e.key.toLowerCase()];
+    if (!colour) return;
+    const p = seatColors(game).indexOf(colour) + 1;
+    if (!p) {
+      this.app.toast(`${colour} isn't playing.`);
+      return;
+    }
+    e.preventDefault();
+    this.app.store.update((s) => {
+      s.ui.tool.player = p;
+      s.ui.tool.cube = !e.shiftKey;
+    });
   }
 
   overlay() {
@@ -78,6 +106,8 @@ export class PlayPanel {
         </div>
       </div>
       <p class="hint">Tap a hex to place; tap again to remove. ${game.markers.length} marker${game.markers.length === 1 ? '' : 's'} on the board.</p>
+      <p class="hint keys">Keys: <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> pick a colour's cube
+        (with <kbd>Shift</kbd>, its disc) · <kbd>Space</kbd> disc/cube · <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo</p>
       <label class="check"><input type="checkbox" id="show-viable" ${ui.overlay === 'viable' ? 'checked' : ''}> Highlight possible hexes <span class="muted">(thicker outline = likelier)</span></label>
       ${summary ? `
       <h3>Likeliest hexes</h3>
@@ -98,5 +128,8 @@ export class PlayPanel {
       this.app.store.update((s) => (s.ui.overlay = e.target.checked ? 'viable' : 'none'));
   }
 }
+
+// Shortcut keys: each colour's first letter.
+const KEYS = { y: 'yellow', r: 'red', g: 'green', c: 'cyan', p: 'purple' };
 
 const pct = (p) => (p >= 0.995 ? '100%' : p < 0.01 ? '<1%' : `${Math.round(p * 100)}%`);
