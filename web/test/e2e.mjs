@@ -72,10 +72,10 @@ try {
   await page.waitForSelector('.status.ok');
   check(await count('#board .structure', 6), 'random board has 6 structures');
   // Colours playing: fewer than 3 is allowed while choosing, but flagged.
-  for (const c of ['cyan', 'green', 'red']) await page.click(`[data-color="${c}"]`);
+  for (const c of ['purple', 'cyan', 'green', 'red']) await page.click(`[data-color="${c}"]`);
   check(await count('[data-color].on', 1) && (await page.textContent('.status.warn')).includes('at least 3'), 'fewer than 3 colours is an incomplete setup');
-  for (const c of ['red', 'green', 'cyan']) await page.click(`[data-color="${c}"]`);
-  check(await count('[data-color].on', 4) && await count('.status.ok', 1), 'reselecting colours makes the setup valid again');
+  for (const c of ['red', 'green', 'cyan', 'purple']) await page.click(`[data-color="${c}"]`);
+  check(await count('[data-color].on', 5) && await count('.status.ok', 1), 'reselecting colours makes the setup valid again');
   await page.screenshot({ path: out + 'phone-random.png', fullPage: true });
 
   // Place a structure by tapping its chip, then a hex.
@@ -92,6 +92,8 @@ try {
 
   // Drag and drop: from a chip onto the board, within the board, and swapping.
   async function drag(from, to) {
+    await page.locator(from).waitFor();
+    await page.locator(to).waitFor();
     const a = await page.locator(from).boundingBox();
     const b = await page.locator(to).boundingBox();
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
@@ -145,7 +147,9 @@ try {
   const hexAt = (x, y) => `${x},${y}`;
   const flipped0 = await page.$eval('[data-flip="0,0"]', (b) => b.classList.contains('on'));
   check((await labelAt()).includes(hexAt(flipped0 ? 5 : 0, flipped0 ? 2 : 0)), 'tile number is on the right corner');
+  const labelsBefore = (await labelAt()).join(' ');
   await page.click('[data-flip="0,0"]');
+  await page.waitForFunction((b) => [...document.querySelectorAll('#board .tile-label')].map((t) => { const g = t.closest('[data-x]'); return `${g.dataset.x},${g.dataset.y}`; }).join(' ') !== b, labelsBefore);
   const now = await labelAt();
   check(now.includes(hexAt(flipped0 ? 0 : 5, flipped0 ? 0 : 2)) && !now.includes(hexAt(flipped0 ? 5 : 0, flipped0 ? 2 : 0)), 'flipping a tile moves its number to the opposite corner');
   const corner = flipped0 ? '0,0' : '5,2';
