@@ -54,7 +54,7 @@ async function count(sel, n) {
 try {
   page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('pageerror', (e) => errors.push(e.stack ?? e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 
   await page.goto(url);
@@ -208,6 +208,20 @@ try {
   check(await count('#board [data-x="0"][data-y="8"] .disc', 1), 'undo brings it back');
   await page.click('[data-act="redo"]');
   check(await count('#board .disc, #board .cube', before), 'redo removes it again');
+  // Facts are not always entered in play order: a disc may follow a cube on the same hex, but a hex holds one cube.
+  await page.click('[data-cube="1"]');
+  await page.click('#board [data-x="0"][data-y="8"]', { force: true });
+  await page.click('[data-tool-player="3"]');
+  await page.click('[data-cube="0"]');
+  await page.click('#board [data-x="0"][data-y="8"]', { force: true });
+  check(await count('#board [data-x="0"][data-y="8"] .cube', 1) && await count('#board [data-x="0"][data-y="8"] .disc', 1), 'a disc can be added to a cubed hex');
+  await page.click('[data-cube="1"]');
+  await page.click('#board [data-x="0"][data-y="8"]', { force: true });
+  check((await page.textContent('#toast')).includes('Replaced the cube') && await count('#board [data-x="0"][data-y="8"] .cube', 1) && await count('#board [data-x="0"][data-y="8"] .disc', 0), 'a new cube replaces the one on a hex');
+  await page.click('[data-act="undo"]');
+  await page.click('[data-act="undo"]');
+  await page.click('[data-act="undo"]');
+  check(await count('#board .disc, #board .cube', before), 'undo clears them again');
   // Keyboard shortcuts: a colour's letter picks its cube, Shift for its disc, Space toggles.
   await page.keyboard.press('g');
   check(await count('[data-tool-player="3"].on', 1) && await count('[data-cube="1"].on', 1), 'key G picks a green cube');
@@ -235,10 +249,12 @@ try {
   await page.keyboard.press('Escape');
   check(await count('dialog.help', 0), 'Escape closes it');
 
-  // (3,5) has yellow's cube: nobody may add a piece there.
+  // (3,5) has yellow's cube: a red cube replaces it.
+  await page.click('[data-cube="1"]');
   await page.click('#board [data-x="3"][data-y="5"]', { force: true });
   await page.waitForSelector('#toast.show');
-  check(await count('#board [data-x="3"][data-y="5"] .disc', 0), 'no piece on a hex with a cube');
+  check(await count('#board [data-x="3"][data-y="5"] .cube', 1) && (await page.textContent('#toast')).includes('Replaced the cube'), 'a cube replaces the one on a cubed hex');
+  await page.click('[data-act="undo"]');
   // A contradicting marker shows a warning: green cube on the cryptid's hex would leave no world.
   await page.click('[data-tool-player="1"]');
   await page.click('[data-cube="1"]');
@@ -446,6 +462,80 @@ try {
     `phone: touching ${touched} pops up the board with that hex spotlit`);
   check(await count('.board-peek', 0) && await count('#board.spotlit', 0), 'phone: the spotlight clears after a moment');
   await phone.close();
+
+  // --- Clue validator (validate.html): a separate page that shares nothing
+  // with the solver. Clues are entered blind and verified by entering them
+  // again; a mistake or a contradiction, from clues or markers, sounds the
+  // buzzer (counted by a fake AudioContext). The example game's answers are
+  // known from the CLI. ---
+  const val = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await val.addInitScript(() => {
+    window.__buzzes = 0;
+    const param = { setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {}, value: 0 };
+    window.AudioContext = class {
+      state = 'running';
+      currentTime = 0;
+      destination = {};
+      createGain() { return { gain: { ...param }, connect: (n) => { if (n === this.destination) window.__buzzes++; return n; } }; }
+      createOscillator() { return { frequency: { ...param }, setPeriodicWave() {}, connect: (n) => n, start() {}, stop() {} }; }
+      createPeriodicWave() { return {}; }
+    };
+  });
+  page = await val.newPage();
+  await page.goto(url);
+  await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  check(await count('a.nav-link[href="validate.html"]', 1) && await count('[data-tab="validate"]', 0), 'the solver links to the validator, which is not a tab');
+  await page.goto(url + 'validate.html');
+  await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  const buzzes = (n) => page.waitForFunction((n) => window.__buzzes === n, n, { timeout: 5000 }).then(() => true, () => false);
+  const enter = async (seat, rule) => {
+    await page.click(`button[data-seat="${seat}"]`);
+    await page.waitForSelector('#validate-rule:not([disabled])');
+    await page.selectOption('#validate-rule', rule);
+    await page.click('#validate-go');
+  };
+  check(await count('[data-tab="match"], [data-tab="advice"], [data-tab="play"]', 0) && await count('[data-tab]', 3), 'validator: only Setup, Markers and Clues tabs');
+  await page.click('text=Import…');
+  await page.fill('dialog textarea', await readFile(join(root, '../examples/game.txt'), 'utf8'));
+  await page.click('dialog button:has-text("Load")');
+  await page.waitForFunction(() => localStorage.getItem('decryptid.validate.v1')?.includes('stone'));
+  const keys = await page.evaluate(() => [localStorage.getItem('decryptid.v1'), localStorage.getItem('decryptid.validate.v1')]);
+  check(!(keys[0] ?? '').includes('stone') && keys[1].includes('stone'), 'validator: saves under its own key and never touches the solver\'s state');
+  await page.click('[data-tab="markers"]');
+  check(await count('.status.ok', 1) && await count('#board .disc, #board .cube', 8), 'validator: imported markers are consistent');
+  check(await count('#board .ring.viable', 0) && !(await page.textContent('#tab-body')).includes('%'), 'validator: no highlights and no probabilities');
+  await page.click('[data-tab="clues"]');
+  check(await count('.status.ok', 1) && (await page.textContent('#tab-body')).includes('No clues entered yet'), 'validator: the markers alone are consistent');
+  await enter(1, 'Distance 1 from Swamp');
+  await enter(2, 'Distance 1 from Water');
+  await enter(3, 'Distance 2 from Cougar territory');
+  check(await count('.status.ok', 1) && (await page.textContent('#tab-body')).includes('fit the board'), 'validator: the true clues are consistent');
+  check(!(await page.textContent('#tab-body')).includes('Swamp') && await count('#validate-rule', 0), 'validator: an entered clue is never shown');
+  check(await buzzes(0), 'validator: no buzzer for correct clues');
+  await page.click('button[data-seat="2"]');
+  await page.selectOption('#validate-rule', 'Distance 1 from Swamp');
+  await page.click('#validate-go');
+  check(await buzzes(1) && await count('#validate-rule', 1), 'validator: a wrong re-entry buzzes and stays open');
+  await page.selectOption('#validate-rule', 'Distance 1 from Water');
+  await page.click('#validate-go');
+  check(await count('#validate-rule', 0) && await buzzes(1), 'validator: the right re-entry closes quietly');
+  // A marker that contradicts yellow's clue: a cube where their rule holds.
+  await page.click('[data-tab="markers"]');
+  await page.click('[data-tool-player="1"]');
+  await page.click('[data-cube="1"]');
+  await page.click('#board [data-x="1"][data-y="1"]');
+  check(await buzzes(2) && await count('.status.warn', 1), 'validator: a contradicting marker buzzes and warns');
+  await page.click('[data-act="undo"]');
+  check(await count('.status.ok', 1) && await buzzes(2), 'validator: undoing it is consistent again, quietly');
+  await page.click('[data-tab="clues"]');
+  await page.click('button[data-seat="1"]');
+  await page.click('#validate-forget');
+  await enter(1, 'Distance 2 from Bear territory');
+  check(await buzzes(3) && await count('.status.warn', 1), 'validator: contradicting clues buzz and warn');
+  await page.click('#validate-run');
+  await page.waitForSelector('.status.warn');
+  check(await buzzes(3), 'validator: checking again while invalid stays quiet');
+  await val.close();
 } finally {
   await browser.close();
   server.close();

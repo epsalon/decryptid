@@ -6,6 +6,27 @@ import { t } from './i18n.js';
 import { hexRef } from './hexref.js';
 import { typing } from './keys.js';
 
+// tapMarker works out what tapping hex (x, y) does with the selected tool.
+// Taps toggle, and follow the rules: at most one cube per hex, and one piece
+// per player per hex. A disc may go on a cubed hex, since what is known is
+// not always entered in play order, and a new cube replaces the one there.
+// It returns the new markers (null if nothing changes) and a message to
+// show (or null).
+export function tapMarker(game, { player, cube }, x, y) {
+  const here = game.markers.filter((m) => m.x === x && m.y === y);
+  const mine = here.find((m) => m.player === player);
+  const otherCube = cube ? here.find((m) => m.cube && m.player !== player) : null;
+  if (mine && !!mine.cube === cube) {
+    return { markers: game.markers.filter((m) => m !== mine), message: null }; // tap again to remove
+  }
+  const markers = game.markers.filter((m) => m !== mine && m !== otherCube);
+  markers.push(cube ? { player, x, y, cube: true } : { player, x, y });
+  let message = null;
+  if (otherCube) message = t('play.cubed', { player: seatName(game, otherCube.player) });
+  else if (mine) message = t(mine.cube ? 'play.replacedCube' : 'play.replacedDisc', { player: seatName(game, player) });
+  return { markers, message };
+}
+
 export class PlayPanel {
   constructor(root, app) {
     this.root = root;
@@ -44,32 +65,16 @@ export class PlayPanel {
     return this.app.viableOverlay();
   }
 
-  // onHex places or removes the selected marker. Taps toggle, and follow the
-  // rules: at most one cube per hex, nothing new on a cubed hex, and one
-  // piece per player per hex.
+  // onHex places or removes the selected marker.
   onHex(x, y) {
     const { game, ui, match } = this.app.store.state;
     if (match && match.phase !== 'over') {
       this.app.toast(t('play.inMatch'));
       return;
     }
-    const { player, cube } = ui.tool;
-    const here = game.markers.filter((m) => m.x === x && m.y === y);
-    const mine = here.find((m) => m.player === player);
-    const otherCube = here.find((m) => m.cube && m.player !== player);
-    const name = seatName(game, player);
-    let markers;
-    if (mine && !!mine.cube === cube) {
-      markers = game.markers.filter((m) => m !== mine); // tap again to remove
-    } else if (otherCube) {
-      this.app.toast(t('play.cubed', { player: seatName(game, otherCube.player) }));
-      return;
-    } else {
-      markers = game.markers.filter((m) => m !== mine);
-      markers.push(cube ? { player, x, y, cube: true } : { player, x, y });
-      if (mine) this.app.toast(t(mine.cube ? 'play.replacedCube' : 'play.replacedDisc', { player: name }));
-    }
-    this.app.store.update((s) => setMarkers(s, markers));
+    const { markers, message } = tapMarker(game, ui.tool, x, y);
+    if (message) this.app.toast(message);
+    if (markers) this.app.store.update((s) => setMarkers(s, markers));
   }
 
   render() {
@@ -86,7 +91,9 @@ export class PlayPanel {
       const n = summary.locations.length;
       const view = game.known[me] ? t('play.withClue') : t('play.markersOnly');
       const found = n === 1 ? t('play.found', { view }) : t('play.onOneOf', { count: n, view });
-      status = `<p class="status ${n === 1 ? 'ok' : ''}">${found}${pending ? ` <span class="muted">${t('common.updating')}</span>` : ''}</p>`;
+      status = n
+        ? `<p class="status ${n === 1 ? 'ok' : ''}">${found}${pending ? ` <span class="muted">${t('common.updating')}</span>` : ''}</p>`
+        : `<p class="status warn">${t('play.noWorld')}</p>`;
     }
 
     const total = summary?.worlds || 1;

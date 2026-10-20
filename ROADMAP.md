@@ -5,11 +5,7 @@
    turn order (`TurnOptions.Order`), ~900 head-to-head games.
 2. Tell which rule sets would put the cryptid on each tile, once the board
    is set up (per-tile view of the solver's worlds).
-3. A validation mode: check that the clues given are correct, with or
-   without knowing each player's rule. If players' rules can be entered, do
-   it so no one sees the others' (honor system) while the phone is passed
-   around.
-4. (Pie in the sky) Recognize the board state from a photo of the real
+3. (Pie in the sky) Recognize the board state from a photo of the real
    game: tiles, structures, discs and cubes.
    - Collect labeled photos of real boards first, to measure accuracy.
    - Find the board, correct perspective, and map hex centers to (x, y).

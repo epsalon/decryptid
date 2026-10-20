@@ -40,7 +40,7 @@ func (g *Game) Summary() (*Summary, error) {
 	nr := len(p.rules)
 	locs := make([]int, cells)
 	rules := make([]int, g.Players*nr)
-	s := &Summary{}
+	s := &Summary{Locations: []LocCount{}} // never nil: JSON null breaks the UI when no world fits
 	search.Each(p.masks, p.cands, !g.AnyClues, func(rs []int, loc int) {
 		s.Worlds++
 		locs[loc]++
@@ -55,7 +55,7 @@ func (g *Game) Summary() (*Summary, error) {
 	}
 	sort.SliceStable(s.Locations, func(a, b int) bool { return s.Locations[a].Worlds > s.Locations[b].Worlds })
 	for j := 0; j < g.Players; j++ {
-		var rc []RuleCount
+		rc := []RuleCount{}
 		for r := 0; r < nr; r++ {
 			if c := rules[j*nr+r]; c > 0 {
 				rc = append(rc, RuleCount{Rule: p.rules[r].Name, Worlds: c})

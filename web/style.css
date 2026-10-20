@@ -34,7 +34,7 @@ h1 { font-size: 1.2rem; margin: 0; letter-spacing: 0.04em; }
 h3 { font-size: 0.95rem; margin: 18px 0 4px; }
 .muted, .hint { color: var(--muted); }
 .hint { font-size: 0.85rem; margin: 0 0 8px; }
-.github-link {
+.github-link, .nav-link {
   margin-inline-start: auto;
   color: var(--muted);
   text-decoration: none;
@@ -46,7 +46,8 @@ h3 { font-size: 0.95rem; margin: 18px 0 4px; }
   border-radius: 6px;
   transition: color 0.15s, background-color 0.15s;
 }
-.github-link:hover {
+.nav-link + .github-link { margin-inline-start: 0; }
+.github-link:hover, .nav-link:hover {
   color: var(--text);
   background-color: var(--line);
 }

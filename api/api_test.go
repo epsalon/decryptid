@@ -49,6 +49,18 @@ func TestOps(t *testing.T) {
 		t.Errorf("summary: %+v", sum.Locations)
 	}
 
+	var valid bool
+	json.Unmarshal(call(t, map[string]any{"op": "validate", "game": g}), &valid)
+	if !valid {
+		t.Error("validate: the example game should be valid")
+	}
+	wrong := g
+	wrong.Known = map[int]string{1: "Distance 1 from Water", 2: "Distance 1 from Water", 3: "Distance 1 from Water"}
+	json.Unmarshal(call(t, map[string]any{"op": "validate", "game": wrong}), &valid)
+	if valid {
+		t.Error("validate: three identical clues should not be valid")
+	}
+
 	var turn TurnResult
 	json.Unmarshal(call(t, map[string]any{"op": "adviseTurn", "game": g, "player": 1}), &turn)
 	if turn.Search == nil || turn.Search.X != 3 || turn.Search.Y != 3 {

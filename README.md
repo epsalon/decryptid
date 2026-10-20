@@ -23,7 +23,12 @@ Set up the board (copy it from the official app or setup card), pick your colour
 then record discs and cubes as they're placed. The board highlights where the
 cryptid can still be, and the **Advice** tab tells you what to ask, where to
 search, and where to put your cubes. No game at hand? The **vs AI** tab deals a
-random board and plays a full game against AI opponents.
+random board and plays a full game against AI opponents. The separate
+**[clue validator](https://decryptid.8ln.org/validate.html)** checks a set of
+clues without anyone seeing them: set up the board and markers, then each player
+enters their clue in turn while the phone is passed around. A clue is never shown
+again, and a wrong re-entry or a contradiction sounds a buzzer. It shares no state
+with the solver and shows no probabilities.
 
 Visit **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** or run it locally:
 

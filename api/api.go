@@ -128,6 +128,10 @@ func handle(r *Request) (any, error) {
 		return hexes, nil
 	case "summary":
 		return g.Summary()
+	case "validate":
+		// Whether some world fits the markers and the known rules; nothing
+		// else is revealed.
+		return g.Validate()
 	case "masks":
 		// For each named rule, which hexes it allows (index y*12 + x).
 		byName := map[string]int{}

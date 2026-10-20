@@ -8,6 +8,7 @@ import { SetupPanel } from './setup.js';
 import { MePanel } from './me.js';
 import { PlayPanel } from './play.js';
 import { AdvicePanel } from './advice.js';
+import { Terrain } from './terrain.js';
 import { MatchPanel, matchActive, dropStaleMatch } from './match.js';
 import { installHexRefs, dropStaleHexRef } from './hexref.js';
 import { installKeys } from './keys.js';
@@ -111,45 +112,14 @@ function analyze() {
   );
 }
 
-// Terrain and animal territories only change with the tiles, so they are
-// fetched from the engine only then. Structures are drawn from the game
-// state directly, so placing or moving one redraws at once, without
-// waiting for the engine; markers and overlays are redrawn on every change.
-//
-// The worker answers one request at a time, so render() asks for terrain
-// before analyze() asks for a summary: otherwise a changed tile would only
-// be redrawn after the summary, which takes a few hundred ms on a fresh
-// 5-player advanced board.
-let terrain = [];
-let terrainFor = '';
-let terrainReq = { key: '', done: null }; // the request in flight
-function requestTerrain() {
-  const { game } = app.store.state;
-  const key = JSON.stringify(game.spec.tiles);
-  if (key === terrainFor || key === terrainReq.key) return;
-  const bare = { ...game, spec: { tiles: game.spec.tiles, buildings: [] }, markers: [] };
-  terrainReq = {
-    key,
-    done: app.engine.latest('board', 'board', { game: bare }).then((h) => {
-      if (h === undefined) return; // superseded by a newer change
-      terrain = h;
-      terrainFor = key;
-    }, (err) => {
-      terrainReq.key = ''; // retry on the next render
-      throw err;
-    }),
-  };
-}
+// The terrain is requested before the summary: see terrain.js.
+const terrain = new Terrain(app.engine);
 
 async function renderBoard() {
-  const key = JSON.stringify(app.store.state.game.spec.tiles);
-  if (key !== terrainFor) {
-    await terrainReq.done;
-    if (key !== terrainFor) return; // the tiles changed again; a newer render draws them
-  }
+  if (!(await terrain.ready(app.store.state.game))) return;
   const { game, ui } = app.store.state;
   const at = new Map(game.spec.buildings.map((b) => [`${b.x},${b.y}`, b]));
-  const hexes = terrain.map((h) => {
+  const hexes = terrain.hexes.map((h) => {
     const b = at.get(`${h.x},${h.y}`);
     return b ? { ...h, structure: b.type, color: b.color } : h;
   });
@@ -162,7 +132,7 @@ function render() {
   dropStaleMatch(app.store.state);
   // Lets structures on the board grab touches for dragging, only in setup.
   document.body.classList.toggle('setup-mode', app.store.state.ui.tab === 'setup' && !matchActive(app.store.state));
-  requestTerrain(); // before analyze(): see above
+  terrain.request(app.store.state.game); // before analyze(): see terrain.js
   analyze();
   renderTabs();
   current().panel.render();

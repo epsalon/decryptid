@@ -74,8 +74,16 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   `worker.js`, which runs the wasm. The game JSON is the same shape as Go's
   `game.Game`. `match.js` runs games against AI seats: the engine deals
   (`newMatch`) and answers come from rule `masks`; the turn rules mirror
-  `sim`, so keep the two in step. Test with `make e2e`, a Playwright script that also cross-checks
-  the UI against CLI results.
+  `sim`, so keep the two in step.
+  The clue validator is a separate page, `validate.html` with
+  `js/validate-app.js`: its own `Store` key (`decryptid.validate.v1`) so it
+  shares no state with the solver, the same `SetupPanel`, and `validate.js`
+  (markers like Play but with no analysis, plus blind clue entry kept in
+  `state.validate`). It asks only the `validate` op (`Game.Validate`) whether
+  the clues fit the markers, and failures call `buzz.js`. Never show it
+  probabilities, highlights or the entered clues.
+  Test with `make e2e`, a Playwright script that also cross-checks the UI
+  against CLI results.
 - **i18n (`web/js/i18n.js`, i18next):** all UI text comes from `web/locales/*.json`
   via `t('key', vars)`. `en.json` is the base (US English); other catalogs
   hold only the keys that differ, with fallbacks such as en-AU → en-GB → en.

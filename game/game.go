@@ -241,9 +241,9 @@ func (g *Game) prepare(useKnown bool) (*prepared, error) {
 		}
 		if len(ok) == 0 {
 			if _, known := g.Known[p]; known {
-				return nil, fmt.Errorf("player %d: known rule %q contradicts their markers", p, g.Known[p])
+				return nil, &contradiction{fmt.Sprintf("player %d: known rule %q contradicts their markers", p, g.Known[p])}
 			}
-			return nil, fmt.Errorf("player %d: no rule matches their markers", p)
+			return nil, &contradiction{fmt.Sprintf("player %d: no rule matches their markers", p)}
 		}
 		res.cands[p-1] = ok
 	}

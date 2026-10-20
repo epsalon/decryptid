@@ -2,7 +2,8 @@
   "app": {
     "loading": "Loading engine…",
     "engineFailed": "Engine failed to load: {{error}}",
-    "github": "GitHub repository"
+    "github": "GitHub repository",
+    "validator": "Clue validator"
   },
   "tab": { "setup": "Setup", "me": "Me", "play": "Play", "advice": "Advice", "match": "vs AI" },
   "board": {
@@ -103,6 +104,7 @@
     "withClue": "with your clue",
     "markersOnly": "from the markers alone — set your clue in <b>Me</b> to narrow it down",
     "found": "★ Found it ({{view}}).",
+    "noWorld": "No cryptid location fits these markers and clues. Check the last marker you entered.",
     "onOneOf_one": "The cryptid is on one of <b>{{count}}</b> hex ({{view}}).",
     "onOneOf_other": "The cryptid is on one of <b>{{count}}</b> hexes ({{view}}).",
     "place": "Place",
@@ -117,7 +119,7 @@
     "clueCount_other": "{{count}} clues",
     "notPlaying": "{{color}} isn't playing.",
     "inMatch": "During a match, moves are made in the vs AI tab.",
-    "cubed": "{{player}} has a cube there; nothing more can go on that hex.",
+    "cubed": "Replaced the cube {{player}} had there; a hex holds only one cube.",
     "replacedDisc": "Replaced {{player}}'s disc.",
     "replacedCube": "Replaced {{player}}'s cube."
   },
@@ -223,6 +225,33 @@
       "pass": "{{p}} passes.",
       "gaveUp": "You gave up."
     }
+  },
+  "validate": {
+    "intro": "Place the markers, then check a set of clues without seeing them. Each player enters their clue in turn and passes the phone on. A clue is never shown again: to verify it, enter it once more.",
+    "whose": "Whose clue?",
+    "set": "set",
+    "unset": "not set",
+    "handTo": "Hand the phone to {{player}}",
+    "enterHint": "Choose your clue, then tap Save. It won't be shown again.",
+    "verifyHint": "Choose the clue again to verify it. A wrong choice sounds a buzzer.",
+    "save": "Save clue",
+    "verify": "Verify",
+    "forget": "Forget clue",
+    "cancel": "Cancel",
+    "run": "Check all clues",
+    "pick": "Choose a clue first.",
+    "saved": "Clue saved for {{player}}.",
+    "forgotten": "Clue forgotten for {{player}}.",
+    "matches": "That matches {{player}}'s clue.",
+    "mismatch": "That is not {{player}}'s clue.",
+    "checking": "Checking…",
+    "consistent": "The clues entered fit the board and the markers.",
+    "consistentNone": "No clues entered yet. The markers alone leave a possible world.",
+    "contradiction": "The clues contradict the board or the markers.",
+    "title": "Clue validator",
+    "back": "Back to the solver",
+    "tab": { "markers": "Markers", "clues": "Clues" },
+    "useMarkers": "Switch to the Markers tab to place discs and cubes."
   },
   "keys": {
     "title": "Keyboard shortcuts",

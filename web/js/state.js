@@ -152,9 +152,12 @@ function withDefaults(s) {
   return s;
 }
 
+// A Store keeps one game in localStorage under its own key, so the solver
+// and the clue validator (validate.html) never see each other's state.
 export class Store {
-  constructor() {
-    this.state = withDefaults(load() ?? { game: defaultGame() });
+  constructor(key = KEY) {
+    this.key = key;
+    this.state = withDefaults(load(key) ?? { game: defaultGame() });
     this.listeners = [];
   }
   subscribe(fn) {
@@ -163,23 +166,23 @@ export class Store {
   // update applies fn to the state, saves, and notifies listeners.
   update(fn) {
     fn(this.state);
-    save(this.state);
+    save(this.key, this.state);
     for (const l of this.listeners) l(this.state);
   }
 }
 
-function load() {
+function load(key) {
   try {
-    const s = JSON.parse(localStorage.getItem(KEY));
+    const s = JSON.parse(localStorage.getItem(key));
     return s && s.game && s.game.spec ? s : null;
   } catch {
     return null;
   }
 }
 
-function save(state) {
+function save(key, state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(key, JSON.stringify(state));
   } catch {
     // Storage may be unavailable (private mode); the app still works.
   }
