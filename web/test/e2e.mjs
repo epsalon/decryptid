@@ -535,6 +535,7 @@ try {
     await page.selectOption('#validate-rule', rule);
     await page.click('#validate-go');
   };
+  check(await count('header a.brand[href="./"] .logo', 1) && await count('header a.nav-link[href="./"]', 1), 'validator: the logo, the heading and a Solver link all lead back to the solver');
   check(await count('[data-tab="match"], [data-tab="advice"], [data-tab="play"]', 0) && await count('[data-tab]', 3), 'validator: only Setup, Markers and Clues tabs');
   await page.click('text=Import…');
   await page.fill('dialog textarea', await readFile(join(root, '../examples/game.txt'), 'utf8'));

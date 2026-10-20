@@ -3,7 +3,7 @@
     "loading": "Engine wird geladen…",
     "engineFailed": "Engine konnte nicht geladen werden: {{error}}",
     "github": "GitHub-Repository",
-    "validator": "Hinweisprüfer"
+    "validator": "Prüfer"
   },
   "tab": {
     "setup": "Aufbau",
@@ -293,8 +293,8 @@
     "consistent": "Die eingegebenen Hinweise passen zu Spielplan und Markierungen.",
     "consistentNone": "Noch keine Hinweise eingegeben. Die Markierungen allein lassen eine mögliche Welt zu.",
     "contradiction": "Die Hinweise widersprechen dem Spielplan oder den Markierungen.",
-    "title": "Hinweisprüfer",
-    "back": "Zurück zum Löser",
+    "title": "Prüfer",
+    "back": "Löser",
     "tab": {
       "markers": "Markierungen",
       "clues": "Hinweise"

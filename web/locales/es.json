@@ -3,7 +3,7 @@
     "loading": "Cargando el motor…",
     "engineFailed": "No se pudo cargar el motor: {{error}}",
     "github": "Repositorio de GitHub",
-    "validator": "Verificador de pistas"
+    "validator": "Verificador"
   },
   "tab": {
     "setup": "Preparación",
@@ -293,8 +293,8 @@
     "consistent": "Las pistas introducidas encajan con el tablero y las marcas.",
     "consistentNone": "Aún no se ha introducido ninguna pista. Las marcas por sí solas dejan un mundo posible.",
     "contradiction": "Las pistas contradicen el tablero o las marcas.",
-    "title": "Verificador de pistas",
-    "back": "Volver al solucionador",
+    "title": "Verificador",
+    "back": "Solucionador",
     "tab": {
       "markers": "Marcas",
       "clues": "Pistas"

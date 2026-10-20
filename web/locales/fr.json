@@ -3,7 +3,7 @@
     "loading": "Chargement du moteur…",
     "engineFailed": "Échec du chargement du moteur : {{error}}",
     "github": "Dépôt GitHub",
-    "validator": "Vérificateur d'indices"
+    "validator": "Vérificateur"
   },
   "tab": {
     "setup": "Mise en place",
@@ -294,8 +294,8 @@
     "consistent": "Les indices saisis sont compatibles avec le plateau et les marqueurs.",
     "consistentNone": "Aucun indice saisi pour l'instant. Les marqueurs seuls laissent un monde possible.",
     "contradiction": "Les indices contredisent le plateau ou les marqueurs.",
-    "title": "Vérificateur d'indices",
-    "back": "Retour au solveur",
+    "title": "Vérificateur",
+    "back": "Solveur",
     "tab": {
       "markers": "Marqueurs",
       "clues": "Indices"

@@ -3,7 +3,7 @@
     "loading": "Loading engine…",
     "engineFailed": "Engine failed to load: {{error}}",
     "github": "GitHub repository",
-    "validator": "Clue validator"
+    "validator": "Validator"
   },
   "tab": { "setup": "Setup", "me": "Me", "play": "Play", "advice": "Advice", "match": "vs AI" },
   "board": {
@@ -249,8 +249,8 @@
     "consistent": "The clues entered fit the board and the markers.",
     "consistentNone": "No clues entered yet. The markers alone leave a possible world.",
     "contradiction": "The clues contradict the board or the markers.",
-    "title": "Clue validator",
-    "back": "Back to the solver",
+    "title": "Validator",
+    "back": "Solver",
     "tab": { "markers": "Markers", "clues": "Clues" },
     "useMarkers": "Switch to the Markers tab to place discs and cubes."
   },
