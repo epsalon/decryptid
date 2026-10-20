@@ -497,12 +497,44 @@ try {
   await page.mouse.move(hexB.x + hexB.width / 2, hexB.y + hexB.height / 2, { steps: 8 });
   await page.mouse.up();
   check(await count('#struct-dock [data-dock]', 5) && await count('#board [data-x="5"][data-y="4"] .structure', 1), 'phone setup: dragging from the tray places it and removes it from the tray');
+  // Dragging a structure off the board takes it back off (mouse).
+  const offB = await page.locator('#tabs').boundingBox();
+  const placedB = await page.locator('#board [data-x="5"][data-y="4"]').boundingBox();
+  await page.mouse.move(placedB.x + placedB.width / 2, placedB.y + placedB.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(offB.x + offB.width / 2, offB.y + offB.height / 2, { steps: 8 });
+  await page.mouse.up();
+  check(await count('#struct-dock [data-dock]', 6) && await count('#board .has-structure', 0), 'dragging a structure off the board returns it to the tray');
   await page.click('[data-tab="play"]');
   check(await count('#struct-dock[hidden]', 1), 'the tray is only shown on the Setup tab');
   await page.click('[data-tab="setup"]');
   await page.setViewportSize({ width: 1280, height: 800 });
   check(!(await page.isVisible('#struct-dock')), 'the tray is hidden when the list is beside the board');
   await dockCtx.close();
+
+  // --- Real touch input (CDP touch events on an emulated phone): the tray,
+  // structures already on the board, and dragging them off. ---
+  const touchCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  page = await touchCtx.newPage();
+  const cdp = await touchCtx.newCDPSession(page);
+  await page.goto(url);
+  await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  await page.waitForSelector('#struct-dock [data-dock]');
+  const centre = async (sel) => { const r = await page.locator(sel).first().boundingBox(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; };
+  const touchDrag = async (from, to) => {
+    const a = await centre(from);
+    const z = await centre(to);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [a] });
+    for (let i = 1; i <= 10; i++) await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: a.x + ((z.x - a.x) * i) / 10, y: a.y + ((z.y - a.y) * i) / 10 }] });
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  };
+  await touchDrag('#struct-dock [data-dock]', '#board [data-x="5"][data-y="4"]');
+  check(await count('#board [data-x="5"][data-y="4"].has-structure', 1), 'touch: dragging from the tray places a structure');
+  await touchDrag('#board [data-x="5"][data-y="4"]', '#board [data-x="8"][data-y="2"]');
+  check(await count('#board [data-x="8"][data-y="2"].has-structure', 1) && await count('#board [data-x="5"][data-y="4"].has-structure', 0), 'touch: dragging a structure already on the board moves it');
+  await touchDrag('#board [data-x="8"][data-y="2"]', '#tabs');
+  check(await count('#board .has-structure', 0) && await count('#struct-dock [data-dock]', 6), 'touch: dragging a structure off the board returns it to the tray');
+  await touchCtx.close();
 
   // --- Clue validator (validate.html): a separate page that shares nothing
   // with the solver. Clues are entered blind and verified by entering them

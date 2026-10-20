@@ -71,8 +71,15 @@ export class SetupPanel {
         if (!b) return;
         s = { type: b.type, color: b.color };
       } else return;
-      this.drag = { s, x0: e.clientX, y0: e.clientY, ghost: null };
+      this.drag = { s, fromBoard: !chip, x0: e.clientX, y0: e.clientY, ghost: null };
     });
+    // On touch screens the browser starts scrolling as soon as a finger
+    // moves, and touch-action doesn't reach the SVG shapes of structures on
+    // the board. Cancelling the first touchmove while a structure is held
+    // keeps the gesture ours.
+    document.addEventListener('touchmove', (e) => {
+      if (this.drag && e.cancelable) e.preventDefault();
+    }, { passive: false });
     document.addEventListener('pointermove', (e) => {
       const d = this.drag;
       if (!d) return;
@@ -86,6 +93,7 @@ export class SetupPanel {
       e.preventDefault();
       d.ghost.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
       setTarget(hexUnder(e));
+      d.ghost.classList.toggle('off', d.fromBoard && !target); // letting go here takes it off the board
       last = { clientX: e.clientX, clientY: e.clientY };
       if (!scroller) scroller = requestAnimationFrame(scroll);
     });
@@ -101,8 +109,17 @@ export class SetupPanel {
       document.addEventListener('click', swallow, { capture: true, once: true });
       setTimeout(() => document.removeEventListener('click', swallow, { capture: true }), 0);
       if (g) this.drop(d.s, +g.dataset.x, +g.dataset.y);
+      else if (d.fromBoard) this.remove(d.s); // dragged off the board
     });
     document.addEventListener('pointercancel', end);
+  }
+
+  // remove takes structure s off the board, back to the ones still to place.
+  remove(s) {
+    this.store.update((st) => {
+      st.game.spec.buildings = st.game.spec.buildings.filter((b) => !same(b, s));
+    });
+    this.render();
   }
 
   // drop puts structure s on hex (x, y). If another structure is there, the

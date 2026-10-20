@@ -210,6 +210,7 @@ footer a { color: inherit; }
 .dock-struct:hover { background: none; }
 .dock-struct.on .structure-icon { filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 1px #fff); }
 .drag-ghost { position: fixed; left: 0; top: 0; pointer-events: none; z-index: 10; margin: -16px 0 0 -16px; }
+.drag-ghost.off { opacity: 0.5; }
 .drag-ghost .structure-icon { display: block; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6)); }
 .structure-icon { flex: none; overflow: visible; }
 
