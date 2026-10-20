@@ -436,6 +436,17 @@ try {
   await page.selectOption('#language', 'he');
   check((await page.getAttribute('html', 'dir')) === 'rtl' && (await page.getAttribute('html', 'lang')) === 'he', 'Hebrew: page is right-to-left');
   check((await page.textContent('#tab-body')).includes('הקישו על הצבעים'), 'Hebrew: the UI is translated');
+  // The language is the one setting shared with the validator, in both directions.
+  await page.goto(url + 'validate.html');
+  await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  check((await page.getAttribute('html', 'dir')) === 'rtl' && (await page.inputValue('#language')) === 'he', 'the validator opens in the language chosen in the solver');
+  await page.selectOption('#language', 'en');
+  await page.goto(url);
+  await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  check((await page.getAttribute('html', 'dir')) === 'ltr' && (await page.inputValue('#language')) === 'en', 'the solver follows a language chosen in the validator');
+  const validatorState = await page.evaluate(() => localStorage.getItem('decryptid.validate.v1') ?? '');
+  check(!validatorState.includes('"language"') && !(await page.evaluate(() => localStorage.getItem('decryptid.v1') ?? '')).includes('"language":"en"'), 'the language is saved under its own key, not in either game state');
+  await page.selectOption('#language', 'he');
   await page.selectOption('#language', 'en');
   check((await page.getAttribute('html', 'dir')) === 'ltr', 'English: back to left-to-right');
   await uk.close();

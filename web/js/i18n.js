@@ -24,6 +24,29 @@ const FALLBACK = {
   default: ['en'],
 };
 
+// The chosen language is the one setting shared by the solver and the clue
+// validator (validate.html), so it is saved under its own key, not in either
+// page's game state.
+const LANGUAGE_KEY = 'decryptid.language';
+
+// savedLanguage is the language chosen on either page, or fallback.
+export function savedLanguage(fallback = 'auto') {
+  try {
+    return localStorage.getItem(LANGUAGE_KEY) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// saveLanguage remembers the chosen language for both pages.
+export function saveLanguage(lng) {
+  try {
+    localStorage.setItem(LANGUAGE_KEY, lng);
+  } catch {
+    // Storage may be unavailable (private mode); the choice just won't persist.
+  }
+}
+
 // browserLanguage is the user's preferred language, as the browser reports it.
 export const browserLanguage = () => (navigator.languages ?? [navigator.language])[0] || 'en';
 

@@ -77,7 +77,7 @@ markers) → per-rule masks → per-player candidate rules → `search.Solve` �
   `sim`, so keep the two in step.
   The clue validator is a separate page, `validate.html` with
   `js/validate-app.js`: its own `Store` key (`decryptid.validate.v1`) so it
-  shares no state with the solver, the same `SetupPanel`, and `validate.js`
+  shares no state with the solver (only the language, under `decryptid.language`), the same `SetupPanel`, and `validate.js`
   (markers like Play but with no analysis, plus blind clue entry kept in
   `state.validate`). It asks only the `validate` op (`Game.Validate`) whether
   the clues fit the markers, and failures call `buzz.js`. Never show it

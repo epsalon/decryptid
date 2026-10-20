@@ -28,7 +28,7 @@ random board and plays a full game against AI opponents. The separate
 clues without anyone seeing them: set up the board and markers, then each player
 enters their clue in turn while the phone is passed around. A clue is never shown
 again, and a wrong re-entry or a contradiction sounds a buzzer. It shares no state
-with the solver and shows no probabilities.
+with the solver, except the language setting, and shows no probabilities.
 
 Visit **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** or run it locally:
 

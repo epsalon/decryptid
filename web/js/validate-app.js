@@ -1,6 +1,6 @@
 // Entry point of the clue validator (validate.html). A separate page with
 // its own saved state (see validate.js), so it shares nothing with the
-// solver but the engine and the board drawing.
+// solver but the engine, the board drawing and the chosen language.
 
 import { Engine } from './engine.js';
 import { Store, seat } from './state.js';
@@ -9,7 +9,7 @@ import { SetupPanel } from './setup.js';
 import { Terrain } from './terrain.js';
 import { Validator, ValidateMarkers, ValidateClues } from './validate.js';
 import { installHexRefs, dropStaleHexRef } from './hexref.js';
-import { initI18n, setLanguage, t, LANGUAGES } from './i18n.js';
+import { initI18n, setLanguage, savedLanguage, saveLanguage, t, LANGUAGES } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -27,7 +27,8 @@ store.state.validate ??= { key: '', clues: {} }; // entered clues, never display
 const engine = new Engine();
 const app = { store, engine, toast, rerender: () => render() };
 
-await initI18n(store.state.ui.language);
+const language = savedLanguage(); // the one thing shared with the solver
+await initI18n(language);
 $('engine-status').textContent = t('app.loading');
 
 const validator = new Validator(app);
@@ -73,10 +74,11 @@ function render() {
 
 $('language').innerHTML = [['auto', t('footer.automatic')], ...Object.entries(LANGUAGES)]
   .map(([code, label]) => `<option value="${code}">${label}</option>`).join('');
-$('language').value = store.state.ui.language;
+$('language').value = language;
 $('language').onchange = async (e) => {
   await setLanguage(e.target.value);
-  store.update((s) => (s.ui.language = e.target.value));
+  saveLanguage(e.target.value);
+  render();
 };
 $('coords').checked = !!store.state.ui.coords;
 $('coords').onchange = (e) => store.update((s) => (s.ui.coords = e.target.checked));

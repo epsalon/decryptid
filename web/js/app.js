@@ -12,7 +12,7 @@ import { Terrain } from './terrain.js';
 import { MatchPanel, matchActive, dropStaleMatch } from './match.js';
 import { installHexRefs, dropStaleHexRef } from './hexref.js';
 import { installKeys } from './keys.js';
-import { initI18n, setLanguage, t, LANGUAGES } from './i18n.js';
+import { initI18n, setLanguage, savedLanguage, saveLanguage, t, LANGUAGES } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -60,7 +60,9 @@ const app = {
 };
 
 // Translations load before anything is rendered.
-await initI18n(app.store.state.ui.language);
+// (Saved states from before the shared key kept it in ui.language.)
+const language = savedLanguage(app.store.state.ui.language);
+await initI18n(language);
 $('engine-status').textContent = t('app.loading');
 
 const panels = {
@@ -143,10 +145,11 @@ function render() {
 // Language: the browser's by default, or chosen in the footer.
 $('language').innerHTML = [['auto', t('footer.automatic')], ...Object.entries(LANGUAGES)]
   .map(([code, label]) => `<option value="${code}">${label}</option>`).join('');
-$('language').value = app.store.state.ui.language;
+$('language').value = language;
 $('language').onchange = async (e) => {
   await setLanguage(e.target.value);
-  app.store.update((s) => (s.ui.language = e.target.value));
+  saveLanguage(e.target.value);
+  render();
 };
 
 app.rerender = render;
