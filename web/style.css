@@ -195,7 +195,8 @@ footer a { color: inherit; }
 .tile-border { stroke: #000; stroke-width: 4; stroke-linecap: round; pointer-events: none; }
 
 /* Drag and drop in setup */
-.setup-mode .hex.has-structure, .struct, .dock-struct { touch-action: none; }
+.setup-mode .hex.has-structure, .dock-struct { touch-action: none; }
+@media (min-width: 960px) { .struct { touch-action: none; } } /* on phones the list scrolls; the tray is the drag source */
 .setup-mode .hex.has-structure { cursor: grab; }
 .hex.drop-target .hex-bg { stroke: #fff; stroke-width: 3; filter: brightness(1.25); }
 /* Structures still to place, right under the board (phones only: beside it, the list is already in view) */

@@ -120,11 +120,30 @@ try {
   check((await page.locator('[data-struct="stone,green"].on').count()) === 1, 'a tap on a chip still selects it');
   await page.click('[data-struct="stone,green"]');
   await drag('#board [data-x="0"][data-y="8"]', '#board [data-x="5"][data-y="4"]'); // swap back: blue stone to 5,4
-  // On a phone the list is below the board: dragging near the top edge scrolls up to it.
+  // On a phone the list below the board is not a drag source (it would fight
+  // with scrolling): it doesn't block touch scrolling and doesn't start a drag.
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('[data-struct="shed,white"]').scrollIntoViewIfNeeded();
+  const shedBefore = await where('shed,white');
+  check((await page.locator('[data-struct="shed,white"]').evaluate((e) => getComputedStyle(e).touchAction)) !== 'none', 'phone: the structure list does not block scrolling');
   const chipBox = await page.locator('[data-struct="shed,white"]').boundingBox();
   await page.mouse.move(chipBox.x + chipBox.width / 2, chipBox.y + chipBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(chipBox.x + chipBox.width / 2 + 40, chipBox.y + chipBox.height / 2 - 40, { steps: 5 });
+  check(await count('.drag-ghost', 0), 'phone: dragging from the structure list starts no drag');
+  await page.mouse.up();
+  await page.evaluate(() => scrollTo(0, 0));
+  check((await where('shed,white')) === shedBefore, 'phone: ...and changes nothing');
+  if (shedBefore !== '—') {
+    // Take it off the board (dragging off), so it is in the tray.
+    const [sx, sy] = shedBefore.split(',');
+    await drag(`#board [data-x="${sx}"][data-y="${sy}"]`, '#tabs');
+    check((await where('shed,white')) === '—' && await count('#struct-dock [data-dock="shed,white"]', 1), 'phone: dragging a placed structure off the board puts it in the tray');
+  }
+  // Near the top edge, a carried structure scrolls the page up: from the tray, with the board partly scrolled off.
+  await page.evaluate(() => scrollTo(0, 150));
+  const trayBox = await page.locator('#struct-dock [data-dock="shed,white"]').boundingBox();
+  await page.mouse.move(trayBox.x + trayBox.width / 2, trayBox.y + trayBox.height / 2);
   await page.mouse.down();
   await page.mouse.move(195, 20, { steps: 10 }); // hold near the top edge
   await page.waitForFunction(() => scrollY === 0, null, { timeout: 10000 });
@@ -132,7 +151,7 @@ try {
   await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 5 });
   await page.mouse.up();
   const shedAt = await where('shed,white');
-  check(shedAt === '2,7', `phone: auto-scroll carries a structure from the list to the board (${shedAt})`);
+  check(shedAt === '2,7', `phone: auto-scroll carries a structure from the tray to the board (${shedAt})`);
 
   // Choosing a tile already in another slot swaps the two.
   await page.selectOption('[data-slot="0,0"]', '6');

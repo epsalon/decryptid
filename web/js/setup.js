@@ -61,6 +61,10 @@ export class SetupPanel {
     document.addEventListener('pointerdown', (e) => {
       if (this.locked() || e.button > 0) return;
       const chip = e.target.closest('[data-struct], [data-dock]');
+      // On a phone the list below the board is not a drag source: it would
+      // fight with scrolling, and is off screen while carrying (the tray
+      // under the board does the job). Tapping its chips still works.
+      if (chip?.dataset.struct && matchMedia('(max-width: 959px)').matches) return;
       const hex = e.target.closest('#board [data-x]');
       let s;
       if (chip) {
@@ -80,6 +84,11 @@ export class SetupPanel {
     document.addEventListener('touchmove', (e) => {
       if (this.drag && e.cancelable) e.preventDefault();
     }, { passive: false });
+    // The browser's own drag-and-drop (of an icon, or of selected text) would
+    // cancel our pointer events mid-drag, so refuse it while we hold a structure.
+    document.addEventListener('dragstart', (e) => {
+      if (this.drag) e.preventDefault();
+    });
     document.addEventListener('pointermove', (e) => {
       const d = this.drag;
       if (!d) return;
