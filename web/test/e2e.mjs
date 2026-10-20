@@ -449,6 +449,11 @@ try {
   await page.selectOption('#language', 'he');
   await page.selectOption('#language', 'en');
   check((await page.getAttribute('html', 'dir')) === 'ltr', 'English: back to left-to-right');
+  for (const [code, word] of [['fr', 'Mise en place'], ['de', 'Aufbau'], ['es', 'Preparación']]) {
+    await page.selectOption('#language', code);
+    check((await page.textContent('#tabs')).includes(word) && (await page.getAttribute('html', 'lang')) === code, `${code}: the UI is translated`);
+  }
+  await page.selectOption('#language', 'en');
   await uk.close();
 
   // --- On a touch phone, touching a coordinate spotlights it; if the board is

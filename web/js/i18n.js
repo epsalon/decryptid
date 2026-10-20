@@ -11,7 +11,7 @@
 import i18next from '../vendor/i18next.mjs';
 
 // The languages offered in the footer, by BCP 47 code.
-export const LANGUAGES = { en: 'English (US)', 'en-GB': 'English (UK)', he: 'עברית' };
+export const LANGUAGES = { en: 'English (US)', 'en-GB': 'English (UK)', es: 'Español', fr: 'Français', de: 'Deutsch', he: 'עברית' };
 
 // Where each language looks when a key is missing.
 const FALLBACK = {

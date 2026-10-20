@@ -39,7 +39,14 @@ make serve    # builds web/decryptid.wasm and serves at http://localhost:8347
 #### Languages
 
 The UI follows the browser's language, or the one picked in the footer.
-English (US and UK spelling) and Hebrew are available. To add a language:
+English (US and UK spelling), Spanish, French, German and Hebrew are available.
+
+The Spanish, French and German translations are machine-generated. No human
+has checked them, so expect awkward or wrong wording, especially for the game's
+terms. Corrections are very welcome: edit `web/locales/es.json`, `fr.json` or
+`de.json` and open a pull request, or open an issue with the fix.
+
+To add a language:
 
 1. Copy `web/locales/en.json` to `web/locales/<code>.json` (a BCP 47 code,
    such as `fr`) and translate the values. Keep the `{{placeholders}}`, and
