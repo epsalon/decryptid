@@ -202,14 +202,14 @@ try {
   await page.click('[data-tab="play"]');
   await page.waitForSelector('.status:has-text("Found it")');
   check(await count('#board .tile-label', 0) && await count('#board .tile-border', 0), 'tile numbers and outlines are hidden outside setup');
-  check(await count('#board .ring.viable', 1), 'example game: one viable hex, like the CLI');
-  check(await count('#board [data-x="3"][data-y="3"] .ring.viable', 1), 'example game: the cryptid is at 3,3');
+  check(await count('#board .hex.possible', 1) && await count('#board .hex.ruled', 107) && await count('#board .ruled-out', 107), 'example game: one possible hex, like the CLI, the rest hatched and darker');
+  check(await count('#board .hex.possible[data-x="3"][data-y="3"]', 1), 'example game: the cryptid is at 3,3');
 
   // Without my clue the CLI finds 2 hexes.
   await page.click('[data-tab="me"]');
   check((await page.locator('#clue').inputValue()) === 'Distance 1 from Swamp', 'import sets my clue');
   await page.selectOption('#clue', '');
-  await page.waitForFunction(() => document.querySelectorAll('#board .ring.viable').length === 2);
+  await page.waitForFunction(() => document.querySelectorAll('#board .hex.possible').length === 2);
   check(true, 'without my clue: two viable hexes, like the CLI');
   await page.selectOption('#clue', 'Distance 1 from Swamp');
 
@@ -607,7 +607,7 @@ try {
   check(!(keys[0] ?? '').includes('stone') && keys[1].includes('stone'), 'validator: saves under its own key and never touches the solver\'s state');
   await page.click('[data-tab="markers"]');
   check(await count('.status.ok', 1) && await count('#board .disc, #board .cube', 8), 'validator: imported markers are consistent');
-  check(await count('#board .ring.viable', 0) && !(await page.textContent('#tab-body')).includes('%'), 'validator: no highlights and no probabilities');
+  check(await count('#board .hex.possible, #board .hex.ruled', 0) && !(await page.textContent('#tab-body')).includes('%'), 'validator: no highlights and no probabilities');
   await page.click('[data-tab="clues"]');
   check((await page.locator('button[data-seat="1"] .muted').textContent()) === 'set' && await count('.status.ok', 1), 'validator: a known rule in an imported file becomes that seat\'s clue');
   check(!(await page.textContent('#tab-body')).includes('Swamp'), 'validator: ...and is not shown');

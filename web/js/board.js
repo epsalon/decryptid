@@ -7,11 +7,7 @@ const S = 30; // hex radius in SVG units
 const HexShape = defineHex({ dimensions: S, orientation: Orientation.FLAT, offset: -1, origin: 'topLeft' });
 const grid = new Grid(HexShape, rectangle({ width: 12, height: 9 }));
 const PAD = 4;
-// Insets as a fraction of the hex radius. The likelihood halo occupies the
-// band from the edge inwards by up to HALO_MAX units; the territory outline
-// sits further in, so even the thickest halo leaves a gap before it.
-const HALO_MIN = 1.5;
-const HALO_MAX = 4.5;
+// Inset of the territory outline, as a fraction of the hex radius.
 const TERRITORY = 0.76;
 
 const TERRAIN = {
@@ -90,10 +86,10 @@ export class Board {
   }
 
   // render draws hexes (from the engine's 'board' op) with the game's
-  // markers. overlay maps "x,y" to {viable, kind, label, weight}: viable
-  // hexes get a halo whose thickness shows weight (0-1, likelihood), and if
-  // any hex is viable all others are hatched as ruled out; kind adds an
-  // inner ring of that style, and label a badge. opts.coords shows x,y;
+  // markers. overlay maps "x,y" to {viable, kind, label}: viable hexes are
+  // lightened and, if any hex is viable, all others hatched and darkened (CSS
+  // classes possible and ruled); kind adds an inner ring of that style, and
+  // label a badge. Brightness doesn't show likelihood; the Play tab's bars do. opts.coords shows x,y;
   // opts.tiles (the setup's tile slots) labels each slot with its tile number
   // and outlines the tiles.
   render(hexes, markers = [], overlay = new Map(), opts = {}) {
@@ -121,20 +117,12 @@ export class Board {
     for (const h of hexes) {
       const center = grid.getHex({ col: h.x, row: h.y });
       const key = `${h.x},${h.y}`;
-      const g = el('g', { 'data-x': h.x, 'data-y': h.y, transform: `translate(${center.x},${center.y})`, class: h.structure ? 'hex has-structure' : 'hex' }, root);
+      const o = overlay.get(key);
+      const state = o?.viable ? ' possible' : hasViable ? ' ruled' : '';
+      const g = el('g', { 'data-x': h.x, 'data-y': h.y, transform: `translate(${center.x},${center.y})`, class: `hex${h.structure ? ' has-structure' : ''}${state}` }, root);
       const t = TERRAIN[h.terrain];
       el('polygon', { points: points(), fill: t.fill, class: 'hex-bg' }, g);
-      const o = overlay.get(key);
-      if (hasViable && !o?.viable) {
-        el('polygon', { points: points(), class: 'ruled-out' }, g);
-      }
-      if (o?.viable) {
-        // Thicker halo = likelier. It hugs the hex edge and stays outside the
-        // territory outline (drawn after it, further in), so the two never
-        // overlap. Inline style, so it beats the stylesheet.
-        const w = HALO_MIN + (HALO_MAX - HALO_MIN) * (o.weight ?? 1);
-        el('polygon', { points: points(1 - w / (2 * S)), class: 'ring viable', style: `stroke-width:${w.toFixed(1)}` }, g);
-      }
+      if (state === ' ruled') el('polygon', { points: points(), class: 'ruled-out' }, g);
       el('text', { x: -S * 0.52, y: -S * 0.6, class: 'glyph' }, g).textContent = t.glyph;
       if (h.animal) el('polygon', { points: points(TERRITORY), class: `territory ${h.animal}` }, g);
       const tile = labels?.get(key);
