@@ -218,6 +218,8 @@ recipes (adding a clue, an API operation, a tab or a language), and
 - [x] Play against AI opponents in the browser (easy, normal, hard)
 - [x] Map tiles verified against the physical game
 
+Planned work is in [ROADMAP.md](ROADMAP.md).
+
 ## License
 
 MIT, see [LICENSE](LICENSE). The MIT license covers this project's own code
