@@ -42,6 +42,9 @@ type TurnAdvice struct {
 	Locations int        `json:"locations"` // hexes the cryptid may be on, from our view
 	CubeLeak  float64    `json:"cubeLeak"`  // location bits our best penalty cube would give others
 	MaxGain   float64    `json:"maxGain"`   // the most any question could teach us
+	// Risk is the chance, from our view, that an opponent finds the cryptid
+	// on their next turn if we don't (only set when TurnOptions.Urgency > 0).
+	Risk float64 `json:"risk"`
 }
 
 // TurnOptions tune how AdviseTurn scores moves.
@@ -56,6 +59,12 @@ type TurnOptions struct {
 	// Order^(d-1), rescaled so the weights average 1. Below 1, helping the
 	// next players costs more; 0 or 1 weighs everyone equally.
 	Order float64
+	// Urgency raises the value of searching when an opponent is about to win
+	// (see AdviseTurn): a search's score gains Urgency*WinValue*Risk*P.
+	Urgency float64
+	// UrgencyTau is how sure an opponent must be of their likeliest hex
+	// before we expect them to search it (default 0.25).
+	UrgencyTau float64
 }
 
 // orderWeights returns each player's leak weight (see TurnOptions.Order);
@@ -274,6 +283,13 @@ func (g *Game) AdviseTurn(me int, opt TurnOptions) (*TurnAdvice, error) {
 		return adv.Searches[a].P > adv.Searches[b].P
 	})
 	g.scoreSearches(p, adv, me, lambda, winValue, total, weights)
+	if opt.Urgency > 0 && winValue > 0 {
+		adv.Risk = opponentRisk(p, m, n, nr, mine, others, oidx, total, opt.UrgencyTau)
+		for i := range adv.Searches {
+			s := &adv.Searches[i]
+			s.Score += opt.Urgency * winValue * adv.Risk * s.P
+		}
+	}
 	sort.SliceStable(adv.Searches, func(a, b int) bool {
 		return adv.Searches[a].Score > adv.Searches[b].Score
 	})
@@ -328,4 +344,54 @@ func (a *TurnAdvice) ChooseScored() (*Question, *Search) {
 		return &a.Questions[0], nil
 	}
 	return nil, nil
+}
+
+// opponentRisk is the chance, over our possible worlds, that some opponent
+// finds the cryptid on their next turn. Opponent k, holding rule rk, sees
+// the location distribution of every world where they hold rk (the markers
+// are public, our rule is not); we expect them to search their likeliest
+// uncubed hex once it has at least tau of that distribution (default 0.25),
+// which wins in exactly the worlds where the cryptid is there.
+func opponentRisk(p *prepared, m, n, nr int, mine []float64, others []int32, oidx func(k, rk, j, rj int) int, total, tau float64) float64 {
+	if tau <= 0 {
+		tau = 0.25
+	}
+	survive := 1.0
+	for k := 0; k < n; k++ {
+		if k == m {
+			continue
+		}
+		j0 := 0 // any third player: each world is counted once per j
+		for j0 == k || j0 == m {
+			j0++
+		}
+		var risk float64
+		for rk := 0; rk < nr; rk++ {
+			var all [cells]float64
+			var sum float64
+			for rj := 0; rj < nr; rj++ {
+				for loc, c := range others[oidx(k, rk, j0, rj):][:cells] {
+					all[loc] += float64(c)
+					sum += float64(c)
+				}
+			}
+			if sum == 0 {
+				continue
+			}
+			best := -1
+			for loc, c := range all {
+				if p.board[loc/board.Width][loc%board.Width].Cube != 0 {
+					continue
+				}
+				if best < 0 || c > all[best] {
+					best = loc
+				}
+			}
+			if best >= 0 && all[best]/sum >= tau {
+				risk += mine[(k*nr+rk)*cells+best] / total
+			}
+		}
+		survive *= 1 - math.Min(risk, 1)
+	}
+	return 1 - survive
 }

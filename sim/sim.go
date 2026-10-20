@@ -6,6 +6,7 @@ package sim
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 
 	"github.com/epsalon/decryptid/board"
 	"github.com/epsalon/decryptid/game"
@@ -18,28 +19,37 @@ type Policy struct {
 	SearchAt float64 // search once the likeliest hex has at least this chance (if WinValue is 0)
 	WinValue float64 // if > 0, rank searches with questions; a win is worth this many bits
 	Order    float64 // leak weight by turn order, see game.TurnOptions (0 = equal)
+	Urgency  float64 // search sooner when an opponent is close to winning, see game.TurnOptions
+	Tau      float64 // how sure an opponent must be before we expect a search (0 = default)
 	Random   bool    // ask random questions and place random cubes
 }
 
 // Default is the strongest policy found so far by self-play. It ranks
 // searches and questions together, valuing a win at 16 bits; that ties the
 // best fixed search threshold (15%) head-to-head, and gives one ranking.
-// SearchAt is the fallback threshold if WinValue is set to 0.
-var Default = Policy{Name: "ai", Lambda: 0.5, SearchAt: 0.15, WinValue: 16}
+// SearchAt is the fallback threshold if WinValue is set to 0. Urgency 3 with
+// Tau 0.15 searches sooner when an opponent is close to winning: it wins
+// about 2.4 points more per seat in 5-player advanced games (the only ones
+// where the AI asks questions) and changes nothing elsewhere.
+var Default = Policy{Name: "ai", Lambda: 0.5, SearchAt: 0.15, WinValue: 16, Urgency: 3, Tau: 0.15}
 
 // Policies are the built-in strategies, by name.
 var Policies = map[string]Policy{
 	"ai":        Default,
-	"threshold": {Name: "threshold", Lambda: 0.5, SearchAt: 0.15}, // searches once a hex has 15%
-	"greedy":    {Name: "greedy", Lambda: 0, SearchAt: 0.15},      // ignores leaks
-	"cautious":  {Name: "cautious", Lambda: 0.5, SearchAt: 1},     // searches only when certain
-	"random":    {Name: "random", Random: true, SearchAt: 1},      // random questions and cubes
+	"patient":   {Name: "patient", Lambda: 0.5, SearchAt: 0.15, WinValue: 16}, // the default without urgency
+	"threshold": {Name: "threshold", Lambda: 0.5, SearchAt: 0.15},             // searches once a hex has 15%
+	"greedy":    {Name: "greedy", Lambda: 0, SearchAt: 0.15},                  // ignores leaks
+	"cautious":  {Name: "cautious", Lambda: 0.5, SearchAt: 1},                 // searches only when certain
+	"random":    {Name: "random", Random: true, SearchAt: 1},                  // random questions and cubes
 }
 
 // ParsePolicy accepts a built-in name, "lambda:searchAt" for a threshold
 // policy (e.g. "0.3:0.8"), or "lambda/winValue" for one ranking of searches
 // and questions (e.g. "0.5/3"); a third field sets the turn-order weight (e.g. "0.5/8/0.5").
 func ParsePolicy(s string) (Policy, error) {
+	if i := strings.Index(s, "{"); i > 0 && strings.HasSuffix(s, "}") {
+		return parseOverrides(s[:i], s[i+1:len(s)-1], s)
+	}
 	if p, ok := Policies[s]; ok {
 		return p, nil
 	}
@@ -78,6 +88,8 @@ type Config struct {
 type Result struct {
 	Winner int // seat (1-based) of the winner; 0 if nobody won
 	Turns  int // turns taken, over all players
+	Asks   int // turns spent asking a question
+	Finds  int // searches made, including the winning one
 }
 
 type player struct {
@@ -87,10 +99,11 @@ type player struct {
 }
 
 type match struct {
-	cfg     Config
-	rng     *rand.Rand
-	g       *game.Game
-	players []player
+	asks, finds int
+	cfg         Config
+	rng         *rand.Rand
+	g           *game.Game
+	players     []player
 }
 
 // Play plays one game on a random board. Seat i (0-based) uses seats[i],
@@ -121,10 +134,10 @@ func Play(rng *rand.Rand, cfg Config, seats []Policy) (Result, error) {
 			return Result{}, fmt.Errorf("turn %d (player %d): %v", t+1, p, err)
 		}
 		if won {
-			return Result{Winner: p, Turns: t + 1}, nil
+			return Result{Winner: p, Turns: t + 1, Asks: m.asks, Finds: m.finds}, nil
 		}
 	}
-	return Result{Turns: cfg.MaxTurns}, nil
+	return Result{Turns: cfg.MaxTurns, Asks: m.asks, Finds: m.finds}, nil
 }
 
 // deal makes a random board with at least one valid world and picks one.
@@ -217,13 +230,16 @@ func (m *match) turn(p int) (won bool, err error) {
 		return false, err
 	}
 	q, s := pol.Choose(adv)
+	m.log(fmt.Sprintf("P%d risk %.2f", p, adv.Risk))
 	if pol.Random && q != nil {
 		q = &adv.Questions[m.rng.Intn(len(adv.Questions))]
 	}
 	switch {
 	case s != nil:
+		m.finds++
 		return m.search(p, s.X, s.Y, s.P)
 	case q != nil:
+		m.asks++
 		yes := m.answer(q.Player, q.X, q.Y)
 		m.log(fmt.Sprintf("P%d asks P%d about (%d,%d): %v  [gain %.2f leak %.2f; %d locations, %.2f bits]",
 			p, q.Player, q.X, q.Y, yesNo(yes), q.Gain, q.Leak, adv.Locations, adv.Entropy))
@@ -273,5 +289,40 @@ func (p Policy) Choose(a *game.TurnAdvice) (*game.Question, *game.Search) {
 
 // TurnOptions are the advisor settings for this policy.
 func (p Policy) TurnOptions() game.TurnOptions {
-	return game.TurnOptions{Lambda: p.Lambda, WinValue: p.WinValue, Order: p.Order}
+	return game.TurnOptions{Lambda: p.Lambda, WinValue: p.WinValue, Order: p.Order, Urgency: p.Urgency, UrgencyTau: p.Tau}
+}
+
+// parseOverrides builds a policy from a base policy and "key=value" settings,
+// e.g. "ai{urgency=0.5,tau=0.3}"; keys are lambda, win, searchat, order,
+// urgency and tau. The result is named with the full text.
+func parseOverrides(base, settings, full string) (Policy, error) {
+	p, err := ParsePolicy(base)
+	if err != nil {
+		return p, err
+	}
+	p.Name = full
+	for _, kv := range strings.Split(settings, ",") {
+		key, val, ok := strings.Cut(kv, "=")
+		var f float64
+		if _, err := fmt.Sscanf(val, "%g", &f); !ok || err != nil {
+			return p, fmt.Errorf("bad setting %q in policy %q", kv, full)
+		}
+		switch key {
+		case "lambda":
+			p.Lambda = f
+		case "win":
+			p.WinValue = f
+		case "searchat":
+			p.SearchAt = f
+		case "order":
+			p.Order = f
+		case "urgency":
+			p.Urgency = f
+		case "tau":
+			p.Tau = f
+		default:
+			return p, fmt.Errorf("unknown setting %q in policy %q", key, full)
+		}
+	}
+	return p, nil
 }

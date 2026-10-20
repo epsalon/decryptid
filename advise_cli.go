@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
+	"sync"
 
 	"github.com/epsalon/decryptid/game"
 	"github.com/epsalon/decryptid/sim"
@@ -14,7 +16,9 @@ func adviseTurn(g *game.Game, who string, top int, lambda, searchAt, winValue fl
 	if err != nil {
 		return err
 	}
-	pol := sim.Policy{Lambda: lambda, SearchAt: searchAt, WinValue: winValue}
+	// Start from the default policy, so urgency and tau match the web advisor.
+	pol := sim.Default
+	pol.Lambda, pol.SearchAt, pol.WinValue = lambda, searchAt, winValue
 	adv, err := g.AdviseTurn(me, pol.TurnOptions())
 	if err != nil {
 		return err
@@ -66,9 +70,9 @@ func adviseTurn(g *game.Game, who string, top int, lambda, searchAt, winValue fl
 	return nil
 }
 
-func simulate(games, players int, advanced bool, policyList string, seed int64, verbose bool) error {
+func simulate(games, players int, advanced bool, policyList string, seed int64, workers int, verbose bool) error {
 	var pols []sim.Policy
-	for _, name := range strings.Split(policyList, ",") {
+	for _, name := range splitPolicies(policyList) {
 		p, err := sim.ParsePolicy(strings.TrimSpace(name))
 		if err != nil {
 			return err
@@ -82,40 +86,73 @@ func simulate(games, players int, advanced bool, policyList string, seed int64, 
 	for _, p := range pols {
 		stats[p.Name] = &tally{}
 	}
-	rng := rand.New(rand.NewSource(seed))
-	var totalTurns, unfinished int
+	if verbose {
+		workers = 1 // keep the move log readable
+	}
+	// Each game has its own random stream, so results don't depend on how
+	// many workers play them.
+	type outcome struct {
+		seats []sim.Policy
+		res   sim.Result
+		err   error
+	}
+	out := make([]outcome, games)
+	next := make(chan int)
+	var wg sync.WaitGroup
+	for w := 0; w < workers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for i := range next {
+				rng := rand.New(rand.NewSource(seed*7919 + int64(i)*104729))
+				// Shuffle policies into seats so none keeps the first move or
+				// the same neighbours.
+				seats := make([]sim.Policy, players)
+				for s, k := range rng.Perm(players) {
+					seats[s] = pols[(k+i)%len(pols)]
+				}
+				cfg := sim.Config{Players: players, Advanced: advanced}
+				if verbose {
+					fmt.Printf("--- game %d: %v\n", i+1, names(seats))
+					cfg.Log = func(s string) { fmt.Println(s) }
+				}
+				res, err := sim.Play(rng, cfg, seats)
+				out[i] = outcome{seats, res, err}
+			}
+		}()
+	}
 	for i := 0; i < games; i++ {
-		// Shuffle policies into seats so none keeps the first move or the
-		// same neighbours.
-		seats := make([]sim.Policy, players)
-		for s, k := range rng.Perm(players) {
-			seats[s] = pols[(k+i)%len(pols)]
-			stats[seats[s].Name].seats++
+		next <- i
+	}
+	close(next)
+	wg.Wait()
+
+	var totalTurns, unfinished, asks, searches int
+	for i, o := range out {
+		if o.err != nil {
+			return fmt.Errorf("game %d: %v", i+1, o.err)
 		}
-		cfg := sim.Config{Players: players, Advanced: advanced}
-		if verbose {
-			fmt.Printf("--- game %d: %v\n", i+1, names(seats))
-			cfg.Log = func(s string) { fmt.Println(s) }
+		for _, p := range o.seats {
+			stats[p.Name].seats++
 		}
-		res, err := sim.Play(rng, cfg, seats)
-		if err != nil {
-			return fmt.Errorf("game %d: %v", i+1, err)
-		}
-		totalTurns += res.Turns
-		if res.Winner == 0 {
+		totalTurns += o.res.Turns
+		asks += o.res.Asks
+		searches += o.res.Finds
+		if o.res.Winner == 0 {
 			unfinished++
 			continue
 		}
-		st := stats[seats[res.Winner-1].Name]
+		st := stats[o.seats[o.res.Winner-1].Name]
 		st.wins++
-		st.turns += res.Turns
+		st.turns += o.res.Turns
 	}
 	fmt.Printf("%d games, %d players, %s mode: %.1f turns per game on average",
 		games, players, map[bool]string{true: "advanced", false: "basic"}[advanced], float64(totalTurns)/float64(games))
 	if unfinished > 0 {
 		fmt.Printf(", %d unfinished", unfinished)
 	}
-	fmt.Printf("\n\n  %-10s %6s %6s %8s %13s\n", "policy", "seats", "wins", "win/seat", "turns to win")
+	fmt.Printf("\n%.2f questions and %.2f searches per game", float64(asks)/float64(games), float64(searches)/float64(games))
+	fmt.Printf("\n\n  %-28s %6s %6s %8s %7s %13s\n", "policy", "seats", "wins", "win/seat", "(±)", "turns to win")
 	for _, p := range pols {
 		st := stats[p.Name]
 		if st.seats == 0 {
@@ -125,9 +162,11 @@ func simulate(games, players int, advanced bool, policyList string, seed int64, 
 		if st.wins > 0 {
 			avg = float64(st.turns) / float64(st.wins)
 		}
-		fmt.Printf("  %-10s %6d %6d %8.2f %13.1f\n", p.Name, st.seats, st.wins, float64(st.wins)/float64(st.seats), avg)
+		rate := float64(st.wins) / float64(st.seats)
+		se := math.Sqrt(rate * (1 - rate) / float64(st.seats))
+		fmt.Printf("  %-28s %6d %6d %8.3f %7.3f %13.1f\n", p.Name, st.seats, st.wins, rate, se, avg)
 	}
-	fmt.Printf("\n(an even split would be %.2f wins per seat)\n", 1/float64(players))
+	fmt.Printf("\n(an even split would be %.3f wins per seat; ± is one standard error)\n", 1/float64(players))
 	return nil
 }
 
@@ -137,4 +176,25 @@ func names(ps []sim.Policy) []string {
 		out = append(out, p.Name)
 	}
 	return out
+}
+
+// splitPolicies splits a comma-separated policy list, keeping the commas
+// inside braces: "ai,ai{urgency=1,tau=0.3}" is two policies.
+func splitPolicies(s string) []string {
+	var out []string
+	depth, start := 0, 0
+	for i, c := range s {
+		switch c {
+		case '{':
+			depth++
+		case '}':
+			depth--
+		case ',':
+			if depth == 0 {
+				out = append(out, s[start:i])
+				start = i + 1
+			}
+		}
+	}
+	return append(out, s[start:])
 }

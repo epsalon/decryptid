@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/epsalon/decryptid/board"
@@ -28,11 +29,12 @@ func main() {
 	simAdvanced := flag.Bool("advanced", true, "with -sim, play the advanced game")
 	simPolicies := flag.String("policies", "ai,greedy,cautious,random", "with -sim, comma-separated policies, shuffled into seats each game (ai, threshold, greedy, cautious, random, lambda:searchAt or lambda/winValue)")
 	seed := flag.Int64("seed", 1, "with -sim, random seed")
+	workers := flag.Int("workers", runtime.NumCPU(), "with -sim, games to play in parallel")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %[1]s [-v] GAMEFILE|-
        %[1]s -cube PLAYER [-n N] GAMEFILE|-
        %[1]s -turn PLAYER [-lambda L] [-search-at P] [-n N] GAMEFILE|-
-       %[1]s -sim N [-players N] [-advanced=false] [-policies A,B,...] [-seed S] [-v]
+       %[1]s -sim N [-players N] [-advanced=false] [-policies A,B,...] [-seed S] [-workers N] [-v]
        %[1]s -rules [-basic]
 `, os.Args[0])
 		flag.PrintDefaults()
@@ -47,7 +49,7 @@ func main() {
 		return
 	}
 	if *simGames > 0 {
-		if err := simulate(*simGames, *simPlayers, *simAdvanced, *simPolicies, *seed, *verbose); err != nil {
+		if err := simulate(*simGames, *simPlayers, *simAdvanced, *simPolicies, *seed, *workers, *verbose); err != nil {
 			fmt.Fprintln(os.Stderr, "decryptid:", err)
 			os.Exit(1)
 		}

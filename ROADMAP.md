@@ -1,8 +1,10 @@
 # Roadmap
 
-1. Search sooner when an opponent's view is nearly certain (we can compute
-   every opponent's view). Tried and found not to matter: weighting leaks by
-   turn order (`TurnOptions.Order`), ~900 head-to-head games.
+1. ~~Search sooner when an opponent's view is nearly certain~~ (done: the
+   urgency term in `TurnOptions`, default on). About +0.01 wins per seat in
+   5-player advanced self-play, and no change elsewhere. Also tried and found
+   not to matter: weighting leaks by turn order (`TurnOptions.Order`), ~900
+   head-to-head games.
 2. Tell which rule sets would put the cryptid on each tile, once the board
    is set up (per-tile view of the solver's worlds).
 3. (Pie in the sky) Recognize the board state from a photo of the real
