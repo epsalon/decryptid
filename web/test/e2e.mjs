@@ -537,6 +537,8 @@ try {
   await page.click('text=Export…');
   const solverExport = await page.locator('dialog textarea').inputValue();
   await page.click('dialog button[value="close"]');
+  await page.click('[data-tab="play"]');
+  check(!(await page.textContent('.status')).includes('alone') && (await page.textContent('.status')).includes('with the clues entered'), 'solver: after importing known rules, the status does not say "from the markers alone"');
   check(solverExport.includes('rule yellow Distance 1 from Swamp') && solverExport.includes('rule red Distance 1 from Water'), 'solver: import and export carry every known rule');
   await dockCtx.close();
 

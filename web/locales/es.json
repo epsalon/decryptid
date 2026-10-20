@@ -139,6 +139,7 @@
     "error": "{{error}}. Revisa la última marca que introdujiste.",
     "analyzing": "Analizando…",
     "withClue": "con tu pista",
+    "withClues": "con las pistas introducidas",
     "markersOnly": "solo a partir de las marcas — define tu pista en <b>Yo</b> para acotar más",
     "found": "★ ¡Encontrado! ({{view}}).",
     "noWorld": "Ninguna ubicación del críptido encaja con estas marcas y pistas. Revisa la última marca que introdujiste.",

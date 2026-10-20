@@ -89,7 +89,8 @@ export class PlayPanel {
     else if (!summary) status = `<p class="status muted">${t('play.analyzing')}</p>`;
     else {
       const n = summary.locations.length;
-      const view = game.known[me] ? t('play.withClue') : t('play.markersOnly');
+      // The solver uses every known rule, not only yours, so say so when any is set.
+      const view = !Object.keys(game.known).length ? t('play.markersOnly') : game.known[me] ? t('play.withClue') : t('play.withClues');
       const found = n === 1 ? t('play.found', { view }) : t('play.onOneOf', { count: n, view });
       status = n
         ? `<p class="status ${n === 1 ? 'ok' : ''}">${found}${pending ? ` <span class="muted">${t('common.updating')}</span>` : ''}</p>`

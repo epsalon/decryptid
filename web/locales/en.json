@@ -103,6 +103,7 @@
     "error": "{{error}}. Check the last marker you entered.",
     "analyzing": "Analyzing…",
     "withClue": "with your clue",
+    "withClues": "with the clues entered",
     "markersOnly": "from the markers alone — set your clue in <b>Me</b> to narrow it down",
     "found": "★ Found it ({{view}}).",
     "noWorld": "No cryptid location fits these markers and clues. Check the last marker you entered.",

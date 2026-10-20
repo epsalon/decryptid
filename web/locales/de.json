@@ -139,6 +139,7 @@
     "error": "{{error}}. Prüfe die zuletzt eingegebene Markierung.",
     "analyzing": "Analysiere…",
     "withClue": "mit deinem Hinweis",
+    "withClues": "mit den eingegebenen Hinweisen",
     "markersOnly": "allein aus den Markierungen — setze deinen Hinweis unter <b>Ich</b>, um weiter einzugrenzen",
     "found": "★ Gefunden ({{view}}).",
     "noWorld": "Kein Cryptid-Standort passt zu diesen Markierungen und Hinweisen. Prüfe die zuletzt eingegebene Markierung.",

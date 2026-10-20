@@ -139,6 +139,7 @@
     "error": "{{error}}. Vérifiez le dernier marqueur saisi.",
     "analyzing": "Analyse…",
     "withClue": "avec votre indice",
+    "withClues": "avec les indices saisis",
     "markersOnly": "d'après les marqueurs seuls — définissez votre indice dans <b>Moi</b> pour affiner",
     "found": "★ Trouvé ({{view}}).",
     "noWorld": "Aucun emplacement du cryptide ne correspond à ces marqueurs et indices. Vérifiez le dernier marqueur saisi.",
