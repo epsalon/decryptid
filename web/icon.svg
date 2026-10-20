@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#25705a"/>
+      <stop offset="1" stop-color="#0e3b34"/>
+    </linearGradient>
+    <clipPath id="clip"><rect width="128" height="128" rx="30"/></clipPath>
+  </defs>
+  <rect width="128" height="128" rx="30" fill="url(#bg)"/>
+  <g clip-path="url(#clip)">
+    <!-- forest -->
+    <g stroke="#0b2f29" stroke-width="2.5">
+      <circle cx="118" cy="64" r="19" fill="#2b8a4e"/>
+      <circle cx="100" cy="92" r="27" fill="#2f9453"/>
+      <circle cx="76" cy="114" r="22" fill="#3aa35c"/>
+      <circle cx="108" cy="116" r="19" fill="#49b866"/>
+    </g>
+    <!-- the cryptid peeking out -->
+    <circle cx="86" cy="86" r="19" fill="#d9692a" stroke="#7a3412" stroke-width="2.5"/>
+    <g stroke="#7a3412" stroke-width="2.5" stroke-linejoin="round">
+      <path d="M42 40 L47 22 L55 34 L63 17 L70 33 L79 22 L82 41 Z" fill="#e8782f"/>
+      <circle cx="62" cy="56" r="27" fill="#e8782f"/>
+    </g>
+    <ellipse cx="62" cy="60" rx="19" ry="16" fill="#f8d49a"/>
+    <!-- glowing eyes -->
+    <g stroke="#f4a63b" stroke-width="1.5">
+      <circle cx="54" cy="56" r="6.5" fill="#fff6cf"/>
+      <circle cx="70" cy="56" r="6.5" fill="#fff6cf"/>
+    </g>
+    <circle cx="55" cy="57" r="2.8" fill="#4a1e0e"/>
+    <circle cx="71" cy="57" r="2.8" fill="#4a1e0e"/>
+    <!-- mouth -->
+    <path d="M54 67 Q62 78 70 67 Q62 70 54 67 Z" fill="#5a1c14" stroke="#5a1c14" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M57 71 Q62 75.5 67 71 Q62 73 57 71 Z" fill="#ef7b7b"/>
+    <!-- magnifying glass -->
+    <line x1="40" y1="82" x2="22" y2="108" stroke="#13292c" stroke-width="15" stroke-linecap="round"/>
+    <line x1="40" y1="82" x2="22" y2="108" stroke="#b8692f" stroke-width="10" stroke-linecap="round"/>
+    <line x1="42" y1="79" x2="36" y2="88" stroke="#dfe6e8" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="62" cy="56" r="36" fill="#cfe9ee" fill-opacity="0.16"/>
+    <circle cx="62" cy="56" r="36" fill="none" stroke="#13292c" stroke-width="11"/>
+    <circle cx="62" cy="56" r="36" fill="none" stroke="#e6edf0" stroke-width="7"/>
+    <path d="M37 41 A28 28 0 0 1 55 27" fill="none" stroke="#fff" stroke-opacity="0.75" stroke-width="4" stroke-linecap="round"/>
+    <!-- sparkles -->
+    <path d="M20 12 L22.6 19.4 L30 22 L22.6 24.6 L20 32 L17.4 24.6 L10 22 L17.4 19.4 Z" fill="#fff7d6"/>
+    <path d="M108 18 L109.8 23.2 L115 25 L109.8 26.8 L108 32 L106.2 26.8 L101 25 L106.2 23.2 Z" fill="#f6a93b"/>
+  </g>
+</svg>
