@@ -529,6 +529,15 @@ try {
   await page.click('[data-tab="setup"]');
   await page.setViewportSize({ width: 1280, height: 800 });
   check(!(await page.isVisible('#struct-dock')), 'the tray is hidden when the list is beside the board');
+  // Import and export carry every known rule (the solver keeps them all).
+  await page.click('[data-tab="setup"]');
+  await page.click('text=Import…');
+  await page.fill('dialog textarea', example + '\nrule red Distance 1 from Water\n');
+  await page.click('dialog button:has-text("Load")');
+  await page.click('text=Export…');
+  const solverExport = await page.locator('dialog textarea').inputValue();
+  await page.click('dialog button[value="close"]');
+  check(solverExport.includes('rule yellow Distance 1 from Swamp') && solverExport.includes('rule red Distance 1 from Water'), 'solver: import and export carry every known rule');
   await dockCtx.close();
 
   // --- Real touch input (CDP touch events on an emulated phone): the tray,
@@ -598,36 +607,54 @@ try {
   check(await count('.status.ok', 1) && await count('#board .disc, #board .cube', 8), 'validator: imported markers are consistent');
   check(await count('#board .ring.viable', 0) && !(await page.textContent('#tab-body')).includes('%'), 'validator: no highlights and no probabilities');
   await page.click('[data-tab="clues"]');
-  check(await count('.status.ok', 1) && (await page.textContent('#tab-body')).includes('No clues entered yet'), 'validator: the markers alone are consistent');
-  await enter(1, 'Distance 1 from Swamp');
+  check((await page.locator('button[data-seat="1"] .muted').textContent()) === 'set' && await count('.status.ok', 1), 'validator: a known rule in an imported file becomes that seat\'s clue');
+  check(!(await page.textContent('#tab-body')).includes('Swamp'), 'validator: ...and is not shown');
+  await enter(1, 'Distance 1 from Swamp'); // verifies the imported clue, quietly
   await enter(2, 'Distance 1 from Water');
   await enter(3, 'Distance 2 from Cougar territory');
   check(await count('.status.ok', 1) && (await page.textContent('#tab-body')).includes('fit the board'), 'validator: the true clues are consistent');
   check(!(await page.textContent('#tab-body')).includes('Swamp') && await count('#validate-rule', 0), 'validator: an entered clue is never shown');
   check(await buzzes(0), 'validator: no buzzer for correct clues');
+  // Export carries every entered clue, and importing it restores them.
+  await page.click('[data-tab="setup"]');
+  await page.click('text=Export…');
+  const exported = await page.locator('dialog textarea').inputValue();
+  check(await buzzes(1), 'validator: exporting sounds the buzzer, to discourage peeking');
+  await page.click('dialog button[value="close"]');
+  check(exported.includes('rule yellow Distance 1 from Swamp') && exported.includes('rule red Distance 1 from Water') && exported.includes('rule green Distance 2 from Cougar territory'), 'validator: export includes every entered clue');
+  await page.click('[data-tab="clues"]');
+  await page.click('button[data-seat="2"]');
+  await page.click('#validate-forget');
+  check((await page.locator('button[data-seat="2"] .muted').textContent()) === 'not set', 'validator: a forgotten clue is not set');
+  await page.click('[data-tab="setup"]');
+  await page.click('text=Import…');
+  await page.fill('dialog textarea', exported);
+  await page.click('dialog button:has-text("Load")');
+  await page.click('[data-tab="clues"]');
+  check((await page.locator('button[data-seat="2"] .muted').textContent()) === 'set' && await count('.status.ok', 1), 'validator: importing the export restores every clue');
   await page.click('button[data-seat="2"]');
   await page.selectOption('#validate-rule', 'Distance 1 from Swamp');
   await page.click('#validate-go');
-  check(await buzzes(1) && await count('#validate-rule', 1), 'validator: a wrong re-entry buzzes and stays open');
+  check(await buzzes(2) && await count('#validate-rule', 1), 'validator: a wrong re-entry buzzes and stays open');
   await page.selectOption('#validate-rule', 'Distance 1 from Water');
   await page.click('#validate-go');
-  check(await count('#validate-rule', 0) && await buzzes(1), 'validator: the right re-entry closes quietly');
+  check(await count('#validate-rule', 0) && await buzzes(2), 'validator: the right re-entry closes quietly');
   // A marker that contradicts yellow's clue: a cube where their rule holds.
   await page.click('[data-tab="markers"]');
   await page.click('[data-tool-player="1"]');
   await page.click('[data-cube="1"]');
   await page.click('#board [data-x="1"][data-y="1"]');
-  check(await buzzes(2) && await count('.status.warn', 1), 'validator: a contradicting marker buzzes and warns');
+  check(await buzzes(3) && await count('.status.warn', 1), 'validator: a contradicting marker buzzes and warns');
   await page.click('[data-act="undo"]');
-  check(await count('.status.ok', 1) && await buzzes(2), 'validator: undoing it is consistent again, quietly');
+  check(await count('.status.ok', 1) && await buzzes(3), 'validator: undoing it is consistent again, quietly');
   await page.click('[data-tab="clues"]');
   await page.click('button[data-seat="1"]');
   await page.click('#validate-forget');
   await enter(1, 'Distance 2 from Bear territory');
-  check(await buzzes(3) && await count('.status.warn', 1), 'validator: contradicting clues buzz and warn');
+  check(await buzzes(4) && await count('.status.warn', 1), 'validator: contradicting clues buzz and warn');
   await page.click('#validate-run');
   await page.waitForSelector('.status.warn');
-  check(await buzzes(3), 'validator: checking again while invalid stays quiet');
+  check(await buzzes(4), 'validator: checking again while invalid stays quiet');
   await val.close();
 } finally {
   await browser.close();

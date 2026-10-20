@@ -9,11 +9,15 @@ const label = (s) => t('structure.label', { color: t(`structureColor.${s.color}`
 const same = (a, b) => a.type === b.type && a.color === b.color;
 
 export class SetupPanel {
-  constructor(root, store, engine, toast) {
+  // clues, if given, is where known rules live instead of game.known (the
+  // clue validator keeps them apart): {get() -> {seat: rule}, set(state, known),
+  // onExport()}.
+  constructor(root, store, engine, toast, clues = null) {
     this.root = root;
     this.store = store;
     this.engine = engine;
     this.toast = toast;
+    this.clues = clues;
     this.placing = null; // structure {type, color} waiting for a hex tap
     this.drag = null; // structure being dragged, see installDrag
     this.installDrag();
@@ -339,7 +343,10 @@ export class SetupPanel {
   }
 
   async export() {
-    const text = await this.engine.call('format', { game: this.store.state.game });
+    this.clues?.onExport?.(); // first, while still inside the click that asked for it
+    const { game } = this.store.state;
+    const known = this.clues ? this.clues.get() : game.known;
+    const text = await this.engine.call('format', { game: { ...game, known } });
     textDialog(t('setup.exportTitle'), t('setup.exportHint'), text, [
       [t('setup.copy'), async (text) => { await navigator.clipboard.writeText(text); this.toast(t('setup.copied')); }],
       [t('setup.download'), (text) => download('cryptid-game.txt', text)],
@@ -354,6 +361,11 @@ export class SetupPanel {
         this.store.update((s) => {
           s.game = { markers: [], known: {}, ...g };
           s.game.colors = seatColors(s.game);
+          if (this.clues) {
+            this.clues.set(s, s.game.known); // every known rule, kept out of the game
+            s.game.known = {};
+            return;
+          }
           const known = Object.keys(s.game.known);
           if (known.length === 1) s.me = +known[0];
           else if (s.me > s.game.players) s.me = 0;

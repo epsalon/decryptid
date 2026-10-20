@@ -16,6 +16,20 @@ import { t } from './i18n.js';
 // different seats make them meaningless.
 const clueKey = (game) => JSON.stringify([game.advanced, seatColors(game)]);
 
+// validatorClues is how the validator's Setup panel exports and imports known
+// rules: they are the entered clues, not part of the game. An export lists
+// every clue in plain text, so it sounds the buzzer to discourage peeking.
+export const validatorClues = (v) => ({
+  onExport: buzz,
+  get() {
+    const { game } = v.app.store.state;
+    return Object.fromEntries(Object.entries(v.clues()).filter(([p]) => +p <= game.players));
+  },
+  set(state, known) {
+    state.validate = { key: clueKey(state.game), clues: { ...known } };
+  },
+});
+
 // Validator holds what both panels share: the entered clues and the verdict.
 // app is {store, engine, toast, rerender}.
 export class Validator {

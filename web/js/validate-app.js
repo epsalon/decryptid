@@ -7,7 +7,7 @@ import { Store, seat } from './state.js';
 import { Board } from './board.js';
 import { SetupPanel } from './setup.js';
 import { Terrain } from './terrain.js';
-import { Validator, ValidateMarkers, ValidateClues } from './validate.js';
+import { Validator, ValidateMarkers, ValidateClues, validatorClues } from './validate.js';
 import { installHexRefs, dropStaleHexRef } from './hexref.js';
 import { initI18n, setLanguage, savedLanguage, saveLanguage, t, LANGUAGES } from './i18n.js';
 
@@ -33,7 +33,7 @@ $('engine-status').textContent = t('app.loading');
 
 const validator = new Validator(app);
 const panels = {
-  setup: { title: 'tab.setup', panel: new SetupPanel($('tab-body'), store, engine, toast) },
+  setup: { title: 'tab.setup', panel: new SetupPanel($('tab-body'), store, engine, toast, validatorClues(validator)) },
   markers: { title: 'validate.tab.markers', panel: new ValidateMarkers($('tab-body'), validator) },
   clues: { title: 'validate.tab.clues', panel: new ValidateClues($('tab-body'), validator) },
 };

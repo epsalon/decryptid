@@ -27,7 +27,8 @@ random board and plays a full game against AI opponents. The separate
 **[clue validator](https://decryptid.8ln.org/validate.html)** checks a set of
 clues without anyone seeing them: set up the board and markers, then each player
 enters their clue in turn while the phone is passed around. A clue is never shown
-again, and a wrong re-entry or a contradiction sounds a buzzer. It shares no state
+again, and a wrong re-entry or a contradiction sounds a buzzer. Exporting also
+sounds it, since the file lists every clue in plain text. It shares no state
 with the solver, except the language setting, and shows no probabilities.
 
 Visit **[https://decryptid.8ln.org/](https://decryptid.8ln.org/)** or run it locally:
