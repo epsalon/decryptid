@@ -96,6 +96,7 @@
     "rotated": "Retournée à 180°",
     "structures": "Structures",
     "structuresHint": "Faites glisser une structure sur son hexagone, ou touchez-la puis l'hexagone. Faites glisser sur le plateau pour en déplacer une.",
+    "dockHint": "Faites-les glisser sur le plateau, ou touchez-en une puis un hexagone.",
     "tapHex": "touchez un hexagone",
     "occupied": "{{structure}} est déjà là.",
     "ready": "✓ Plateau prêt.",

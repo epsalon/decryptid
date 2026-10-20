@@ -96,6 +96,7 @@
     "rotated": "Um 180° gedreht",
     "structures": "Bauwerke",
     "structuresHint": "Ziehe ein Bauwerk auf sein Feld oder tippe es und dann das Feld an. Ziehe auf dem Spielplan, um eines zu verschieben.",
+    "dockHint": "Ziehe sie auf den Spielplan oder tippe eines und dann ein Feld an.",
     "tapHex": "Feld antippen",
     "occupied": "{{structure}} steht bereits dort.",
     "ready": "✓ Spielplan bereit.",

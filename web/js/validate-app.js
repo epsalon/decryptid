@@ -68,6 +68,7 @@ function render() {
   validator.request(false);
   renderTabs();
   current().panel.render();
+  panels.setup.panel.renderDock();
   renderBoard().catch((e) => toast(e.message));
   dropStaleHexRef();
 }
@@ -76,8 +77,8 @@ $('language').innerHTML = [['auto', t('footer.automatic')], ...Object.entries(LA
   .map(([code, label]) => `<option value="${code}">${label}</option>`).join('');
 $('language').value = language;
 $('language').onchange = async (e) => {
+  saveLanguage(e.target.value); // first: leaving the page mid-switch must not lose the choice
   await setLanguage(e.target.value);
-  saveLanguage(e.target.value);
   render();
 };
 $('coords').checked = !!store.state.ui.coords;

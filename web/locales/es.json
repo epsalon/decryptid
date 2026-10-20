@@ -96,6 +96,7 @@
     "rotated": "Girada 180°",
     "structures": "Estructuras",
     "structuresHint": "Arrastra una estructura a su casilla, o tócala y luego toca la casilla. Arrastra sobre el tablero para mover una.",
+    "dockHint": "Arrástralas al tablero, o toca una y luego una casilla.",
     "tapHex": "toca una casilla",
     "occupied": "{{structure}} ya está ahí.",
     "ready": "✓ Tablero listo.",

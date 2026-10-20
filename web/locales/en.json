@@ -60,6 +60,7 @@
     "rotated": "Rotated 180°",
     "structures": "Structures",
     "structuresHint": "Drag a structure onto its hex, or tap it and then the hex. Drag on the board to move one.",
+    "dockHint": "Drag these onto the board, or tap one and then a hex.",
     "tapHex": "tap a hex",
     "occupied": "{{structure}} is already there.",
     "ready": "✓ Board ready.",

@@ -60,11 +60,11 @@ export class SetupPanel {
     };
     document.addEventListener('pointerdown', (e) => {
       if (this.locked() || e.button > 0) return;
-      const chip = e.target.closest('[data-struct]');
+      const chip = e.target.closest('[data-struct], [data-dock]');
       const hex = e.target.closest('#board [data-x]');
       let s;
       if (chip) {
-        const [type, color] = chip.dataset.struct.split(',');
+        const [type, color] = (chip.dataset.struct ?? chip.dataset.dock).split(',');
         s = { type, color };
       } else if (hex) {
         const b = this.store.state.game.spec.buildings.find((b) => b.x === +hex.dataset.x && b.y === +hex.dataset.y);
@@ -219,6 +219,29 @@ export class SetupPanel {
     this.bind();
   }
 
+  // pick selects structure s for tap-to-place (or deselects it if it was).
+  pick(type, color) {
+    this.placing = this.placing && same(this.placing, { type, color }) ? null : { type, color };
+    this.store.update(() => {}); // redraw the board overlay
+  }
+
+  // renderDock shows the structures not yet on the board in a tray right
+  // under it (#struct-dock, only on narrow screens), so that on a phone they
+  // can be dragged without scrolling between the list and the board. It is
+  // empty outside the Setup tab.
+  renderDock() {
+    const dock = document.getElementById('struct-dock');
+    if (!dock) return;
+    const { game } = this.store.state;
+    const todo = this.locked() ? [] : structuresFor(game).filter((s) => !game.spec.buildings.some((b) => same(b, s)));
+    dock.hidden = !todo.length;
+    dock.innerHTML = todo.length ? `
+      <div class="dock-hint">${t('setup.dockHint')}</div>
+      <div class="dock-row">${todo.map((s) => `<button data-dock="${s.type},${s.color}" class="dock-struct ${this.placing && same(this.placing, s) ? 'on' : ''}"
+        title="${label(s)}" aria-label="${label(s)}">${structureIcon(s.type, s.color, 30)}</button>`).join('')}</div>` : '';
+    dock.querySelectorAll('[data-dock]').forEach((b) => (b.onclick = () => this.pick(...b.dataset.dock.split(','))));
+  }
+
   bind() {
     const q = (sel) => this.root.querySelectorAll(sel);
     q('[data-color]').forEach((b) => (b.onclick = () => this.toggleColor(b.dataset.color)));
@@ -240,11 +263,7 @@ export class SetupPanel {
       const t = s.game.spec.tiles[r][c];
       t.flipped = !t.flipped;
     })));
-    q('[data-struct]').forEach((b) => (b.onclick = () => {
-      const [type, color] = b.dataset.struct.split(',');
-      this.placing = this.placing && same(this.placing, { type, color }) ? null : { type, color };
-      this.store.update(() => {}); // redraw the board overlay
-    }));
+    q('[data-struct]').forEach((b) => (b.onclick = () => this.pick(...b.dataset.struct.split(','))));
     q('[data-act]').forEach((b) => (b.onclick = () => this[b.dataset.act]()));
   }
 

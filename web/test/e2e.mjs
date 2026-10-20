@@ -479,6 +479,31 @@ try {
   check(await count('.board-peek', 0) && await count('#board.spotlit', 0), 'phone: the spotlight clears after a moment');
   await phone.close();
 
+  // --- Setup on a phone: unplaced structures sit in a tray right under the
+  // board, so they can be dragged without scrolling. ---
+  const dockCtx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  page = await dockCtx.newPage();
+  await page.goto(url);
+  await page.waitForFunction(() => document.getElementById('engine-status').textContent === '', null, { timeout: 30000 });
+  await page.waitForSelector('#board .hex');
+  check(await count('#struct-dock [data-dock]', 6), 'phone setup: the six unplaced structures are in the tray');
+  const boardBox = await page.locator('#board').boundingBox();
+  const dockBox = await page.locator('#struct-dock').boundingBox();
+  check(dockBox.y >= boardBox.y + boardBox.height - 2 && dockBox.y + dockBox.height <= 844, 'phone setup: the tray is right under the board, on screen with it');
+  const chipB = await page.locator('#struct-dock [data-dock]').first().boundingBox();
+  const hexB = await page.locator('#board [data-x="5"][data-y="4"]').boundingBox();
+  await page.mouse.move(chipB.x + chipB.width / 2, chipB.y + chipB.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(hexB.x + hexB.width / 2, hexB.y + hexB.height / 2, { steps: 8 });
+  await page.mouse.up();
+  check(await count('#struct-dock [data-dock]', 5) && await count('#board [data-x="5"][data-y="4"] .structure', 1), 'phone setup: dragging from the tray places it and removes it from the tray');
+  await page.click('[data-tab="play"]');
+  check(await count('#struct-dock[hidden]', 1), 'the tray is only shown on the Setup tab');
+  await page.click('[data-tab="setup"]');
+  await page.setViewportSize({ width: 1280, height: 800 });
+  check(!(await page.isVisible('#struct-dock')), 'the tray is hidden when the list is beside the board');
+  await dockCtx.close();
+
   // --- Clue validator (validate.html): a separate page that shares nothing
   // with the solver. Clues are entered blind and verified by entering them
   // again; a mistake or a contradiction, from clues or markers, sounds the
