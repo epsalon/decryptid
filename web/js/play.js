@@ -1,7 +1,7 @@
 // "Play" panel: record discs and cubes as they are placed, and see what
 // the solver makes of them.
 
-import { setMarkers, undo, redo, ruleLabel, seatLabel, seatColors, seatName, letterOf } from './state.js';
+import { setMarkers, undo, redo, ruleLabel, seatLabel, seatColors, seatName, letterOf, seatOrder } from './state.js';
 import { t } from './i18n.js';
 import { hexRef } from './hexref.js';
 import { typing } from './keys.js';
@@ -102,9 +102,9 @@ export class PlayPanel {
     this.root.innerHTML = `
       ${status}
       <h3>${t('play.place')}</h3>
-      <div class="chips">${Array.from({ length: game.players }, (_, i) => `
-        <button data-tool-player="${i + 1}" class="chip ${tool.player === i + 1 ? 'on' : ''}">
-          ${seatLabel(game, i + 1)}${i + 1 === me ? ` ${t('common.you')}` : ''}</button>`).join('')}
+      <div class="chips">${seatOrder(game).map((p) => `
+        <button data-tool-player="${p}" class="chip ${tool.player === p ? 'on' : ''}">
+          ${seatLabel(game, p)}${p === me ? ` ${t('common.you')}` : ''}</button>`).join('')}
       </div>
       <div class="field">
         <div class="seg">
@@ -123,10 +123,13 @@ export class PlayPanel {
       <ol class="locs">${top.map((l) => `<li><span>${hexRef(l.x, l.y)}</span><span class="bar"><i style="width:${(100 * l.worlds) / summary.locations[0].worlds}%"></i></span><span>${pct(l.worlds / total)}</span></li>`).join('')}</ol>
       ${summary.locations.length > top.length ? `<p class="hint">${t('common.andMore', { count: summary.locations.length - top.length })}</p>` : ''}
       <h3>${t('play.possibleClues')}</h3>
-      ${summary.playerRules.map((rs, i) => `
-        <details><summary>${seatLabel(game, i + 1)}${i + 1 === me ? ` ${t('common.you')}` : ''}: ${t('play.clueCount', { count: rs.length })}</summary>
+      ${seatOrder(game).map((p) => {
+        const rs = summary.playerRules[p - 1];
+        return `
+        <details><summary>${seatLabel(game, p)}${p === me ? ` ${t('common.you')}` : ''}: ${t('play.clueCount', { count: rs.length })}</summary>
           <ul class="clues">${rs.slice(0, 12).map((r) => `<li><span>${ruleLabel(r.rule)}</span><span>${pct(r.worlds / total)}</span></li>`).join('')}
-          ${rs.length > 12 ? `<li class="muted">${t('common.andMore', { count: rs.length - 12 })}</li>` : ''}</ul></details>`).join('')}` : ''}`;
+          ${rs.length > 12 ? `<li class="muted">${t('common.andMore', { count: rs.length - 12 })}</li>` : ''}</ul></details>`;
+      }).join('')}` : ''}`;
 
     const q = (sel) => this.root.querySelectorAll(sel);
     q('[data-tool-player]').forEach((b) => (b.onclick = () => this.app.store.update((s) => (s.ui.tool.player = +b.dataset.toolPlayer))));

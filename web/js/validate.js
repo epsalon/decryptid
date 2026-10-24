@@ -7,7 +7,7 @@
 // wrong entry or a contradiction sounds a buzzer. This is the honor system:
 // the clues sit in the saved state, the page just never displays them.
 
-import { setMarkers, undo, redo, ruleGroups, ruleLabel, seatLabel, seatName, seatColors, setupProblems } from './state.js';
+import { setMarkers, undo, redo, ruleGroups, ruleLabel, seatLabel, seatName, seatColors, seatOrder, setupProblems } from './state.js';
 import { tapMarker } from './play.js';
 import { buzz } from './buzz.js';
 import { t } from './i18n.js';
@@ -146,8 +146,8 @@ export class ValidateMarkers {
     this.root.innerHTML = `
       ${this.v.statusHtml()}
       <h3>${t('play.place')}</h3>
-      <div class="chips">${Array.from({ length: game.players }, (_, i) => `
-        <button data-tool-player="${i + 1}" class="chip ${tool.player === i + 1 ? 'on' : ''}">${seatLabel(game, i + 1)}</button>`).join('')}
+      <div class="chips">${seatOrder(game).map((p) => `
+        <button data-tool-player="${p}" class="chip ${tool.player === p ? 'on' : ''}">${seatLabel(game, p)}</button>`).join('')}
       </div>
       <div class="field">
         <div class="seg">
@@ -205,7 +205,7 @@ export class ValidateClues {
     const { game } = store.state;
     this.v.request(false);
     const clues = this.v.clues();
-    const seats = Array.from({ length: game.players }, (_, i) => i + 1);
+    const seats = seatOrder(game);
     if (this.seat > game.players) this.seat = 0;
 
     // Keep a choice made but not yet submitted if a redraw lands meanwhile.

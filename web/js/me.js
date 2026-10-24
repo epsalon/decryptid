@@ -1,6 +1,6 @@
 // "Me" panel: which color is mine (or none: a spectator), and my secret clue.
 
-import { ruleGroups, ruleLabel, seatLabel, seatColors } from './state.js';
+import { ruleGroups, ruleLabel, seatLabel, seatColors, seatOrder } from './state.js';
 import { t } from './i18n.js';
 import { hasClueNumbers, clueNumberField, onClueNumber } from './cluenumbers.js';
 
@@ -26,7 +26,7 @@ export class MePanel {
     }
     const rules = this.app.rulesFor(game.advanced);
     const clue = game.known[me] ?? '';
-    const seats = Array.from({ length: game.players }, (_, i) => i + 1);
+    const seats = seatOrder(game);
     this.root.innerHTML = `
       <h3>${t('me.youAre')}</h3>
       <div class="chips">

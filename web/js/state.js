@@ -44,6 +44,12 @@ export const seatLabel = (game, p) => {
 // letterOf is a player color's letter, for a color name from the game.
 export const letterOf = (name) => PLAYERS.find((c) => c.name === name)?.letter ?? name;
 
+// seatOrder lists the seat numbers (1-based) in Greek letter order, the order
+// the chips and lists show. Seat numbers stay turn order, so a seat's button
+// still acts on that seat.
+export const seatOrder = (game) => Array.from({ length: game.players }, (_, i) => i + 1)
+  .sort((a, b) => seat(game, a).slot - seat(game, b).slot || a - b);
+
 // seatName is seat p's letter as plain text, for messages.
 export const seatName = (game, p) => seat(game, p).letter;
 
