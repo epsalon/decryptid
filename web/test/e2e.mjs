@@ -137,8 +137,10 @@ try {
   if (shedBefore !== '—') {
     // Take it off the board (dragging off), so it is in the tray.
     const [sx, sy] = shedBefore.split(',');
+    const before = await page.evaluate(() => ({ y: scrollY, hex: [...document.querySelectorAll('#board [data-x][data-y]')].length }));
     await drag(`#board [data-x="${sx}"][data-y="${sy}"]`, '#tabs');
-    check((await where('shed,white')) === '—' && await count('#struct-dock [data-dock="shed,white"]', 1), 'phone: dragging a placed structure off the board puts it in the tray');
+    const after = await page.evaluate(() => ({ y: scrollY, dock: document.querySelectorAll('#struct-dock [data-dock]').length }));
+    check((await where('shed,white')) === '—' && await count('#struct-dock [data-dock="shed,white"]', 1), `phone: dragging a placed structure off the board puts it in the tray (scroll ${before.y} -> ${after.y}, where ${shedBefore} -> ${await where('shed,white')}, dock ${after.dock})`);
   }
   // Near the top edge, a carried structure scrolls the page up: from the tray, with the board partly scrolled off.
   await page.evaluate(() => scrollTo(0, 150));
