@@ -2,8 +2,7 @@ import { t } from './i18n.js';
 
 // Clue numbers of the Cryptid cluebooks. Each player color has its own book,
 // and its clues are numbered 1 to 96, so a number plus a color
-// gives one rule. Only the rule names are here, not the books’ text. The Blue book
-// serves cyan, the fourth color.
+// gives one rule. Only the rule names are here, not the books’ text.
 const CLUE_RULES = {
   yellow: [
     'Not On Swamp or Mountain', 'Distance 2 from Bear territory', 'Not Distance 2 from Cougar territory', 'Distance 1 from Mountain',
@@ -83,7 +82,7 @@ const CLUE_RULES = {
     'On Mountain or Desert', 'On Forest or Swamp', 'Not On Mountain or Water', 'On Swamp or Mountain',
     'Not On Forest or Water', 'Not Distance 2 from Standing Stone', 'Not Distance 3 from Green structure', 'Not Distance 1 from Swamp',
   ],
-  blue: [
+  cyan: [
     'Distance 3 from Blue structure', 'Distance 1 from Water', 'Not On Mountain or Water', 'On Forest or Swamp',
     'Not On Desert or Water', 'Distance 3 from Blue structure', 'Not Distance 1 from Desert', 'Not On Forest or Swamp',
     'Not On Forest or Water', 'Not Distance 2 from Standing Stone', 'Distance 3 from Green structure', 'Distance 2 from Standing Stone',
@@ -137,8 +136,8 @@ const CLUE_RULES = {
   ],
 };
 
-// The book that numbers a seat's color (cyan has none of its own).
-const BOOK = { yellow: 'yellow', red: 'red', green: 'green', cyan: 'blue', purple: 'purple' };
+// The book that numbers a seat's color: one per color, in CLUE_RULES.
+const BOOK = { yellow: 'yellow', red: 'red', green: 'green', cyan: 'cyan', purple: 'purple' };
 
 // hasClueNumbers reports whether a seat's color has a cluebook, so its clues
 // can be entered by clue number.
