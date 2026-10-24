@@ -106,7 +106,8 @@
     "export": "Exporter…",
     "newGame": "Nouvelle partie",
     "needColors": "Choisissez d'abord au moins 3 couleurs.",
-    "confirmNew": "Commencer une nouvelle partie ? Cela efface le plateau et tous les marqueurs.",
+    "confirmNew": "Commencer une nouvelle partie ? Cela efface le plateau, tous les marqueurs et tous les indices.",
+    "confirmRandom": "Créer un plateau aléatoire ? Cela efface tous les marqueurs et indices.",
     "exportTitle": "Exporter la partie",
     "exportHint": "C'est le même format que celui lu par l'outil en ligne de commande.",
     "importTitle": "Importer une partie",
@@ -274,6 +275,11 @@
       "gaveUp": "Vous avez abandonné."
     }
   },
+  "clueNumber": {
+    "label": "Numéro d'indice",
+    "invalid": "Les numéros d'indice vont de 1 à 96.",
+    "advanced": "Ce numéro d'indice est un indice avancé. Activez le mode avancé pour l'utiliser."
+  },
   "search": {
     "intro": "Touchez un hexagone du plateau pour voir quels jeux de règles placeraient le cryptide là.",
     "hex": "Hexagone {{x}},{{y}}",
@@ -293,7 +299,6 @@
     "verify": "Vérifier",
     "forget": "Oublier l'indice",
     "cancel": "Annuler",
-    "run": "Vérifier tous les indices",
     "pick": "Choisissez d'abord un indice.",
     "saved": "Indice enregistré pour {{player}}.",
     "forgotten": "Indice oublié pour {{player}}.",

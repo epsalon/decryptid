@@ -106,7 +106,8 @@
     "export": "Exportieren…",
     "newGame": "Neues Spiel",
     "needColors": "Wähle zuerst mindestens 3 Farben.",
-    "confirmNew": "Neues Spiel beginnen? Dadurch werden der Spielplan und alle Markierungen gelöscht.",
+    "confirmNew": "Neues Spiel beginnen? Das leert das Spielfeld, alle Marker und alle Hinweise.",
+    "confirmRandom": "Zufälliges Spielfeld erstellen? Das entfernt alle Marker und Hinweise.",
     "exportTitle": "Spiel exportieren",
     "exportHint": "Das ist dasselbe Format, das das Kommandozeilenwerkzeug liest.",
     "importTitle": "Spiel importieren",
@@ -273,6 +274,11 @@
       "gaveUp": "Du hast aufgegeben."
     }
   },
+  "clueNumber": {
+    "label": "Hinweisnummer",
+    "invalid": "Hinweisnummern reichen von 1 bis 96.",
+    "advanced": "Diese Hinweisnummer ist ein Fortgeschritten-Hinweis. Schalte den Fortgeschritten-Modus ein, um sie zu verwenden."
+  },
   "search": {
     "intro": "Tippe auf ein Feld im Spielplan, um zu sehen, welche Regelkombinationen das Cryptid dorthin bringen würden.",
     "hex": "Feld {{x}},{{y}}",
@@ -292,7 +298,6 @@
     "verify": "Prüfen",
     "forget": "Hinweis vergessen",
     "cancel": "Abbrechen",
-    "run": "Alle Hinweise prüfen",
     "pick": "Wähle zuerst einen Hinweis.",
     "saved": "Hinweis für {{player}} gespeichert.",
     "forgotten": "Hinweis für {{player}} vergessen.",

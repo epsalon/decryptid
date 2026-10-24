@@ -69,7 +69,8 @@
     "export": "Export…",
     "newGame": "New game",
     "needColors": "Choose at least 3 colors first.",
-    "confirmNew": "Start a new game? This clears the board and all markers.",
+    "confirmNew": "Start a new game? This clears the board, all markers and all clues.",
+    "confirmRandom": "Make a random board? This clears all markers and clues.",
     "exportTitle": "Export game",
     "exportHint": "This is the same format the command-line tool reads.",
     "importTitle": "Import game",
@@ -228,6 +229,11 @@
       "gaveUp": "You gave up."
     }
   },
+  "clueNumber": {
+    "label": "Clue number",
+    "invalid": "Clue numbers run from 1 to 96.",
+    "advanced": "That clue number is an advanced clue. Turn on advanced mode to use it."
+  },
   "search": {
     "intro": "Tap a hex on the board to see which rule sets would put the cryptid there.",
     "hex": "Hex {{x}},{{y}}",
@@ -247,7 +253,6 @@
     "verify": "Verify",
     "forget": "Forget clue",
     "cancel": "Cancel",
-    "run": "Check all clues",
     "pick": "Choose a clue first.",
     "saved": "Clue saved for {{player}}.",
     "forgotten": "Clue forgotten for {{player}}.",

@@ -106,7 +106,8 @@
     "export": "Exportar…",
     "newGame": "Partida nueva",
     "needColors": "Elige primero al menos 3 colores.",
-    "confirmNew": "¿Empezar una partida nueva? Se borrarán el tablero y todas las marcas.",
+    "confirmNew": "¿Empezar una partida nueva? Se borran el tablero, todos los marcadores y todas las pistas.",
+    "confirmRandom": "¿Crear un tablero aleatorio? Se borran todos los marcadores y pistas.",
     "exportTitle": "Exportar partida",
     "exportHint": "Es el mismo formato que lee la herramienta de línea de comandos.",
     "importTitle": "Importar partida",
@@ -273,6 +274,11 @@
       "gaveUp": "Te rendiste."
     }
   },
+  "clueNumber": {
+    "label": "Número de pista",
+    "invalid": "Los números de pista van del 1 al 96.",
+    "advanced": "Ese número de pista es una pista avanzada. Activa el modo avanzado para usarla."
+  },
   "search": {
     "intro": "Toca una casilla del tablero para ver qué conjuntos de reglas pondrían al críptido allí.",
     "hex": "Casilla {{x}},{{y}}",
@@ -292,7 +298,6 @@
     "verify": "Verificar",
     "forget": "Olvidar pista",
     "cancel": "Cancelar",
-    "run": "Comprobar todas las pistas",
     "pick": "Elige primero una pista.",
     "saved": "Pista guardada para {{player}}.",
     "forgotten": "Pista olvidada para {{player}}.",

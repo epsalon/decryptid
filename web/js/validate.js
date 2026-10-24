@@ -11,6 +11,7 @@ import { setMarkers, undo, redo, ruleGroups, ruleLabel, seatLabel, seatName, sea
 import { tapMarker } from './play.js';
 import { buzz } from './buzz.js';
 import { t } from './i18n.js';
+import { hasClueNumbers, clueNumberField, onClueNumber } from './cluenumbers.js';
 
 // clueKey identifies what entered clues belong to: a different mode or
 // different seats make them meaningless.
@@ -177,6 +178,18 @@ export class ValidateClues {
     this.root = root;
     this.v = v;
     this.seat = 0; // the seat whose clue is being entered or verified, 0 for none
+    document.addEventListener('keydown', (e) => this.onDigit(e));
+  }
+
+  // onDigit starts a clue number with the digit pressed: the number entry
+  // takes focus and shows it. Other keys are left alone.
+  onDigit(e) {
+    if (!/^\d$/.test(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
+    const input = this.root.querySelector('#validate-clue-number');
+    if (!input || e.target.closest?.('input, select, textarea, [contenteditable]') || document.querySelector('dialog[open]')) return;
+    e.preventDefault();
+    input.value = e.key;
+    input.focus();
   }
 
   overlay() {
@@ -203,11 +216,14 @@ export class ValidateClues {
     const entry = !this.seat ? '' : `
       <h3>${t('validate.handTo', { player: seatLabel(game, this.seat) })}</h3>
       <p class="hint">${t(clues[this.seat] ? 'validate.verifyHint' : 'validate.enterHint')}</p>
-      <select id="validate-rule" data-seat="${this.seat}" ${rules ? '' : 'disabled'}>
-        <option value="">${t('me.notSet')}</option>
-        ${rules ? [...ruleGroups(rules)].map(([g, rs]) => `<optgroup label="${g}">${rs.map((r) =>
-          `<option value="${r.name}">${ruleLabel(r.name)}</option>`).join('')}</optgroup>`).join('') : ''}
-      </select>
+      <div class="clue-row">
+        <select id="validate-rule" data-seat="${this.seat}" ${rules ? '' : 'disabled'}>
+          <option value="">${t('me.notSet')}</option>
+          ${rules ? [...ruleGroups(rules)].map(([g, rs]) => `<optgroup label="${g}">${rs.map((r) =>
+            `<option value="${r.name}">${ruleLabel(r.name)}</option>`).join('')}</optgroup>`).join('') : ''}
+        </select>
+        ${rules && hasClueNumbers(seatColors(game)[this.seat - 1]) ? clueNumberField('validate-clue-number') : ''}
+      </div>
       <div class="actions">
         <button id="validate-go">${t(clues[this.seat] ? 'validate.verify' : 'validate.save')}</button>
         ${clues[this.seat] ? `<button id="validate-forget" class="danger">${t('validate.forget')}</button>` : ''}
@@ -222,7 +238,6 @@ export class ValidateClues {
         <button data-seat="${p}" class="chip ${this.seat === p ? 'on' : ''}">${seatLabel(game, p)}
           <span class="muted">${t(clues[p] ? 'validate.set' : 'validate.unset')}</span></button>`).join('')}
       </div>
-      <div class="actions"><button id="validate-run">${t('validate.run')}</button></div>
       ${entry}`;
 
     const select = this.root.querySelector('#validate-rule');
@@ -232,10 +247,6 @@ export class ValidateClues {
       this.seat = this.seat === +b.dataset.seat ? 0 : +b.dataset.seat;
       rerender();
     }));
-    q('#validate-run').onclick = () => {
-      this.v.loud = true;
-      this.v.request(true);
-    };
     if (!this.seat) return;
     const p = this.seat;
     q('#validate-cancel').onclick = () => {
@@ -247,8 +258,9 @@ export class ValidateClues {
       this.v.setClue(p, null);
       toast(t('validate.forgotten', { player: seatName(game, p) }));
     });
-    q('#validate-go').onclick = () => {
-      const rule = select.value;
+    // submit saves or verifies the rule entered for this seat. Its messages
+    // never name the rule, and a clue number reaches it without the select.
+    const submit = (rule) => {
       if (!rule) {
         toast(t('validate.pick'));
         return;
@@ -267,5 +279,11 @@ export class ValidateClues {
         select.value = '';
       }
     };
+    q('#validate-go').onclick = () => submit(select.value);
+    const number = q('#validate-clue-number');
+    if (number) {
+      onClueNumber(number, seatColors(game)[p - 1], toast,
+        (name) => !!select.querySelector(`option[value="${name}"]`), submit);
+    }
   }
 }

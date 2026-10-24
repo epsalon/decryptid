@@ -16,3 +16,6 @@ web/decryptid.wasm
 web/wasm_exec.js
 node_modules
 web/test/out/
+
+# Scratch outputs, including data from third-party sources
+_scratch/

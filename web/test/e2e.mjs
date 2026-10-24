@@ -241,6 +241,30 @@ try {
   await page.waitForFunction(() => document.querySelectorAll('#board .hex.possible').length === 2);
   check(true, 'without my clue: two viable hexes, like the CLI');
   await page.selectOption('#clue', 'Distance 1 from Swamp');
+  // A clue number picks that clue for my color's book. Basic mode offers the
+  // positive clues only: a "Not" clue number is refused, and the clue stays.
+  const clueNumber = await page.evaluate(async () => {
+    const { clueRule } = await import('./js/cluenumbers.js');
+    const s = JSON.parse(localStorage.getItem('decryptid.v1'));
+    const color = s.game.colors[s.me - 1];
+    const names = Array.from({ length: 96 }, (_, i) => clueRule(color, String(i + 1)));
+    const basic = names.findIndex((n) => !n.startsWith('Not '));
+    const advanced = names.findIndex((n) => n.startsWith('Not '));
+    return { basic: [basic + 1, names[basic]], advanced: [advanced + 1, names[advanced]], yellowOne: clueRule('yellow', '1') };
+  });
+  check(clueNumber.yellowOne === 'Not On Swamp or Mountain', 'clue numbers: yellow 1 is "not on swamp or mountain"');
+  await page.fill('#clue-number', String(clueNumber.basic[0]));
+  await page.press('#clue-number', 'Enter');
+  check((await page.locator('#clue').inputValue()) === clueNumber.basic[1], `clue numbers: ${clueNumber.basic[0]} picks ${clueNumber.basic[1]}`);
+  await page.fill('#clue-number', String(clueNumber.advanced[0]));
+  await page.press('#clue-number', 'Enter');
+  await page.waitForFunction(() => document.querySelector('#toast')?.textContent.includes('advanced clue'));
+  check((await page.locator('#clue').inputValue()) === clueNumber.basic[1], `clue numbers: advanced ${clueNumber.advanced[0]} is refused and the clue stays`);
+  await page.fill('#clue-number', '97');
+  await page.press('#clue-number', 'Enter');
+  await page.waitForFunction(() => document.querySelector('#toast')?.textContent.includes('1 to 96'));
+  check(true, 'clue numbers: 97 is refused');
+  await page.selectOption('#clue', 'Distance 1 from Swamp');
 
   // Placing, the cube rules, and undo/redo.
   await page.click('[data-tab="play"]');
@@ -595,6 +619,34 @@ try {
   check(await count('#board .has-structure', 0) && await count('#struct-dock [data-dock]', 6), 'touch: dragging a structure off the board returns it to the tray');
   await touchCtx.close();
 
+  // A random board asks first when markers are on the board. Once confirmed it
+  // clears the markers and every clue. Its own page, so the steps above stay as they are.
+  const clear = await browser.newContext({ viewport: { width: 1000, height: 800 } });
+  const sp = await clear.newPage();
+  await sp.goto(url);
+  await sp.click('text=Import…');
+  await sp.fill('dialog textarea', example);
+  await sp.click('dialog button:has-text("Load")');
+  await sp.click('[data-tab="me"]');
+  if (!(await sp.evaluate(() => JSON.parse(localStorage.getItem('decryptid.v1')).me))) await sp.click('[data-me="1"]');
+  await sp.selectOption('#clue', 'Distance 1 from Swamp');
+  await sp.click('[data-tab="setup"]');
+  const asked = sp.waitForEvent('dialog');
+  const declined = sp.click('text=Random board'); // not awaited: the confirm dialog blocks the click until answered
+  const dialog = await asked;
+  check(dialog.message().includes('markers'), 'random board asks before clearing markers');
+  await dialog.dismiss();
+  await declined;
+  check((await sp.locator('#board .disc, #board .cube').count()) > 0, 'random board: declining keeps the markers');
+  const accepted = sp.waitForEvent('dialog');
+  const confirmed = sp.click('text=Random board');
+  await (await accepted).accept();
+  await confirmed;
+  await sp.waitForFunction(() => JSON.parse(localStorage.getItem('decryptid.v1')).game.markers.length === 0);
+  const after = await sp.evaluate(() => JSON.parse(localStorage.getItem('decryptid.v1')).game);
+  check(Object.keys(after.known).length === 0 && after.markers.length === 0, 'random board: confirming clears the markers and every clue');
+  await clear.close();
+
   // --- Clue validator (validate.html): a separate page that shares nothing
   // with the solver. Clues are entered blind and verified by entering them
   // again; a mistake or a contradiction, from clues or markers, sounds the
@@ -670,22 +722,53 @@ try {
   await page.selectOption('#validate-rule', 'Distance 1 from Water');
   await page.click('#validate-go');
   check(await count('#validate-rule', 0) && await buzzes(2), 'validator: the right re-entry closes quietly');
+  // A clue number verifies blind: the right number is quiet, a wrong one buzzes, and neither shows a clue.
+  const clueNumberFor = (color, rule) => page.evaluate(async ([c, r]) => {
+    const { clueRule } = await import('./js/cluenumbers.js');
+    return Array.from({ length: 96 }, (_, i) => i + 1).find((i) => clueRule(c, String(i)) === r);
+  }, [color, rule]);
+  const seat2Color = await page.evaluate(() => JSON.parse(localStorage.getItem('decryptid.validate.v1')).game.colors[1]);
+  await page.click('button[data-seat="2"]');
+  await page.waitForSelector('#validate-clue-number');
+  check((await page.getAttribute('#validate-clue-number', 'placeholder')) === '##', 'validator: the clue number entry shows ##');
+  await page.keyboard.press('7');
+  const typed = await page.evaluate(() => ({ value: document.querySelector('#validate-clue-number').value, focused: document.activeElement.id }));
+  check(typed.value === '7' && typed.focused === 'validate-clue-number', 'validator: a digit key after picking a color enters the clue number');
+  await page.fill('#validate-clue-number', '');
+  await page.fill('#validate-clue-number', String(await clueNumberFor(seat2Color, 'Distance 1 from Water')));
+  await page.press('#validate-clue-number', 'Enter');
+  check(await buzzes(2) && await count('#validate-rule', 0), 'validator: the right clue number verifies quietly');
+  await page.click('button[data-seat="2"]');
+  await page.waitForSelector('#validate-clue-number');
+  await page.fill('#validate-clue-number', String(await clueNumberFor(seat2Color, 'Distance 1 from Swamp')));
+  await page.press('#validate-clue-number', 'Enter');
+  check(await buzzes(3) && (await page.inputValue('#validate-rule')) === '', 'validator: a wrong clue number buzzes and leaves the choice empty');
+  await page.click('#validate-cancel');
   // A marker that contradicts yellow's clue: a cube where their rule holds.
   await page.click('[data-tab="markers"]');
   await page.click('[data-tool-player="1"]');
   await page.click('[data-cube="1"]');
   await page.click('#board [data-x="1"][data-y="1"]');
-  check(await buzzes(3) && await count('.status.warn', 1), 'validator: a contradicting marker buzzes and warns');
+  check(await buzzes(4) && await count('.status.warn', 1), 'validator: a contradicting marker buzzes and warns');
   await page.click('[data-act="undo"]');
-  check(await count('.status.ok', 1) && await buzzes(3), 'validator: undoing it is consistent again, quietly');
+  check(await count('.status.ok', 1) && await buzzes(4), 'validator: undoing it is consistent again, quietly');
   await page.click('[data-tab="clues"]');
   await page.click('button[data-seat="1"]');
   await page.click('#validate-forget');
   await enter(1, 'Distance 2 from Bear territory');
-  check(await buzzes(4) && await count('.status.warn', 1), 'validator: contradicting clues buzz and warn');
-  await page.click('#validate-run');
+  check(await buzzes(5) && await count('.status.warn', 1), 'validator: contradicting clues buzz and warn');
+  await page.click('[data-tab="markers"]');
+  await page.click('[data-tab="clues"]');
   await page.waitForSelector('.status.warn');
-  check(await buzzes(4), 'validator: checking again while invalid stays quiet');
+  check(await buzzes(5), 'validator: checking again while invalid stays quiet');
+  // A new game clears the clues entered on the validator too.
+  const resetAsk = page.waitForEvent('dialog');
+  await page.click('[data-tab="setup"]');
+  const reset = page.click('text=New game');
+  await (await resetAsk).accept();
+  await reset;
+  await page.click('[data-tab="clues"]');
+  check((await page.locator('button[data-seat="1"] .muted').textContent()) === 'not set', 'validator: a new game clears the entered clues');
   await val.close();
 } finally {
   await browser.close();

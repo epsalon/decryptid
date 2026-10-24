@@ -323,10 +323,12 @@ export class SetupPanel {
   async random() {
     const { game } = this.store.state;
     if (seatColors(game).length < 3) return this.toast(t('setup.needColors'));
+    if (game.markers.length && !confirm(t('setup.confirmRandom'))) return;
     const g = await this.engine.call('randomSetup', { players: game.players, advanced: game.advanced, seed: Date.now() % 1e9 });
     this.placing = null;
     this.store.update((s) => {
       s.game = { ...g, colors: seatColors(s.game), markers: [], known: {} };
+      this.clues?.set(s, {}); // a new board starts with no clues
     });
   }
 
@@ -339,6 +341,7 @@ export class SetupPanel {
       s.game.players = keep.players;
       s.game.colors = seatColors(keep);
       s.game.advanced = keep.advanced;
+      this.clues?.set(s, {}); // a new game starts with no clues
     });
   }
 
