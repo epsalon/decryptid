@@ -9,6 +9,7 @@ import { MePanel } from './me.js';
 import { PlayPanel } from './play.js';
 import { AdvicePanel } from './advice.js';
 import { Terrain } from './terrain.js';
+import { TilesPanel } from './tiles.js';
 import { MatchPanel, matchActive, dropStaleMatch } from './match.js';
 import { installHexRefs, dropStaleHexRef } from './hexref.js';
 import { installKeys } from './keys.js';
@@ -70,6 +71,7 @@ const panels = {
   me: { title: 'tab.me', panel: new MePanel($('tab-body'), app) },
   play: { title: 'tab.play', panel: new PlayPanel($('tab-body'), app) },
   advice: { title: 'tab.advice', panel: new AdvicePanel($('tab-body'), app) },
+  tiles: { title: 'tab.tiles', panel: new TilesPanel($('tab-body'), app) },
   match: { title: 'tab.match', panel: new MatchPanel($('tab-body'), app) },
 };
 const current = () => panels[app.store.state.ui.tab] ?? panels.setup;

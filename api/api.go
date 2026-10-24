@@ -128,6 +128,8 @@ func handle(r *Request) (any, error) {
 		return hexes, nil
 	case "summary":
 		return g.Summary()
+	case "tiles":
+		return g.TileSummary()
 	case "validate":
 		// Whether some world fits the markers and the known rules; nothing
 		// else is revealed.

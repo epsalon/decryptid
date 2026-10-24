@@ -49,6 +49,12 @@ func TestOps(t *testing.T) {
 		t.Errorf("summary: %+v", sum.Locations)
 	}
 
+	var tiles []game.TileCount
+	json.Unmarshal(call(t, map[string]any{"op": "tiles", "game": g}), &tiles)
+	if len(tiles) != 6 || tiles[2].Worlds != 2 {
+		t.Errorf("tiles: want 6 tiles, with the example's two worlds on tile 2 (hex 3,3), got %+v", tiles)
+	}
+
 	var valid bool
 	json.Unmarshal(call(t, map[string]any{"op": "validate", "game": g}), &valid)
 	if !valid {

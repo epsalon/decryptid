@@ -10,7 +10,8 @@
     "me": "Yo",
     "play": "Juego",
     "advice": "Consejos",
-    "match": "vs IA"
+    "match": "vs IA",
+    "tiles": "Losetas"
   },
   "board": {
     "label": "Tablero de juego",
@@ -272,6 +273,10 @@
       "gaveUp": "Te rendiste."
     }
   },
+  "tiles": {
+    "intro": "Para cada loseta: la probabilidad de que el críptido esté ahí y qué reglas podría tener cada jugador en los mundos en que está ahí.",
+    "none": "Ningún mundo posible pone al críptido aquí."
+  },
   "validate": {
     "intro": "Coloca las marcas y luego comprueba un conjunto de pistas sin verlas. Cada jugador introduce su pista por turno y pasa el teléfono. Una pista no se vuelve a mostrar: para verificarla, introdúcela otra vez.",
     "whose": "¿La pista de quién?",
@@ -305,7 +310,7 @@
   "keys": {
     "title": "Atajos de teclado",
     "anywhere": "En cualquier sitio",
-    "tabs": "Preparación, Yo, Juego, Consejos, vs IA",
+    "tabs": "Preparación, Yo, Juego, Consejos, Losetas, vs IA",
     "cursor": "Mover el cursor del tablero",
     "enter": "Actuar sobre la casilla del cursor (como tocarla)",
     "escape": "Ocultar el cursor",

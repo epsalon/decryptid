@@ -10,7 +10,8 @@
     "me": "Moi",
     "play": "Jeu",
     "advice": "Conseils",
-    "match": "contre l'IA"
+    "match": "contre l'IA",
+    "tiles": "Tuiles"
   },
   "board": {
     "label": "Plateau de jeu",
@@ -273,6 +274,10 @@
       "gaveUp": "Vous avez abandonné."
     }
   },
+  "tiles": {
+    "intro": "Pour chaque tuile : la probabilité que le cryptide s'y trouve, et les règles que chaque joueur pourrait avoir dans les mondes où il s'y trouve.",
+    "none": "Aucun monde possible ne place le cryptide ici."
+  },
   "validate": {
     "intro": "Placez les marqueurs, puis vérifiez un ensemble d'indices sans les voir. Chaque joueur saisit son indice à son tour et passe le téléphone. Un indice n'est plus jamais affiché : pour le vérifier, saisissez-le une nouvelle fois.",
     "whose": "L'indice de qui ?",
@@ -306,7 +311,7 @@
   "keys": {
     "title": "Raccourcis clavier",
     "anywhere": "Partout",
-    "tabs": "Mise en place, Moi, Jeu, Conseils, contre l'IA",
+    "tabs": "Mise en place, Moi, Jeu, Conseils, Tuiles, contre l'IA",
     "cursor": "Déplacer le curseur du plateau",
     "enter": "Agir sur l'hexagone du curseur (comme le toucher)",
     "escape": "Masquer le curseur",

@@ -248,3 +248,10 @@ dialog.help td:first-child { white-space: nowrap; width: 1%; }
 
 /* Right-to-left languages: the board and technical text stay left-to-right. */
 #board, kbd, .hexref { direction: ltr; unicode-bidi: isolate; }
+
+/* Tiles panel: one card per map tile, in the board's 3x2 layout */
+.tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tile-card { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; min-width: 0; }
+.tile-card h4 { margin: 0 0 4px; font-size: 0.9rem; }
+.tile-player { margin-top: 6px; font-size: 0.8rem; }
+.tile-player .chip { font-size: 0.8rem; }

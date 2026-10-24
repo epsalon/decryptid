@@ -5,8 +5,9 @@
    5-player advanced self-play, and no change elsewhere. Also tried and found
    not to matter: weighting leaks by turn order (`TurnOptions.Order`), ~900
    head-to-head games.
-2. Tell which rule sets would put the cryptid on each tile, once the board
-   is set up (per-tile view of the solver's worlds).
+2. ~~Tell which rule sets would put the cryptid on each tile~~ (done: the
+   Tiles tab, key 5. `TileSummary` counts the solver's worlds per tile and,
+   per player, the rules they hold in those worlds. Tested against `Solve`).
 3. (Pie in the sky) Recognize the board state from a photo of the real
    game: tiles, structures, discs and cubes.
    - Collect labeled photos of real boards first, to measure accuracy.

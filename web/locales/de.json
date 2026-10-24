@@ -10,7 +10,8 @@
     "me": "Ich",
     "play": "Spiel",
     "advice": "Tipps",
-    "match": "gegen KI"
+    "match": "gegen KI",
+    "tiles": "Teile"
   },
   "board": {
     "label": "Spielplan",
@@ -272,6 +273,10 @@
       "gaveUp": "Du hast aufgegeben."
     }
   },
+  "tiles": {
+    "intro": "Für jedes Plättchen: wie wahrscheinlich das Cryptid dort ist und welche Regeln jeder Spieler in den Welten haben könnte, in denen es dort ist.",
+    "none": "Keine mögliche Welt setzt das Cryptid hierhin."
+  },
   "validate": {
     "intro": "Platziere die Markierungen und prüfe dann eine Reihe von Hinweisen, ohne sie zu sehen. Jeder Spieler gibt der Reihe nach seinen Hinweis ein und reicht das Telefon weiter. Ein Hinweis wird nie wieder angezeigt: Gib ihn zur Prüfung noch einmal ein.",
     "whose": "Wessen Hinweis?",
@@ -305,7 +310,7 @@
   "keys": {
     "title": "Tastenkürzel",
     "anywhere": "Überall",
-    "tabs": "Aufbau, Ich, Spiel, Tipps, gegen KI",
+    "tabs": "Aufbau, Ich, Spiel, Tipps, Teile, gegen KI",
     "cursor": "Spielplan-Cursor bewegen",
     "enter": "Auf das Feld des Cursors wirken (wie Antippen)",
     "escape": "Cursor ausblenden",

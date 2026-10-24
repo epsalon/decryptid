@@ -5,7 +5,7 @@
     "github": "GitHub repository",
     "validator": "Validator"
   },
-  "tab": { "setup": "Setup", "me": "Me", "play": "Play", "advice": "Advice", "match": "vs AI" },
+  "tab": { "setup": "Setup", "me": "Me", "play": "Play", "advice": "Advice", "match": "vs AI", "tiles": "Tiles" },
   "board": {
     "label": "Game board",
     "coords": "Coordinates",
@@ -228,6 +228,10 @@
       "gaveUp": "You gave up."
     }
   },
+  "tiles": {
+    "intro": "For each map tile: how likely the cryptid is there, and which rules each player could hold in the worlds that put it there.",
+    "none": "No possible world puts the cryptid here."
+  },
   "validate": {
     "intro": "Place the markers, then check a set of clues without seeing them. Each player enters their clue in turn and passes the phone on. A clue is never shown again: to verify it, enter it once more.",
     "whose": "Whose clue?",
@@ -258,7 +262,7 @@
   "keys": {
     "title": "Keyboard shortcuts",
     "anywhere": "Anywhere",
-    "tabs": "Setup, Me, Play, Advice, vs AI",
+    "tabs": "Setup, Me, Play, Advice, Tiles, vs AI",
     "cursor": "Move the board cursor",
     "enter": "Act on the cursor's hex (like tapping it)",
     "escape": "Hide the cursor",

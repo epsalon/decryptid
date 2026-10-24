@@ -204,6 +204,17 @@ try {
   check(await count('#board .tile-label', 0) && await count('#board .tile-border', 0), 'tile numbers and outlines are hidden outside setup');
   check(await count('#board .hex.possible', 1) && await count('#board .hex.ruled', 107) && await count('#board .ruled-out', 107), 'example game: one possible hex, like the CLI, the rest hatched and darker');
   check(await count('#board .hex.possible[data-x="3"][data-y="3"]', 1), 'example game: the cryptid is at 3,3');
+  await page.click('[data-tab="tiles"]');
+  await page.waitForSelector('.tile-card');
+  check(await count('.tile-card', 6), 'tiles: one card per map tile');
+  const cards = await page.$$eval('.tile-card h4', (hs) => hs.map((h) => h.querySelector('.muted').textContent));
+  check(cards[2] === '100%' && cards.filter((c, i) => i !== 2 && c === '0%').length === 5, `tiles: all the example's worlds are on tile 3 (${cards.join(' ')})`);
+  check(await count('.tile-card:nth-child(3) .tile-player', 3), 'tiles: each player has a rule list for the tile');
+  await page.keyboard.press('6');
+  check(await count('[data-tab="match"][aria-selected="true"]', 1), 'key 6 switches to vs AI (the last tab)');
+  await page.keyboard.press('5');
+  check(await count('[data-tab="tiles"][aria-selected="true"]', 1), 'key 5 switches to Tiles');
+  await page.click('[data-tab="play"]');
 
   // Without my clue the CLI finds 2 hexes.
   await page.click('[data-tab="me"]');
@@ -297,7 +308,7 @@ try {
   await page.click('[data-tab="advice"]');
   await page.waitForFunction(() => document.querySelector('.rec-action')?.textContent.includes('Search 2,1'), null, { timeout: 30000 });
   check(true, 'fresh 4-player game: search 2,1 at 17% (as the CLI says)');
-  check((await page.locator('table.advice tr.search').count()) >= 1 && (await page.locator('table.advice tr.ask').count()) >= 1, 'one ranking mixes searches and questions');
+  check((await page.locator('table.advice tbody tr').count()) >= 1 && (await page.locator('table.advice tbody tr:first-child').getAttribute('class')) === 'search', 'one ranking: the best move is the search, and the table lists moves');
   await page.click('.settings summary');
   await page.$eval('#win-value', (el) => { el.value = '1'; el.dispatchEvent(new Event('change')); });
   await page.waitForFunction(() => /Ask\s*red about 11,1/.test(document.querySelector('.rec-action')?.textContent ?? ''), null, { timeout: 30000 });

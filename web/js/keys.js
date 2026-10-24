@@ -1,6 +1,6 @@
 // Keyboard play: the whole game works without a pointer.
 //
-//   1-5          switch tabs (Setup, Me, Play, Advice, vs AI)
+//   1-6          switch tabs (Setup, Me, Play, Advice, Tiles, vs AI)
 //   arrows       move the board cursor; Enter acts on its hex, like a tap
 //   Esc          hide the cursor (or close this help)
 //   ?            show all shortcuts
@@ -11,7 +11,7 @@
 
 import { t } from './i18n.js';
 
-const TABS = ['setup', 'me', 'play', 'advice', 'match'];
+const TABS = ['setup', 'me', 'play', 'advice', 'tiles', 'match'];
 
 // typing reports whether a key event belongs to a text field or dialog.
 export const typing = (e) =>
@@ -53,7 +53,7 @@ export function installKeys(app, board, onHex) {
     } else if (e.key === 'Escape' && cursor) {
       cursor = null;
       board.setCursor(null);
-    } else if (/^[1-5]$/.test(e.key)) {
+    } else if (/^[1-6]$/.test(e.key)) {
       app.store.update((s) => (s.ui.tab = TABS[+e.key - 1]));
     }
   });
@@ -70,7 +70,7 @@ function toggleHelp() {
   help.innerHTML = `<form method="dialog"><h3>${t('keys.title')}</h3>
     <table>
       ${head('keys.anywhere')}
-      ${row('<kbd>1</kbd>–<kbd>5</kbd>', 'keys.tabs')}
+      ${row('<kbd>1</kbd>–<kbd>6</kbd>', 'keys.tabs')}
       ${row('<kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd>', 'keys.cursor')}
       ${row('<kbd>Enter</kbd>', 'keys.enter')}
       ${row('<kbd>Esc</kbd>', 'keys.escape')}
