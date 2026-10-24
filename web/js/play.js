@@ -142,6 +142,7 @@ export class PlayPanel {
 }
 
 // Shortcut keys: each color's first letter.
-const KEYS = { y: 'yellow', r: 'red', g: 'green', c: 'cyan', p: 'purple' };
+// b is accepted for cyan too, but the help shows c only.
+const KEYS = { y: 'yellow', r: 'red', g: 'green', c: 'cyan', b: 'cyan', p: 'purple' };
 
 const pct = (p) => (p >= 0.995 ? '100%' : p < 0.01 ? '<1%' : `${Math.round(p * 100)}%`);

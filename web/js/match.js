@@ -268,7 +268,7 @@ export class MatchPanel {
     if (k === 'a' || k === 's') {
       this.action = k === 'a' ? 'ask' : 'search';
     } else {
-      const color = { y: 'yellow', r: 'red', g: 'green', c: 'cyan', p: 'purple' }[k];
+      const color = { y: 'yellow', r: 'red', g: 'green', c: 'cyan', b: 'cyan', p: 'purple' }[k];
       const p = color && Array.from({ length: this.app.store.state.game.players }, (_, i) => i + 1).find((q) => name(q) === color);
       if (!p || p === m.seat) return;
       this.action = 'ask';

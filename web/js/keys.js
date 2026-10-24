@@ -10,8 +10,16 @@
 // fire while typing in a field or while a dialog is open.
 
 import { t } from './i18n.js';
+import { PLAYERS } from './state.js';
 
 const TABS = ['setup', 'me', 'play', 'advice', 'search', 'match'];
+
+// colorKey is a key letter drawn in its player color.
+const colorKey = (letter, name) => {
+  const c = PLAYERS.find((p) => p.name === name);
+  const text = name === 'yellow' || name === 'cyan' ? '#111' : '#fff';
+  return `<kbd style="background:${c.color};color:${text};border-color:${c.color}">${letter}</kbd>`;
+};
 
 // typing reports whether a key event belongs to a text field or dialog.
 export const typing = (e) =>
@@ -66,7 +74,9 @@ function toggleHelp() {
   help.className = 'help';
   const row = (keys, text) => `<tr><td>${keys}</td><td>${t(text)}</td></tr>`;
   const head = (text) => `<tr><th colspan="2">${t(text)}</th></tr>`;
-  const letters = '<kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd>';
+  // Each color letter takes its color, so it is clear which player it is.
+  const letters = [['Y', 'yellow'], ['R', 'red'], ['G', 'green'], ['C', 'cyan'], ['P', 'purple']]
+    .map(([letter, name]) => colorKey(letter, name)).join(' ');
   help.innerHTML = `<form method="dialog"><h3>${t('keys.title')}</h3>
     <table>
       ${head('keys.anywhere')}
