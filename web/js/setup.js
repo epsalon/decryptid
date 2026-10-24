@@ -1,6 +1,6 @@
 // Setup panel: players, mode, map tiles, structures, import/export.
 
-import { structuresFor, setupProblems, defaultGame, PLAYERS, seatColors, colorName } from './state.js';
+import { structuresFor, setupProblems, defaultGame, PLAYERS, seatColors, swatch } from './state.js';
 import { t } from './i18n.js';
 import { structureIcon } from './board.js';
 import { hexRef } from './hexref.js';
@@ -209,7 +209,7 @@ export class SetupPanel {
       <div class="chips">${PLAYERS.map((c) => {
         const i = seatColors(game).indexOf(c.name);
         return `<button data-color="${c.name}" class="chip ${i >= 0 ? 'on' : ''}" aria-pressed="${i >= 0}">
-          <span class="dot" style="background:${c.color}"></span>${colorName(c.name)}</button>`;
+          ${swatch(c.color, c.letter)}</button>`;
       }).join('')}</div>
       <div class="field"><span>${t('setup.mode')}</span>
         <div class="seg">

@@ -28,7 +28,6 @@
     "andMore_two": "…ועוד {{count}}.",
     "andMore_other": "…ועוד {{count}}."
   },
-  "color": { "yellow": "צהוב", "red": "אדום", "green": "ירוק", "cyan": "תכלת", "purple": "סגול" },
   "terrain": { "forest": "יער", "swamp": "ביצה", "mountain": "הר", "desert": "מדבר", "water": "מים" },
   "animal": { "bear": "דוב", "cougar": "פומה" },
   "structure": {

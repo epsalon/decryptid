@@ -70,7 +70,7 @@ for this list.
 | <kbd>Enter</kbd> | Act on the cursor's hex, like tapping it |
 | <kbd>Esc</kbd> | Hide the cursor |
 | <kbd>Tab</kbd> | Move between buttons and fields |
-| **Play:** <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> | Place that colour's **cube** (yellow, red, green, cyan, purple) |
+| **Play:** <kbd>Y</kbd> <kbd>R</kbd> <kbd>G</kbd> <kbd>C</kbd> <kbd>P</kbd> | Place that colour's **cube** (red, green, cyan, yellow, purple) |
 | **Play:** <kbd>Shift</kbd> + letter | Place that colour's **disc** |
 | **Play:** <kbd>Space</kbd> | Switch between disc and cube |
 | **Play:** <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> | Undo (add <kbd>Shift</kbd> to redo) |

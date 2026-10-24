@@ -219,7 +219,7 @@ try {
   await page.waitForSelector('.search-sets li');
   const sets = await page.$$eval('.search-sets li', (ls) => ls.map((l) => l.textContent));
   const dots = await page.$$eval('.search-sets .seat-dot', (ds) => ds.map((d) => d.textContent));
-  check(sets.length >= 1 && dots.length >= 3 && /^[YRGCP]$/.test(dots.join('')[0]) && await count('.search-player', 0), `search: clue sets show letter swatches, not color names (${sets.join(' / ')})`);
+  check(sets.length >= 1 && dots.length >= 3 && /^[αβγδε]$/.test(dots.join('')[0]) && await count('.search-player', 0), `search: clue sets show letter swatches, not color names (${sets.join(' / ')})`);
   check(!/yellow|red|green|cyan|purple/i.test(await page.textContent('.search-sets')), 'search: no color names in the clue sets');
   await page.click('.search-detail [data-view="players"]');
   check(await count('.search-detail .search-player', 3), 'search: switching back shows each player again');
@@ -303,7 +303,7 @@ try {
   check(await count('[data-cube="1"].on', 1), 'Space switches to a cube');
   await page.keyboard.press(' ');
   await page.keyboard.press('p');
-  check((await page.textContent('#toast')).includes("purple isn't playing") && await count('[data-tool-player="2"].on', 1), 'a colour that is not playing is ignored, with a note');
+  check((await page.textContent('#toast')).includes("ε isn't playing") && await count('[data-tool-player="2"].on', 1), 'a colour that is not playing is ignored, with a note');
 
   // Keyboard play: digits switch tabs, arrows + Enter place on the cursor's hex.
   await page.keyboard.press('1');
@@ -353,8 +353,8 @@ try {
   check((await page.locator('table.advice tbody tr').count()) >= 1 && (await page.locator('table.advice tbody tr:first-child').getAttribute('class')) === 'search', 'one ranking: the best move is the search, and the table lists moves');
   await page.click('.settings summary');
   await page.$eval('#win-value', (el) => { el.value = '1'; el.dispatchEvent(new Event('change')); });
-  await page.waitForFunction(() => /Ask\s*red about 11,1/.test(document.querySelector('.rec-action')?.textContent ?? ''), null, { timeout: 30000 });
-  check(true, 'with a win worth only 1 bit: ask red about 11,1 (as the CLI says)');
+  await page.waitForFunction(() => /Ask\s*α about 11,1/.test(document.querySelector('.rec-action')?.textContent ?? ''), null, { timeout: 30000 });
+  check(true, 'with a win worth only 1 bit: ask α (red) about 11,1 (as the CLI says)');
   check(await count('#board .badge.best', 1), 'the recommended hex is marked on the board');
   check((await page.locator('#board .badge.ask').count()) >= 1, 'other good question hexes are numbered on the board');
   await page.screenshot({ path: out + 'phone-advice.png', fullPage: true });
@@ -404,7 +404,7 @@ try {
   await page.click('[data-act="start"]');
   await page.waitForSelector('.rec-action:has-text("setup cube")', { timeout: 30000 });
   check((await matchState()).rules.length === 4, 'a match deals four secret clues');
-  check((await page.textContent('#tab-body')).includes('You are') && (await page.textContent('#tab-body .hint')).includes('purple'), 'in vs AI I play the colour I chose');
+  check((await page.textContent('#tab-body')).includes('You are') && (await page.textContent('#tab-body .hint')).includes('ε'), 'in vs AI I play the colour I chose');
   await page.click('[data-tab="advice"]');
   check((await page.textContent('#tab-body')).includes('hints are off'), 'solver hints are off by default in a match');
   await page.click('[data-tab="setup"]');

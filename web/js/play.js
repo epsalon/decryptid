@@ -1,7 +1,7 @@
 // "Play" panel: record discs and cubes as they are placed, and see what
 // the solver makes of them.
 
-import { setMarkers, undo, redo, ruleLabel, seatLabel, seatColors, seatName, colorName } from './state.js';
+import { setMarkers, undo, redo, ruleLabel, seatLabel, seatColors, seatName, letterOf } from './state.js';
 import { t } from './i18n.js';
 import { hexRef } from './hexref.js';
 import { typing } from './keys.js';
@@ -51,7 +51,7 @@ export class PlayPanel {
     if (!color) return;
     const p = seatColors(game).indexOf(color) + 1;
     if (!p) {
-      this.app.toast(t('play.notPlaying', { color: colorName(color) }));
+      this.app.toast(t('play.notPlaying', { color: letterOf(color) }));
       return;
     }
     e.preventDefault();

@@ -6,7 +6,7 @@
 // when a search gets a disc from everyone. AI seats decide with the same
 // advisors as the self-play simulator, seeing only their own clue.
 
-import { PLAYERS, ruleLabel, seat as seatOf, boardKey, colorName } from './state.js';
+import { PLAYERS, ruleLabel, boardKey, seatLabel, seatName, swatch } from './state.js';
 import { t } from './i18n.js';
 import { hexRef, linkHexRefs } from './hexref.js';
 import { typing } from './keys.js';
@@ -22,8 +22,8 @@ const AI_DELAY = 700; // ms between AI moves, so they can be followed
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // Seats are turn order; names and dots come from the current game's colors.
 let currentGame = () => null;
-const name = (p) => colorName(seatOf(currentGame(), p).name);
-const dot = (p) => `<span class="dot" style="background:${seatOf(currentGame(), p).color}"></span>`;
+const name = (p) => seatName(currentGame(), p);
+const dot = (p) => seatLabel(currentGame(), p);
 const ordinal = (n) => t('match.position', { count: n, ordinal: true });
 
 // The log stores message keys and values, not text, so it shows in the
@@ -325,7 +325,7 @@ export class MatchPanel {
       const result = m.winner ? `${dot(m.winner)} ${m.winner === m.seat ? t('match.youWin') : t('match.wins', { player: name(m.winner) })}` : t('match.gameOver');
       status = `<div class="rec"><div class="rec-action">${result}</div>
         <div class="muted">${t('match.wasOn', { hex: hexRef(m.location.x, m.location.y) })}</div></div>
-        <h3>${t('match.everyonesClues')}</h3><ul class="clues">${m.rules.map((r, i) => `<li><span>${dot(i + 1)} ${name(i + 1)}${i + 1 === m.seat ? ` ${t('common.you')}` : ''}</span><span>${ruleLabel(r)}</span></li>`).join('')}</ul>`;
+        <h3>${t('match.everyonesClues')}</h3><ul class="clues">${m.rules.map((r, i) => `<li><span>${dot(i + 1)}${i + 1 === m.seat ? ` ${t('common.you')}` : ''}</span><span>${ruleLabel(r)}</span></li>`).join('')}</ul>`;
     } else if (!mine) {
       status = `<p class="status">${dot(n.who)} ${t(n.what === 'cube' ? 'match.placingCube' : 'match.takingTurn', { player: name(n.who) })}</p>`;
     } else if (n.what === 'cube') {
@@ -368,7 +368,7 @@ export class MatchPanel {
       <p class="hint">${t(`match.level.${o.difficulty}`)}: ${t(`match.levelHint.${o.difficulty}`)}.</p>
       <h3>${t('match.yourColor')}</h3>
       <div class="chips">${PLAYERS.map((c) => `<button data-o="color" data-v="${c.name}" class="chip ${o.color === c.name ? 'on' : ''}">
-        <span class="dot" style="background:${c.color}"></span>${colorName(c.name)}</button>`).join('')}</div>
+        ${swatch(c.color, c.letter)}</button>`).join('')}</div>
       <div class="field"><span>${t('match.youPlay')}</span><div class="seg">
         <button data-o="seat" data-v="0" class="${o.seat ? '' : 'on'}">${t('match.random')}</button>
         ${[...Array(o.players).keys()].map((i) => `<button data-o="seat" data-v="${i + 1}" class="${o.seat === i + 1 ? 'on' : ''}">${ordinal(i + 1)}</button>`).join('')}</div></div>

@@ -8,5 +8,5 @@ shed   8 2 blue
 shed   7 4 white
 shed  10 6 green
 shed   3 0 black
-players 4
+colors yellow red green cyan
 mode advanced

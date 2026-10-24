@@ -25,14 +25,13 @@ const fail = (msg) => {
 };
 
 // Keys used in the code. Static ones are checked directly; dynamic ones
-// (`color.${name}`) by listing the values they take.
+// (`terrain.${name}`) by listing the values they take.
 const code = readdirSync(web + 'js').map((f) => readFileSync(web + 'js/' + f, 'utf8')).join('\n');
 for (const [, key] of code.matchAll(/\bt\('([\w.]+)'/g)) if (!has(key)) fail(`missing key ${key}`);
 for (const [, a, b] of code.matchAll(/\bt\(\w+ \? '([\w.]+)' : '([\w.]+)'/g)) for (const key of [a, b]) if (!has(key)) fail(`missing key ${key}`);
 for (const [, a, b] of code.matchAll(/\bt\([\w.]+ \? '([\w.]+)' : '([\w.]+)'/g)) for (const key of [a, b]) if (!has(key)) fail(`missing key ${key}`);
 for (const [, key] of code.matchAll(/(?:head|row)\([^)]*'(keys\.\w+)'\)/g)) if (!has(key)) fail(`missing key ${key}`);
 const families = {
-  color: ['yellow', 'red', 'green', 'cyan', 'purple'],
   terrain: ['forest', 'swamp', 'mountain', 'desert', 'water'],
   animal: ['bear', 'cougar'],
   structureColor: ['white', 'blue', 'green', 'black'],

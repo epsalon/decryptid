@@ -4,19 +4,11 @@
 // hexes are always highlighted here. Nothing beyond that is revealed, as on
 // the Advice tab.
 
-import { setupProblems, seat, seatLabel, ruleLabel, PLAYERS } from './state.js';
+import { setupProblems, seatLabel, ruleLabel } from './state.js';
 import { t } from './i18n.js';
 
 const pct = (p) => (p === 0 ? '0%' : p >= 0.995 ? '100%' : p < 0.01 ? '<1%' : `${Math.round(p * 100)}%`);
 
-// swatch is a seat's color dot, with its letter (as on the Play tab's keys)
-// so that it reads without color.
-const swatch = (game, p) => {
-  const s = seat(game, p);
-  const named = PLAYERS.some((c) => c.name === s.name);
-  const letter = named ? s.name[0].toUpperCase() : String(p);
-  return `<span class="dot seat-dot" style="background:${s.color}">${letter}</span>`;
-};
 
 export class SearchPanel {
   constructor(root, app) {
@@ -116,7 +108,7 @@ export class SearchPanel {
   setsView(game, result) {
     const lis = result.sets.map((s) => {
       const groups = result.groups.map((g) => {
-        const dots = g.map((i) => swatch(game, i + 1)).join('');
+        const dots = g.map((i) => seatLabel(game, i + 1)).join('');
         const rules = g.map((i) => ruleLabel(s.rules[i])).join(' · ');
         return `<span class="set-group"><span class="set-seats">${dots}</span><span>${rules}</span></span>`;
       });

@@ -1,4 +1,4 @@
-# Sample game in progress on the demo board. Players are 1-3 or yellow, red, green.
+# Sample game in progress on the demo board. Seats are yellow, red, green, in turn order.
 tiles 6F 1F 3 5F 4 2F
 stone  0 1 blue
 stone 10 8 white
@@ -6,7 +6,7 @@ stone  1 4 green
 shed   8 2 blue
 shed   7 4 white
 shed  10 6 green
-players 3
+colors yellow red green
 mode basic
 
 # Answers to questions so far: a disc means "could be here" for that

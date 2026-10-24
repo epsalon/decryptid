@@ -10,9 +10,10 @@ import (
 	"github.com/epsalon/decryptid/board"
 )
 
-// PlayerColors are the colors of the physical set, in the order the board
-// printer uses for them. A game's seats may use any of them (Game.Colors).
-var PlayerColors = []string{"yellow", "red", "green", "cyan", "purple"}
+// PlayerColors are the colors of the physical set, in seat order: the Greek
+// letter order of the clue books (alpha red, beta green, gamma cyan, delta
+// yellow, epsilon purple). A game's seats may use any of them (Game.Colors).
+var PlayerColors = []string{"red", "green", "cyan", "yellow", "purple"}
 
 // Parse reads a game description. Blank lines and text after '#' are
 // ignored. Lines are:

@@ -87,10 +87,10 @@ rule cyan Distance 1 from Swamp
 	if err != nil || !reflect.DeepEqual(g, g2) {
 		t.Errorf("round trip: %v\n%s", err, g.Format())
 	}
-	// Printing shows pieces in their colour: cyan is colour 4, purple 5.
+	// Printing shows pieces in their colour: cyan is colour 3, purple 5.
 	b, _ := g.Board()
 	d := g.DisplayBoard(b)
-	if d[2][6].Discs != 1<<3 || d[5][3].Cube != 5 {
+	if d[2][6].Discs != 1<<2 || d[5][3].Cube != 5 {
 		t.Errorf("display: discs %b cube %d", d[2][6].Discs, d[5][3].Cube)
 	}
 	for _, bad := range []string{"colors red red green", "colors red blue green", "disc yellow 1 1\ncolors red cyan green"} {

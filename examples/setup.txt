@@ -6,5 +6,5 @@ stone  1 4 green
 shed   8 2 blue
 shed   7 4 white
 shed  10 6 green
-players 3
+colors yellow red green
 mode basic

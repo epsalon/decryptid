@@ -5,42 +5,47 @@ import { t } from './i18n.js';
 
 const KEY = 'decryptid.v1';
 
-// Player colors of the physical set, in seat order (game.PlayerColors).
+// Player colors of the physical set, in seat order (game.PlayerColors): the
+// Greek letter order of the clue books. Each has a letter for its swatch; the
+// names are only for the saved game and the terminal.
 export const PLAYERS = [
-  { name: 'yellow', color: '#f2c12e' },
-  { name: 'red', color: '#d63a2f' },
-  { name: 'green', color: '#34a853' },
-  { name: 'cyan', color: '#22b8cf' },
-  { name: 'purple', color: '#8e4ec6' },
+  { name: 'red', color: '#d63a2f', letter: 'α' },
+  { name: 'green', color: '#34a853', letter: 'β' },
+  { name: 'cyan', color: '#22b8cf', letter: 'γ' },
+  { name: 'yellow', color: '#f2c12e', letter: 'δ' },
+  { name: 'purple', color: '#8e4ec6', letter: 'ε' },
 ];
 
 // Seats are turn order; colors are just who sits there. game.colors lists
 // each seat's color (same as Go's Game.Colors).
 export const seatColors = (game) => (game.colors ?? PLAYERS.slice(0, game.players).map((p) => p.name));
 
-// seat describes seat p (1-based): its color name, hex color, and slot
+// seat describes seat p (1-based): its color name, hex color, letter, and slot
 // (index in PLAYERS, which fixes where its discs sit in a hex).
 export function seat(game, p) {
   const name = seatColors(game)[p - 1];
   const slot = PLAYERS.findIndex((c) => c.name === name);
-  if (slot < 0) return { name: t('common.player', { n: p }), color: '#999', slot: (p - 1) % PLAYERS.length }; // no such seat
-  return { name, color: PLAYERS[slot].color, slot };
+  if (slot < 0) return { name: t('common.player', { n: p }), color: '#999', letter: String(p), slot: (p - 1) % PLAYERS.length }; // no such seat
+  return { name, color: PLAYERS[slot].color, letter: PLAYERS[slot].letter, slot };
 }
 
 // boardKey identifies a game's board and players, ignoring the markers.
 export const boardKey = (game) => JSON.stringify([game.spec, game.advanced, seatColors(game)]);
 
-// seatLabel is a colored dot plus the seat's color name.
+// swatch is a color dot carrying the seat's letter.
+export const swatch = (color, letter) => `<span class="dot seat-dot" style="background:${color}">${letter}</span>`;
+
+// seatLabel is a seat's swatch: its letter, with no color name.
 export const seatLabel = (game, p) => {
   const s = seat(game, p);
-  return `<span class="dot" style="background:${s.color}"></span>${colorName(s.name)}`;
+  return swatch(s.color, s.letter);
 };
 
-// colorName is a player color's display name ("yellow", ...).
-export const colorName = (name) => (PLAYERS.some((c) => c.name === name) ? t(`color.${name}`) : name);
+// letterOf is a player color's letter, for a color name from the game.
+export const letterOf = (name) => PLAYERS.find((c) => c.name === name)?.letter ?? name;
 
-// seatName is seat p's display name.
-export const seatName = (game, p) => colorName(seat(game, p).name);
+// seatName is seat p's letter as plain text, for messages.
+export const seatName = (game, p) => seat(game, p).letter;
 
 export const STRUCTURE_COLORS = ['white', 'blue', 'green', 'black'];
 export const STRUCTURE_TYPES = ['stone', 'shed'];

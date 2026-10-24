@@ -72,10 +72,10 @@ var bldgColor = []color.Attribute{
 // playerColor is each player's colour, matching the physical set's pieces.
 // It must stay in the same order as game.PlayerColors.
 var playerColor = []color.Attribute{
-	color.FgHiYellow,
 	color.FgHiRed,
 	color.FgHiGreen,
 	color.FgHiCyan,
+	color.FgHiYellow,
 	color.FgHiMagenta, // purple
 }
 

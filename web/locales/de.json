@@ -34,13 +34,6 @@
     "andMore_one": "…und {{count}} weiterer.",
     "andMore_other": "…und {{count}} weitere."
   },
-  "color": {
-    "yellow": "gelb",
-    "red": "rot",
-    "green": "grün",
-    "cyan": "cyan",
-    "purple": "lila"
-  },
   "terrain": {
     "forest": "Wald",
     "swamp": "Sumpf",

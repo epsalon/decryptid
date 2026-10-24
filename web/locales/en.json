@@ -27,7 +27,6 @@
     "andMore_one": "…and {{count}} more.",
     "andMore_other": "…and {{count}} more."
   },
-  "color": { "yellow": "yellow", "red": "red", "green": "green", "cyan": "cyan", "purple": "purple" },
   "terrain": { "forest": "Forest", "swamp": "Swamp", "mountain": "Mountain", "desert": "Desert", "water": "Water" },
   "animal": { "bear": "Bear", "cougar": "Cougar" },
   "structure": {

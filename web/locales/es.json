@@ -34,13 +34,6 @@
     "andMore_one": "…y {{count}} más.",
     "andMore_other": "…y {{count}} más."
   },
-  "color": {
-    "yellow": "amarillo",
-    "red": "rojo",
-    "green": "verde",
-    "cyan": "cian",
-    "purple": "morado"
-  },
   "terrain": {
     "forest": "Bosque",
     "swamp": "Pantano",
