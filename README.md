@@ -65,7 +65,7 @@ for this list.
 
 | Key | Action |
 |---|---|
-| <kbd>1</kbd>–<kbd>6</kbd> | Switch tab: Setup, Me, Play, Advice, Tiles, vs AI |
+| <kbd>1</kbd>–<kbd>6</kbd> | Switch tab: Setup, Me, Play, Advice, Search, vs AI |
 | <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> | Move the board cursor |
 | <kbd>Enter</kbd> | Act on the cursor's hex, like tapping it |
 | <kbd>Esc</kbd> | Hide the cursor |

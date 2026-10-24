@@ -249,9 +249,16 @@ dialog.help td:first-child { white-space: nowrap; width: 1%; }
 /* Right-to-left languages: the board and technical text stay left-to-right. */
 #board, kbd, .hexref { direction: ltr; unicode-bidi: isolate; }
 
-/* Tiles panel: one card per map tile, in the board's 3x2 layout */
-.tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.tile-card { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; min-width: 0; }
-.tile-card h4 { margin: 0 0 4px; font-size: 0.9rem; }
-.tile-player { margin-top: 6px; font-size: 0.8rem; }
-.tile-player .chip { font-size: 0.8rem; }
+/* Search panel: the tapped hex's worlds, per player */
+.search-detail h4 { margin: 0 0 4px; font-size: 0.9rem; }
+.search-player { margin-top: 6px; font-size: 0.8rem; }
+.search-player .chip { font-size: 0.8rem; }
+/* Clue sets: a seat's swatch carries its letter, so it reads without color */
+.seat-dot { width: 16px; height: 16px; font-size: 10px; line-height: 14px; text-align: center; color: #fff; text-shadow: 0 0 2px #000; font-weight: 700; }
+.search-sets li { align-items: start; }
+/* .clues right-aligns and mutes every last span, which would catch the swatch letter and the rule text */
+.clues li span.seat-dot:last-child { text-align: center; color: #fff; }
+.search-sets .set-group > span:last-child { text-align: start; color: inherit; }
+.search-sets li > span:first-child { display: grid; gap: 4px; text-align: start; color: inherit; }
+.set-group { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 6px; }
+.set-seats { display: flex; gap: 2px; padding-top: 1px; }

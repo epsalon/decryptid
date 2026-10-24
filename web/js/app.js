@@ -9,7 +9,7 @@ import { MePanel } from './me.js';
 import { PlayPanel } from './play.js';
 import { AdvicePanel } from './advice.js';
 import { Terrain } from './terrain.js';
-import { TilesPanel } from './tiles.js';
+import { SearchPanel } from './search.js';
 import { MatchPanel, matchActive, dropStaleMatch } from './match.js';
 import { installHexRefs, dropStaleHexRef } from './hexref.js';
 import { installKeys } from './keys.js';
@@ -49,11 +49,12 @@ const app = {
   },
 
   // viableOverlay highlights the hexes the cryptid may be on, weighted by
-  // how many worlds put it there.
-  viableOverlay() {
+  // how many worlds put it there. It shows only when the user has chosen to
+  // highlight them, unless force says the tab always shows them.
+  viableOverlay(force = false) {
     const o = new Map();
     const s = this.analysis.summary;
-    if (!s || this.store.state.ui.overlay !== 'viable') return o;
+    if (!s || (!force && this.store.state.ui.overlay !== 'viable')) return o;
     const max = s.locations[0]?.worlds || 1;
     for (const l of s.locations) o.set(`${l.x},${l.y}`, { viable: true, weight: l.worlds / max });
     return o;
@@ -71,7 +72,7 @@ const panels = {
   me: { title: 'tab.me', panel: new MePanel($('tab-body'), app) },
   play: { title: 'tab.play', panel: new PlayPanel($('tab-body'), app) },
   advice: { title: 'tab.advice', panel: new AdvicePanel($('tab-body'), app) },
-  tiles: { title: 'tab.tiles', panel: new TilesPanel($('tab-body'), app) },
+  search: { title: 'tab.search', panel: new SearchPanel($('tab-body'), app) },
   match: { title: 'tab.match', panel: new MatchPanel($('tab-body'), app) },
 };
 const current = () => panels[app.store.state.ui.tab] ?? panels.setup;

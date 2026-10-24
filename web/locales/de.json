@@ -11,7 +11,7 @@
     "play": "Spiel",
     "advice": "Tipps",
     "match": "gegen KI",
-    "tiles": "Teile"
+    "search": "Suche"
   },
   "board": {
     "label": "Spielplan",
@@ -273,8 +273,11 @@
       "gaveUp": "Du hast aufgegeben."
     }
   },
-  "tiles": {
-    "intro": "Für jedes Plättchen: wie wahrscheinlich das Cryptid dort ist und welche Regeln jeder Spieler in den Welten haben könnte, in denen es dort ist.",
+  "search": {
+    "intro": "Tippe auf ein Feld im Spielplan, um zu sehen, welche Regelkombinationen das Cryptid dorthin bringen würden.",
+    "hex": "Feld {{x}},{{y}}",
+    "byPlayer": "Nach Spieler",
+    "clueSets": "Hinweiskombinationen",
     "none": "Keine mögliche Welt setzt das Cryptid hierhin."
   },
   "validate": {
@@ -310,7 +313,7 @@
   "keys": {
     "title": "Tastenkürzel",
     "anywhere": "Überall",
-    "tabs": "Aufbau, Ich, Spiel, Tipps, Teile, gegen KI",
+    "tabs": "Aufbau, Ich, Spiel, Tipps, Suche, gegen KI",
     "cursor": "Spielplan-Cursor bewegen",
     "enter": "Auf das Feld des Cursors wirken (wie Antippen)",
     "escape": "Cursor ausblenden",

@@ -1,6 +1,6 @@
 // Keyboard play: the whole game works without a pointer.
 //
-//   1-6          switch tabs (Setup, Me, Play, Advice, Tiles, vs AI)
+//   1-6          switch tabs (Setup, Me, Play, Advice, Search, vs AI)
 //   arrows       move the board cursor; Enter acts on its hex, like a tap
 //   Esc          hide the cursor (or close this help)
 //   ?            show all shortcuts
@@ -11,7 +11,7 @@
 
 import { t } from './i18n.js';
 
-const TABS = ['setup', 'me', 'play', 'advice', 'tiles', 'match'];
+const TABS = ['setup', 'me', 'play', 'advice', 'search', 'match'];
 
 // typing reports whether a key event belongs to a text field or dialog.
 export const typing = (e) =>

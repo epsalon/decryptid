@@ -11,7 +11,7 @@
     "play": "Juego",
     "advice": "Consejos",
     "match": "vs IA",
-    "tiles": "Losetas"
+    "search": "Buscar"
   },
   "board": {
     "label": "Tablero de juego",
@@ -273,8 +273,11 @@
       "gaveUp": "Te rendiste."
     }
   },
-  "tiles": {
-    "intro": "Para cada loseta: la probabilidad de que el críptido esté ahí y qué reglas podría tener cada jugador en los mundos en que está ahí.",
+  "search": {
+    "intro": "Toca una casilla del tablero para ver qué conjuntos de reglas pondrían al críptido allí.",
+    "hex": "Casilla {{x}},{{y}}",
+    "byPlayer": "Por jugador",
+    "clueSets": "Combinaciones de pistas",
     "none": "Ningún mundo posible pone al críptido aquí."
   },
   "validate": {
@@ -310,7 +313,7 @@
   "keys": {
     "title": "Atajos de teclado",
     "anywhere": "En cualquier sitio",
-    "tabs": "Preparación, Yo, Juego, Consejos, Losetas, vs IA",
+    "tabs": "Preparación, Yo, Juego, Consejos, Buscar, vs IA",
     "cursor": "Mover el cursor del tablero",
     "enter": "Actuar sobre la casilla del cursor (como tocarla)",
     "escape": "Ocultar el cursor",

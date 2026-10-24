@@ -11,7 +11,7 @@
     "play": "Jeu",
     "advice": "Conseils",
     "match": "contre l'IA",
-    "tiles": "Tuiles"
+    "search": "Recherche"
   },
   "board": {
     "label": "Plateau de jeu",
@@ -274,8 +274,11 @@
       "gaveUp": "Vous avez abandonné."
     }
   },
-  "tiles": {
-    "intro": "Pour chaque tuile : la probabilité que le cryptide s'y trouve, et les règles que chaque joueur pourrait avoir dans les mondes où il s'y trouve.",
+  "search": {
+    "intro": "Touchez un hexagone du plateau pour voir quels jeux de règles placeraient le cryptide là.",
+    "hex": "Hexagone {{x}},{{y}}",
+    "byPlayer": "Par joueur",
+    "clueSets": "Ensembles d'indices",
     "none": "Aucun monde possible ne place le cryptide ici."
   },
   "validate": {
@@ -311,7 +314,7 @@
   "keys": {
     "title": "Raccourcis clavier",
     "anywhere": "Partout",
-    "tabs": "Mise en place, Moi, Jeu, Conseils, Tuiles, contre l'IA",
+    "tabs": "Mise en place, Moi, Jeu, Conseils, Recherche, contre l'IA",
     "cursor": "Déplacer le curseur du plateau",
     "enter": "Agir sur l'hexagone du curseur (comme le toucher)",
     "escape": "Masquer le curseur",

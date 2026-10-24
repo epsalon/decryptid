@@ -26,6 +26,8 @@ type Request struct {
 	Advanced bool       `json:"advanced,omitempty"` // rules, randomSetup
 	Seed     int64      `json:"seed,omitempty"`     // randomSetup, newMatch
 	Rules    []string   `json:"rules,omitempty"`    // masks
+	X        int        `json:"x,omitempty"`        // hex, for hex
+	Y        int        `json:"y,omitempty"`        // hex, for hex
 }
 
 // Response carries either a result or an error message.
@@ -128,8 +130,8 @@ func handle(r *Request) (any, error) {
 		return hexes, nil
 	case "summary":
 		return g.Summary()
-	case "tiles":
-		return g.TileSummary()
+	case "hex":
+		return g.HexSummary(r.X, r.Y)
 	case "validate":
 		// Whether some world fits the markers and the known rules; nothing
 		// else is revealed.

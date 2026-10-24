@@ -49,10 +49,10 @@ func TestOps(t *testing.T) {
 		t.Errorf("summary: %+v", sum.Locations)
 	}
 
-	var tiles []game.TileCount
-	json.Unmarshal(call(t, map[string]any{"op": "tiles", "game": g}), &tiles)
-	if len(tiles) != 6 || tiles[2].Worlds != 2 {
-		t.Errorf("tiles: want 6 tiles, with the example's two worlds on tile 2 (hex 3,3), got %+v", tiles)
+	var hex game.HexCount
+	json.Unmarshal(call(t, map[string]any{"op": "hex", "game": g, "x": 3, "y": 3}), &hex)
+	if hex.Worlds != 2 || hex.Total != 2 {
+		t.Errorf("hex: want the example's two worlds at 3,3, got %+v", hex)
 	}
 
 	var valid bool

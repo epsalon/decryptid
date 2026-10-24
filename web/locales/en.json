@@ -5,7 +5,7 @@
     "github": "GitHub repository",
     "validator": "Validator"
   },
-  "tab": { "setup": "Setup", "me": "Me", "play": "Play", "advice": "Advice", "match": "vs AI", "tiles": "Tiles" },
+  "tab": { "setup": "Setup", "me": "Me", "play": "Play", "advice": "Advice", "match": "vs AI", "search": "Search" },
   "board": {
     "label": "Game board",
     "coords": "Coordinates",
@@ -228,8 +228,11 @@
       "gaveUp": "You gave up."
     }
   },
-  "tiles": {
-    "intro": "For each map tile: how likely the cryptid is there, and which rules each player could hold in the worlds that put it there.",
+  "search": {
+    "intro": "Tap a hex on the board to see which rule sets would put the cryptid there.",
+    "hex": "Hex {{x}},{{y}}",
+    "byPlayer": "By player",
+    "clueSets": "Clue sets",
     "none": "No possible world puts the cryptid here."
   },
   "validate": {
@@ -262,7 +265,7 @@
   "keys": {
     "title": "Keyboard shortcuts",
     "anywhere": "Anywhere",
-    "tabs": "Setup, Me, Play, Advice, Tiles, vs AI",
+    "tabs": "Setup, Me, Play, Advice, Search, vs AI",
     "cursor": "Move the board cursor",
     "enter": "Act on the cursor's hex (like tapping it)",
     "escape": "Hide the cursor",
